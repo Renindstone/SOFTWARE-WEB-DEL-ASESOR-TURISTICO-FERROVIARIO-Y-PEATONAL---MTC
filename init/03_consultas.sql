@@ -15,6 +15,8 @@
 --   SELECT * FROM fn_buscar_zonas('CUS-OLL', 'Naturaleza');
 --   SELECT * FROM fn_verificar_aforo('Llaqta de Machu Picchu', '2026-09-01');
 --   SELECT * FROM fn_verificar_rutas();
+--   SELECT * FROM fn_verificar_categorias();
+--   SELECT * FROM fn_categoria_por_edad('Zona', 15);
 --   SELECT * FROM fn_resumen_bd();
 -- ============================================================================
 
@@ -41,7 +43,7 @@ SELECT
     r."RutDescripcion"                                   AS descripcion_ruta,
     r."RutDistanciaKm"                                  AS km_ida_vuelta,
     r."RutTiempoEstimadoMin"                            AS minutos,
-    r."RutDificultad"                                   AS dificultad,
+    d."DifNombre"                                       AS dificultad,
     z."ZonCostoAprox"                                   AS costo_zona,
     z."ZonCupoMaximoDiario"                             AS cupo_diario,
     z."ZonEstado"                                       AS estado
@@ -50,9 +52,10 @@ JOIN estacion e            ON e."EstIdEstacion"    = z."ZonIdEstacionCercana"
 LEFT JOIN zona_tipo_turismo zt ON zt."ZtiIdZonaTuristica" = z."ZonIdZona"
 LEFT JOIN tipo_turismo t   ON t."TipIdTipoTurismo" = zt."ZtiIdTipoTurismo"
 LEFT JOIN ruta_peatonal r  ON r."RutIdZonaDestino" = z."ZonIdZona"
+LEFT JOIN dificultad d     ON d."DifIdDificultad"  = r."RutIdDificultad"
 GROUP BY z."ZonIdZona", z."ZonNombre", e."EstNombre", e."EstCiudad",
          z."ZonLatitud", z."ZonLongitud",
-         r."RutDescripcion", r."RutDistanciaKm", r."RutTiempoEstimadoMin", r."RutDificultad",
+         r."RutDescripcion", r."RutDistanciaKm", r."RutTiempoEstimadoMin", d."DifNombre",
          z."ZonCostoAprox", z."ZonCupoMaximoDiario", z."ZonEstado";
 
 
@@ -123,6 +126,9 @@ SELECT
     r."RutNombre"                              AS ruta,
     z."ZonNombre"                              AS zona,
     e."EstNombre"                              AS estacion_origen,
+    (SELECT COALESCE(SUM(iv."IviCantidad"), 0)
+       FROM informe_visitante iv
+      WHERE iv."IviIdInforme" = i."InfIdInforme")  AS personas,
     i."InfTotalEstimado"                       AS total_soles
 FROM informe_planificacion i
 JOIN ruta_peatonal r   ON r."RutIdRuta"      = i."InfIdRuta"
@@ -206,17 +212,18 @@ BEGIN
            r."RutDescripcion",
            r."RutDistanciaKm",
            r."RutTiempoEstimadoMin",
-           r."RutDificultad",
+           d."DifNombre",
            z."ZonCostoAprox"
     FROM zona_turistica z
     JOIN estacion e           ON e."EstIdEstacion"      = z."ZonIdEstacionCercana"
     JOIN ruta_peatonal r      ON r."RutIdZonaDestino"   = z."ZonIdZona"
+    JOIN dificultad d         ON d."DifIdDificultad"    = r."RutIdDificultad"
     JOIN zona_tipo_turismo zt ON zt."ZtiIdZonaTuristica" = z."ZonIdZona"
     JOIN tipo_turismo t2      ON t2."TipIdTipoTurismo"  = zt."ZtiIdTipoTurismo"
     WHERE e."EstCodigo" = p_codigo_estacion
       AND e."EstEstado" = 'Activa'
       AND z."ZonEstado" = 'Activa'
-      AND (p_dificultad IS NULL OR r."RutDificultad" = p_dificultad)
+      AND (p_dificultad IS NULL OR d."DifNombre" = p_dificultad)
       AND (p_tipo IS NULL OR EXISTS (
             SELECT 1
             FROM zona_tipo_turismo zt2
@@ -224,7 +231,7 @@ BEGIN
             WHERE zt2."ZtiIdZonaTuristica" = z."ZonIdZona"
               AND t3."TipNombre" = p_tipo))
     GROUP BY z."ZonNombre", r."RutDescripcion", r."RutDistanciaKm", r."RutTiempoEstimadoMin",
-             r."RutDificultad", z."ZonCostoAprox"
+             d."DifNombre", z."ZonCostoAprox"
     ORDER BY r."RutDistanciaKm";
 END;
 $$ LANGUAGE plpgsql;
@@ -294,7 +301,7 @@ BEGIN
            r."RutDescripcion",
            r."RutDistanciaKm",
            r."RutTiempoEstimadoMin",
-           r."RutDificultad",
+           d."DifNombre",
            c."CliEstadoClima",
            c."CliTemperaturaMinimaC",
            c."CliTemperaturaMaximaC",
@@ -311,6 +318,7 @@ BEGIN
     FROM zona_turistica z
     JOIN estacion e          ON e."EstIdEstacion"    = z."ZonIdEstacionCercana"
     JOIN ruta_peatonal r     ON r."RutIdZonaDestino" = z."ZonIdZona"
+    JOIN dificultad d        ON d."DifIdDificultad" = r."RutIdDificultad"
     LEFT JOIN prevision_clima c
            ON c."CliIdEstacion" = e."EstIdEstacion" AND c."CliFecha" = p_fecha
     LEFT JOIN control_aforo a
@@ -321,6 +329,80 @@ BEGIN
     ORDER BY r."RutDistanciaKm";
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- ----------------------------------------------------------------------------
+-- vw_informe_visitantes
+-- Composicion del grupo de cada informe, con la categoria aplicada en cada
+-- ambito. Permite revisar de un vistazo por que un informe costo lo que costo.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW vw_informe_visitantes AS
+SELECT
+    i."InfCodigo"                                      AS informe,
+    iv."IviEdad"                                       AS edad,
+    iv."IviCantidad"                                   AS personas,
+    COALESCE(ct."CatNombre", '(sin tren)')             AS categoria_tren,
+    cz."CatNombre"                                     AS categoria_zona,
+    iv."IviSubtotalTren"                               AS subtotal_tren,
+    iv."IviSubtotalZona"                               AS subtotal_zona,
+    iv."IviSubtotalTren" + iv."IviSubtotalZona"        AS subtotal
+FROM informe_visitante iv
+JOIN informe_planificacion i  ON i."InfIdInforme"  = iv."IviIdInforme"
+LEFT JOIN categoria_visitante ct ON ct."CatIdCategoria" = iv."IviIdCategoriaTren"
+JOIN categoria_visitante cz   ON cz."CatIdCategoria" = iv."IviIdCategoriaZona"
+ORDER BY i."InfCodigo", iv."IviEdad" DESC;
+
+
+-- ----------------------------------------------------------------------------
+-- fn_categoria_por_edad(ambito, edad)
+-- Categoria tarifaria que corresponde a una edad en un ambito ('Tren'/'Zona').
+-- Es la regla que aplicara la capa de negocio al armar el informe de un grupo.
+--   SELECT * FROM fn_categoria_por_edad('Tren', 15);  -- Adulto
+--   SELECT * FROM fn_categoria_por_edad('Zona', 15);  -- Nino
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_categoria_por_edad(
+    p_ambito VARCHAR,
+    p_edad   INTEGER
+) RETURNS TABLE (
+    id_categoria  INTEGER,
+    ambito        VARCHAR,
+    categoria     VARCHAR,
+    factor_precio NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c."CatIdCategoria", c."CatAmbito", c."CatNombre", c."CatFactorPrecio"
+    FROM categoria_visitante c
+    WHERE c."CatAmbito" = p_ambito
+      AND p_edad >= c."CatEdadMinima"
+      AND (c."CatEdadMaxima" IS NULL OR p_edad <= c."CatEdadMaxima");
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+
+-- ----------------------------------------------------------------------------
+-- fn_verificar_categorias()
+-- La restriccion EXCLUDE de categoria_visitante impide que dos tramos de edad
+-- se solapen, pero no que quede un hueco (por ejemplo, si alguien edita el
+-- corte de nino de 11 a 10 y olvida bajar el de adulto). Esta funcion recorre
+-- las edades 0..120 y avisa de las que no tienen categoria en algun ambito.
+--   SELECT * FROM fn_verificar_categorias();   -- sin filas = correcto
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_verificar_categorias()
+RETURNS TABLE (ambito VARCHAR, edad INTEGER, problema TEXT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT a."CatAmbito", e.edad, 'Edad sin categoria tarifaria'::TEXT
+    FROM (SELECT DISTINCT "CatAmbito" FROM categoria_visitante) a
+    CROSS JOIN generate_series(0, 120) AS e(edad)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM categoria_visitante c
+        WHERE c."CatAmbito" = a."CatAmbito"
+          AND e.edad >= c."CatEdadMinima"
+          AND (c."CatEdadMaxima" IS NULL OR e.edad <= c."CatEdadMaxima"))
+    ORDER BY 1, 2;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 
 -- ----------------------------------------------------------------------------
@@ -335,6 +417,8 @@ BEGIN
     SELECT 'rol'::TEXT,                   COUNT(*) FROM rol
     UNION ALL SELECT 'usuario',           COUNT(*) FROM usuario
     UNION ALL SELECT 'tipo_turismo',      COUNT(*) FROM tipo_turismo
+    UNION ALL SELECT 'dificultad',        COUNT(*) FROM dificultad
+    UNION ALL SELECT 'categoria_visitante', COUNT(*) FROM categoria_visitante
     UNION ALL SELECT 'estacion',          COUNT(*) FROM estacion
     UNION ALL SELECT 'servicio_tren',     COUNT(*) FROM servicio_tren
     UNION ALL SELECT 'zona_turistica',    COUNT(*) FROM zona_turistica
@@ -342,6 +426,7 @@ BEGIN
     UNION ALL SELECT 'ruta_peatonal',     COUNT(*) FROM ruta_peatonal
     UNION ALL SELECT 'prevision_clima',   COUNT(*) FROM prevision_clima
     UNION ALL SELECT 'informe_planificacion', COUNT(*) FROM informe_planificacion
+    UNION ALL SELECT 'informe_visitante', COUNT(*) FROM informe_visitante
     UNION ALL SELECT 'control_aforo',     COUNT(*) FROM control_aforo
     UNION ALL SELECT 'auditoria_log',     COUNT(*) FROM auditoria_log;
 END;

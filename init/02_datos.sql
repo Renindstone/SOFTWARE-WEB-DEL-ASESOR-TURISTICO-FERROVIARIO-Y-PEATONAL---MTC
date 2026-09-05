@@ -64,7 +64,46 @@ INSERT INTO tipo_turismo ("TipNombre", "TipDescripcion") VALUES
     ('Gastronomia',      'Mercados tradicionales y zonas de comida local');
 
 -- ----------------------------------------------------------------------------
--- 4. ESTACION  (red real de PeruRail)
+-- 4. DIFICULTAD  (parametrica - RNF-06)
+--
+-- "DifDistanciaMaximaKm" se mide sobre el circuito completo de ida y vuelta y
+-- reproduce los umbrales que hasta ahora estaban escritos en
+-- RutaPeatonalService (hasta 3 km Baja, hasta 6 km Media, por encima Alta).
+-- "DifVelocidadMinPorKm" recoge que un ascenso exigente se camina mas lento
+-- que un paseo llano; antes se usaban 12 min/km para todos los casos.
+-- ----------------------------------------------------------------------------
+INSERT INTO dificultad ("DifNombre", "DifDescripcion", "DifOrden",
+                        "DifDistanciaMaximaKm", "DifVelocidadMinPorKm") VALUES
+    ('Baja',  'Recorrido llano o de pendiente suave, apto para cualquier visitante.',   1,  3.00, 12),
+    ('Media', 'Tramos con pendiente o escalinatas; requiere calzado adecuado.',         2,  6.00, 18),
+    ('Alta',  'Ascenso pronunciado o sendero largo; exige buena condicion fisica.',     3,  NULL, 25);
+
+-- ----------------------------------------------------------------------------
+-- 5. CATEGORIA_VISITANTE  (parametrica - tarifas por edad)
+--
+-- Ambito Tren: politica publicada por PeruRail. El infante de 0 a 2 anos viaja
+-- gratis en brazos de un adulto y el nino de 3 a 11 paga la mitad de la tarifa
+-- adulta; a partir de los 12 se paga tarifa completa.
+--
+-- Ambito Zona: politica de la tarifa del santuario. El corte de nino llega
+-- hasta los 17 anos, no hasta los 11: por eso los rangos no pueden compartirse
+-- con los del tren. El factor 0.6800 sale de la relacion entre la tarifa de
+-- nino y la de adulto para visitantes nacionales y de la CAN.
+--
+-- La tarifa de estudiante no se modela aqui: depende de un carne vigente que
+-- se acredita al ingresar, no de la edad.
+-- ----------------------------------------------------------------------------
+INSERT INTO categoria_visitante ("CatAmbito", "CatNombre", "CatEdadMinima",
+                                 "CatEdadMaxima", "CatFactorPrecio", "CatDescripcion") VALUES
+    ('Tren', 'Infante',  0,   2, 0.0000, 'De 0 a 2 anos. No paga pasaje; viaja en brazos de un adulto.'),
+    ('Tren', 'Nino',     3,  11, 0.5000, 'De 3 a 11 anos. Paga el 50% de la tarifa adulta.'),
+    ('Tren', 'Adulto',  12, NULL, 1.0000, 'Desde los 12 anos. Tarifa completa.'),
+    ('Zona', 'Infante',  0,   2, 0.0000, 'De 0 a 2 anos. No paga entrada.'),
+    ('Zona', 'Nino',     3,  17, 0.6800, 'De 3 a 17 anos. Tarifa reducida de ingreso.'),
+    ('Zona', 'Adulto',  18, NULL, 1.0000, 'Desde los 18 anos. Tarifa completa de ingreso.');
+
+-- ----------------------------------------------------------------------------
+-- 6. ESTACION  (red real de PeruRail)
 --
 -- La estacion Poroy se registra como 'Inactiva': permite validar el RF-02
 -- (excluir estaciones inactivas del selector) y el caso de prueba CN-02.
@@ -81,7 +120,7 @@ INSERT INTO estacion ("EstCodigo", "EstNombre", "EstLatitud", "EstLongitud",
     ('AQP-AQP', 'Estacion Arequipa',                     -16.398900, -71.535000, 2335.00, 'Arequipa',        'Activa');
 
 -- ----------------------------------------------------------------------------
--- 5. SERVICIO_TREN  (horarios y tarifas - simulacion del feed de PeruRail)
+-- 7. SERVICIO_TREN  (horarios y tarifas - simulacion del feed de PeruRail)
 -- ----------------------------------------------------------------------------
 INSERT INTO servicio_tren ("SerHorarioSalida", "SerHorarioLlegada",
                            "SerTiempoTransitoMin", "SerTarifa",
@@ -134,7 +173,7 @@ INSERT INTO servicio_tren ("SerHorarioSalida", "SerHorarioLlegada",
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'AQP-AQP'));
 
 -- ----------------------------------------------------------------------------
--- 6. ZONA_TURISTICA  (carga de Travel Group Peru)
+-- 8. ZONA_TURISTICA  (carga de Travel Group Peru)
 --
 -- Solo zonas alcanzables A PIE desde la estacion asociada (modelo del caso).
 -- "ZonCupoMaximoDiario" se completa unicamente en las zonas que manejan
@@ -220,7 +259,7 @@ INSERT INTO zona_turistica ("ZonNombre", "ZonDescripcion",
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL'), 0.00, NULL, 'Inactiva');
 
 -- ----------------------------------------------------------------------------
--- 7. ZONA_TIPO_TURISMO  (relacion N:M)
+-- 9. ZONA_TIPO_TURISMO  (relacion N:M)
 --
 -- Varias zonas combinan mas de una categoria a la vez: por ejemplo, el
 -- Conjunto Arqueologico de Ollantaytambo es Historia/Cultura Y Naturaleza,
@@ -261,16 +300,16 @@ JOIN zona_turistica z ON z."ZonNombre"  = v.zona
 JOIN tipo_turismo   t ON t."TipNombre"  = v.tipo;
 
 -- ----------------------------------------------------------------------------
--- 8. RUTA_PEATONAL  (circuitos de ida y vuelta - RNF-04)
+-- 10. RUTA_PEATONAL  (circuitos de ida y vuelta - RNF-04)
 --
 -- "RutDistanciaKm" corresponde al recorrido TOTAL (ida + vuelta), es decir,
 -- el doble de la distancia estacion -> zona, segun el calculo definido en
 -- RutaPeatonalService (formula de Haversine x 2).
 -- ----------------------------------------------------------------------------
 INSERT INTO ruta_peatonal ("RutNombre", "RutDescripcion", "RutDistanciaKm", "RutTiempoEstimadoMin",
-                           "RutDificultad", "RutIdEstacionOrigen",
+                           "RutIdDificultad", "RutIdEstacionOrigen",
                            "RutIdZonaDestino", "RutEsIdaVuelta")
-SELECT v.nombre, v.descripcion, v.km, v.minutos, v.dificultad,
+SELECT v.nombre, v.descripcion, v.km, v.minutos, d."DifIdDificultad",
        z."ZonIdEstacionCercana", z."ZonIdZona", TRUE
 FROM (VALUES
     ('Circuito San Pedro - Mercado Central',
@@ -306,10 +345,11 @@ FROM (VALUES
     ('Circuito Arequipa - Mirador de Yanahuara',
      'Caminata moderada por calles empedradas hasta el mirador con vista al volcan Misti.', 4.20,  80, 'Media', 'Mirador de Yanahuara')
 ) AS v(nombre, descripcion, km, minutos, dificultad, zona)
-JOIN zona_turistica z ON z."ZonNombre" = v.zona;
+JOIN zona_turistica z ON z."ZonNombre" = v.zona
+JOIN dificultad     d ON d."DifNombre" = v.dificultad;
 
 -- ----------------------------------------------------------------------------
--- 9. PREVISION_CLIMA  (simulacion del feed diario del SENAMHI)
+-- 11. PREVISION_CLIMA  (simulacion del feed diario del SENAMHI)
 -- ----------------------------------------------------------------------------
 INSERT INTO prevision_clima ("CliFecha", "CliTemperaturaMinimaC", "CliTemperaturaMaximaC",
                              "CliProbabilidadLluvia", "CliEstadoClima", "CliIdEstacion")
@@ -336,7 +376,7 @@ FROM (VALUES
 JOIN estacion e ON e."EstCodigo" = v.codigo;
 
 -- ----------------------------------------------------------------------------
--- 10. CONTROL_AFORO  (RF-16)
+-- 12. CONTROL_AFORO  (RF-16)
 --
 -- La Llaqta de Machu Picchu queda con el aforo COMPLETO para el 01/09/2026
 -- (4500 de 4500), lo que permite ejecutar directamente el caso de prueba
@@ -355,17 +395,19 @@ FROM (VALUES
 JOIN zona_turistica z ON z."ZonNombre" = v.zona;
 
 -- ----------------------------------------------------------------------------
--- 11. INFORME_PLANIFICACION  (RF-08)
+-- 13. INFORME_PLANIFICACION  (RF-08)
 --
 -- InfTotalEstimado = tarifa del tren + costo aproximado de la zona.
 -- El informe INF-0003 se genera sin usuario autenticado (consulta anonima).
 -- ----------------------------------------------------------------------------
+-- INF-0001 lo genera una familia de tres (ver informe_visitante): su total ya
+-- no es el de una persona, sino la suma de los subtotales del grupo.
 INSERT INTO informe_planificacion ("InfCodigo", "InfFechaVisita", "InfIdUsuario",
                                    "InfIdRuta", "InfTotalEstimado") VALUES
     ('INF-0001', '2026-09-02',
      (SELECT "UsuIdUsuario" FROM usuario WHERE "UsuNombreUsuario" = 'turista_jose'),
      (SELECT "RutIdRuta" FROM ruta_peatonal WHERE "RutNombre" = 'Circuito Ollantaytambo - Fortaleza'),
-     215.00),
+     550.10),
     ('INF-0002', '2026-09-03',
      (SELECT "UsuIdUsuario" FROM usuario WHERE "UsuNombreUsuario" = 'turista_jose'),
      (SELECT "RutIdRuta" FROM ruta_peatonal WHERE "RutNombre" = 'Circuito Aguas Calientes - Banos Termales'),
@@ -375,7 +417,39 @@ INSERT INTO informe_planificacion ("InfCodigo", "InfFechaVisita", "InfIdUsuario"
      70.00);
 
 -- ----------------------------------------------------------------------------
--- 12. AUDITORIA_LOG  (RNF-07)
+-- 14. INFORME_VISITANTE  (composicion del grupo)
+--
+-- INF-0001 es el caso de la familia: dos adultos y un nino de 8 anos. Sirve
+-- para comprobar que la edad cambia el precio en los dos ambitos a la vez y
+-- con cortes distintos -- un chico de 8 es "Nino" tanto en el tren como en la
+-- zona, pero uno de 15 seria "Adulto" en el tren y "Nino" en la zona.
+--
+-- Subtotales de INF-0001 (tarifa de tren 145.00, ingreso a la zona 70.00):
+--   2 adultos -> tren 145.00 x 1.0000 x 2 = 290.00 ; zona 70.00 x 1.0000 x 2 = 140.00
+--   1 nino    -> tren 145.00 x 0.5000     =  72.50 ; zona 70.00 x 0.6800     =  47.60
+--   Total del informe = 550.10
+--
+-- INF-0003 se emitio sin tren, por eso su categoria de tren queda en NULL.
+-- ----------------------------------------------------------------------------
+INSERT INTO informe_visitante ("IviIdInforme", "IviEdad", "IviCantidad",
+                               "IviIdCategoriaTren", "IviIdCategoriaZona",
+                               "IviSubtotalTren", "IviSubtotalZona")
+SELECT i."InfIdInforme", v.edad, v.cantidad,
+       ct."CatIdCategoria", cz."CatIdCategoria",
+       v.subtotal_tren, v.subtotal_zona
+FROM (VALUES
+    -- informe,     edad, cantidad, cat_tren,  cat_zona, sub_tren, sub_zona
+    ('INF-0001', 35,  2, 'Adulto', 'Adulto', 290.00, 140.00),
+    ('INF-0001',  8,  1, 'Nino',   'Nino',    72.50,  47.60),
+    ('INF-0002', 35,  1, 'Adulto', 'Adulto', 145.00,  20.00),
+    ('INF-0003', 28,  1,  NULL,    'Adulto',   0.00,  70.00)
+) AS v(codigo, edad, cantidad, cat_tren, cat_zona, subtotal_tren, subtotal_zona)
+JOIN informe_planificacion i ON i."InfCodigo" = v.codigo
+LEFT JOIN categoria_visitante ct ON ct."CatAmbito" = 'Tren' AND ct."CatNombre" = v.cat_tren
+JOIN      categoria_visitante cz ON cz."CatAmbito" = 'Zona' AND cz."CatNombre" = v.cat_zona;
+
+-- ----------------------------------------------------------------------------
+-- 15. AUDITORIA_LOG  (RNF-07)
 -- ----------------------------------------------------------------------------
 INSERT INTO auditoria_log ("AudUsuario", "AudOperacion", "AudTablaAfectada",
                            "AudValorAnterior", "AudValorNuevo") VALUES

@@ -12,6 +12,11 @@
 -- normalizado de 3-4 letras exigido por la catedra, entre comillas dobles
 -- para preservar el uso de mayusculas en PostgreSQL.
 -- ============================================================================
+
+-- btree_gist permite combinar la igualdad de "CatAmbito" con el solapamiento
+-- de rangos en la restriccion EXCLUDE de categoria_visitante. Viene con la
+-- imagen oficial de PostgreSQL (paquete contrib).
+CREATE EXTENSION IF NOT EXISTS btree_gist;
  
 -- ----------------------------------------------------------------------------
 -- 1. ROL  (seguridad)
@@ -55,7 +60,82 @@ CREATE TABLE tipo_turismo (
 );
  
 -- ----------------------------------------------------------------------------
--- 4. ESTACION  (nucleo - fuente PeruRail)
+-- 4. DIFICULTAD  (parametrica - RNF-06 Escalabilidad)
+--
+-- RutDificultad salia de esta tabla como texto con un CHECK. Se separa por dos
+-- razones. La primera es de modelo: el nivel de dificultad es una entidad del
+-- dominio con atributos propios, no una etiqueta de la ruta. La segunda la
+-- exige el RNF-06, que pide "modificar los parametros de dificultad sin
+-- alterar el codigo fuente principal, mediante tablas parametricas"; hasta
+-- ahora los umbrales y el ritmo de caminata eran constantes escritas en
+-- RutaPeatonalService.
+--
+-- DifDistanciaMaximaKm es el tope del tramo (ida y vuelta) que todavia se
+-- clasifica en ese nivel; la dificultad mas alta lo deja en NULL por no tener
+-- tope. DifOrden permite comparar niveles ("dificultad maxima aceptada" del
+-- turista) sin depender del texto del nombre.
+-- ----------------------------------------------------------------------------
+CREATE TABLE dificultad (
+    "DifIdDificultad"       INTEGER GENERATED ALWAYS AS IDENTITY,
+    "DifNombre"             VARCHAR(10)    NOT NULL,
+    "DifDescripcion"        VARCHAR(150)   NULL,
+    "DifOrden"              SMALLINT       NOT NULL,
+    "DifDistanciaMaximaKm"  NUMERIC(5,2)   NULL,
+    "DifVelocidadMinPorKm"  SMALLINT       NOT NULL,
+    CONSTRAINT pk_dificultad          PRIMARY KEY ("DifIdDificultad"),
+    CONSTRAINT uq_dificultad_nombre   UNIQUE ("DifNombre"),
+    CONSTRAINT uq_dificultad_orden    UNIQUE ("DifOrden"),
+    CONSTRAINT ck_dificultad_orden    CHECK ("DifOrden" > 0),
+    CONSTRAINT ck_dificultad_distancia CHECK ("DifDistanciaMaximaKm" IS NULL
+                                              OR "DifDistanciaMaximaKm" > 0),
+    CONSTRAINT ck_dificultad_velocidad CHECK ("DifVelocidadMinPorKm" > 0)
+);
+ 
+-- ----------------------------------------------------------------------------
+-- 5. CATEGORIA_VISITANTE  (parametrica - tarifas por edad)
+--
+-- Ni PeruRail ni el santuario cobran lo mismo a todo el mundo, y no usan los
+-- mismos cortes de edad, por eso la tabla lleva el ambito:
+--   Tren (PeruRail): infante 0-2 no paga, nino 3-11 paga la mitad, adulto 12+.
+--   Zona (tarifa del santuario): nino 3-17 con tarifa reducida, adulto 18+.
+-- Un unico juego de rangos habria sido incorrecto: un chico de 15 anos paga
+-- tarifa de adulto en el tren y de nino en la zona.
+--
+-- CatFactorPrecio se aplica sobre el precio base del servicio (SerTarifa) o de
+-- la zona (ZonCostoAprox). Es una simplificacion coherente con el alcance del
+-- proyecto -- el propio diccionario llama "aproximado" al costo de la zona --;
+-- si en el futuro se necesita el precio exacto por zona y categoria, el paso
+-- siguiente es una tabla de tarifas (zona x categoria) en vez del factor.
+--
+-- La tarifa de estudiante NO se modela aqui a proposito: no depende de la edad
+-- sino de un carne vigente que se acredita en el ingreso, asi que no puede
+-- convivir con rangos de edad excluyentes.
+-- ----------------------------------------------------------------------------
+CREATE TABLE categoria_visitante (
+    "CatIdCategoria"   INTEGER GENERATED ALWAYS AS IDENTITY,
+    "CatAmbito"        VARCHAR(10)    NOT NULL,
+    "CatNombre"        VARCHAR(30)    NOT NULL,
+    "CatEdadMinima"    SMALLINT       NOT NULL,
+    "CatEdadMaxima"    SMALLINT       NULL,
+    "CatFactorPrecio"  NUMERIC(5,4)   NOT NULL,
+    "CatDescripcion"   VARCHAR(150)   NULL,
+    CONSTRAINT pk_categoria_visitante  PRIMARY KEY ("CatIdCategoria"),
+    CONSTRAINT uq_categoria_ambito_nombre UNIQUE ("CatAmbito", "CatNombre"),
+    CONSTRAINT ck_categoria_ambito     CHECK ("CatAmbito" IN ('Tren', 'Zona')),
+    CONSTRAINT ck_categoria_edad_min   CHECK ("CatEdadMinima" >= 0),
+    CONSTRAINT ck_categoria_edad_rango CHECK ("CatEdadMaxima" IS NULL
+                                              OR "CatEdadMaxima" >= "CatEdadMinima"),
+    CONSTRAINT ck_categoria_factor     CHECK ("CatFactorPrecio" BETWEEN 0 AND 1),
+    -- Dentro de un mismo ambito los tramos de edad no pueden solaparse: si lo
+    -- hicieran, una misma edad tendria dos precios validos a la vez.
+    CONSTRAINT ex_categoria_sin_solape EXCLUDE USING gist (
+        "CatAmbito" WITH =,
+        int4range("CatEdadMinima", COALESCE("CatEdadMaxima" + 1, 2147483647)) WITH &&
+    )
+);
+ 
+-- ----------------------------------------------------------------------------
+-- 6. ESTACION  (nucleo - fuente PeruRail)
 -- ----------------------------------------------------------------------------
 CREATE TABLE estacion (
     "EstIdEstacion"   INTEGER GENERATED ALWAYS AS IDENTITY,
@@ -72,7 +152,7 @@ CREATE TABLE estacion (
 );
  
 -- ----------------------------------------------------------------------------
--- 5. SERVICIO_TREN  (integracion PeruRail)
+-- 7. SERVICIO_TREN  (integracion PeruRail)
 -- ----------------------------------------------------------------------------
 CREATE TABLE servicio_tren (
     "SerIdServicio"          INTEGER GENERATED ALWAYS AS IDENTITY,
@@ -88,15 +168,21 @@ CREATE TABLE servicio_tren (
     CONSTRAINT fk_servicio_est_destino FOREIGN KEY ("SerIdEstacionDestino")
         REFERENCES estacion ("EstIdEstacion") ON DELETE RESTRICT,
     CONSTRAINT ck_servicio_tiempo      CHECK ("SerTiempoTransitoMin" > 0),
-    CONSTRAINT ck_servicio_tarifa      CHECK ("SerTarifa" >= 0)
+    CONSTRAINT ck_servicio_tarifa      CHECK ("SerTarifa" >= 0),
+    -- Un tramo no puede tener dos salidas a la misma hora. Ademas da a la
+    -- sincronizacion con PeruRail una clave natural con la que reconocer un
+    -- servicio ya cargado, en vez de volver a insertarlo en cada ejecucion.
+    CONSTRAINT uq_servicio_tramo_hora  UNIQUE ("SerIdEstacionOrigen",
+                                               "SerIdEstacionDestino",
+                                               "SerHorarioSalida")
 );
  
 -- ----------------------------------------------------------------------------
--- 6. ZONA_TURISTICA  (fuente Travel Group Peru)
+-- 8. ZONA_TURISTICA  (fuente Travel Group Peru)
 --
 -- NOTA 1: la columna "ZonIdTipoTurismo" fue retirada de esta tabla. La
 -- categorizacion turistica pasa a resolverse mediante la tabla intermedia
--- zona_tipo_turismo (punto 7), ya que una misma zona puede pertenecer a mas
+-- zona_tipo_turismo (punto 9), ya que una misma zona puede pertenecer a mas
 -- de una categoria a la vez (relacion N:M).
 --
 -- NOTA 2: "ZonLatitud"/"ZonLongitud" son la ubicacion propia del punto de
@@ -119,6 +205,10 @@ CREATE TABLE zona_turistica (
     "ZonCupoMaximoDiario"   INTEGER        NULL,
     "ZonEstado"             VARCHAR(10)    NOT NULL DEFAULT 'Activa',
     CONSTRAINT pk_zona_turistica    PRIMARY KEY ("ZonIdZona"),
+    -- 02_datos.sql resuelve las llaves foraneas de zona_tipo_turismo y
+    -- ruta_peatonal haciendo JOIN por "ZonNombre": si hubiera dos zonas con el
+    -- mismo nombre, esa carga duplicaria filas en silencio.
+    CONSTRAINT uq_zona_nombre       UNIQUE ("ZonNombre"),
     CONSTRAINT fk_zona_estacion     FOREIGN KEY ("ZonIdEstacionCercana")
         REFERENCES estacion ("EstIdEstacion") ON DELETE RESTRICT,
     CONSTRAINT ck_zona_estado       CHECK ("ZonEstado" IN ('Activa', 'Inactiva')),
@@ -129,7 +219,7 @@ CREATE TABLE zona_turistica (
 );
  
 -- ----------------------------------------------------------------------------
--- 7. ZONA_TIPO_TURISMO  (tabla intermedia N:M)
+-- 9. ZONA_TIPO_TURISMO  (tabla intermedia N:M)
 --
 -- Resuelve la relacion muchos a muchos entre zona_turistica y tipo_turismo.
 -- Ejemplo: la Fortaleza de Ollantaytambo puede clasificarse simultaneamente
@@ -150,7 +240,7 @@ CREATE TABLE zona_tipo_turismo (
 );
  
 -- ----------------------------------------------------------------------------
--- 8. RUTA_PEATONAL  (motor de rutas - RNF-04 circuito cerrado)
+-- 10. RUTA_PEATONAL  (motor de rutas - RNF-04 circuito cerrado)
 --
 -- NOTA: "RutIdEstacionOrigen" es una FK propia y directa hacia estacion, en
 -- vez de resolverse mediante zona_turistica.ZonIdEstacionCercana. Los campos
@@ -167,7 +257,7 @@ CREATE TABLE ruta_peatonal (
     "RutDescripcion"         VARCHAR(500)   NULL,
     "RutDistanciaKm"         NUMERIC(5,2)   NOT NULL,
     "RutTiempoEstimadoMin"   INTEGER        NOT NULL,
-    "RutDificultad"          VARCHAR(10)    NOT NULL,
+    "RutIdDificultad"        INTEGER        NOT NULL,
     "RutIdEstacionOrigen"    INTEGER        NOT NULL,
     "RutIdZonaDestino"       INTEGER        NOT NULL,
     "RutEsIdaVuelta"         BOOLEAN        NOT NULL DEFAULT TRUE,
@@ -176,14 +266,19 @@ CREATE TABLE ruta_peatonal (
         REFERENCES estacion ("EstIdEstacion") ON DELETE RESTRICT,
     CONSTRAINT fk_ruta_zona          FOREIGN KEY ("RutIdZonaDestino")
         REFERENCES zona_turistica ("ZonIdZona") ON DELETE RESTRICT,
-    CONSTRAINT ck_ruta_dificultad    CHECK ("RutDificultad" IN ('Baja', 'Media', 'Alta')),
+    CONSTRAINT fk_ruta_dificultad    FOREIGN KEY ("RutIdDificultad")
+        REFERENCES dificultad ("DifIdDificultad") ON DELETE RESTRICT,
     CONSTRAINT ck_ruta_ida_vuelta    CHECK ("RutEsIdaVuelta" = TRUE),
     CONSTRAINT ck_ruta_distancia     CHECK ("RutDistanciaKm" > 0),
-    CONSTRAINT ck_ruta_tiempo        CHECK ("RutTiempoEstimadoMin" > 0)
+    CONSTRAINT ck_ruta_tiempo        CHECK ("RutTiempoEstimadoMin" > 0),
+    -- El circuito de ida y vuelta entre una estacion y una zona es unico: sin
+    -- esta restriccion, dos consultas simultaneas de la misma ruta crean dos
+    -- filas con los mismos valores calculados.
+    CONSTRAINT uq_ruta_origen_zona   UNIQUE ("RutIdEstacionOrigen", "RutIdZonaDestino")
 );
  
 -- ----------------------------------------------------------------------------
--- 9. PREVISION_CLIMA  (integracion SENAMHI)
+-- 11. PREVISION_CLIMA  (integracion SENAMHI)
 -- ----------------------------------------------------------------------------
 CREATE TABLE prevision_clima (
     "CliIdClima"              INTEGER GENERATED ALWAYS AS IDENTITY,
@@ -202,7 +297,7 @@ CREATE TABLE prevision_clima (
 );
  
 -- ----------------------------------------------------------------------------
--- 10. INFORME_PLANIFICACION  (modulo de informes)
+-- 12. INFORME_PLANIFICACION  (modulo de informes)
 -- ----------------------------------------------------------------------------
 CREATE TABLE informe_planificacion (
     "InfIdInforme"       INTEGER GENERATED ALWAYS AS IDENTITY,
@@ -222,12 +317,58 @@ CREATE TABLE informe_planificacion (
 );
  
 -- ----------------------------------------------------------------------------
--- 11. CONTROL_AFORO  (RF-16 / RNF-08 concurrencia)
+-- 13. INFORME_VISITANTE  (composicion del grupo que viaja)
+--
+-- El sistema es un asesor: no vende pasajes ni entradas. Por eso NO se modela
+-- una tabla intermedia usuario <-> informe_planificacion; esa relacion N:M
+-- representaria varias cuentas compartiendo un mismo informe, que no es el
+-- caso de una familia -- una familia de tres no tiene tres cuentas, tiene un
+-- turista que consulta por los tres.
+--
+-- Lo que si hace falta es la composicion del grupo, porque el precio depende
+-- de la edad de cada acompanante. Cada fila agrupa a las personas de una
+-- misma edad ("IviCantidad" personas de "IviEdad" anos), de modo que una
+-- familia de dos adultos y un nino son dos filas y no tres.
+--
+-- Las categorias y los subtotales se guardan resueltos, no se recalculan al
+-- leer: el informe es un documento historico y las tarifas cambian. Es el
+-- mismo criterio con el que la seccion 6.3 justifica que RutaPeatonal guarde
+-- su propia estacion de origen.
+-- ----------------------------------------------------------------------------
+CREATE TABLE informe_visitante (
+    "IviIdVisitante"      INTEGER GENERATED ALWAYS AS IDENTITY,
+    "IviIdInforme"        INTEGER        NOT NULL,
+    "IviEdad"             SMALLINT       NOT NULL,
+    "IviCantidad"         SMALLINT       NOT NULL DEFAULT 1,
+    "IviIdCategoriaTren"  INTEGER        NULL,
+    "IviIdCategoriaZona"  INTEGER        NOT NULL,
+    "IviSubtotalTren"     NUMERIC(7,2)   NOT NULL DEFAULT 0,
+    "IviSubtotalZona"     NUMERIC(7,2)   NOT NULL DEFAULT 0,
+    CONSTRAINT pk_informe_visitante   PRIMARY KEY ("IviIdVisitante"),
+    CONSTRAINT fk_visitante_informe   FOREIGN KEY ("IviIdInforme")
+        REFERENCES informe_planificacion ("InfIdInforme") ON DELETE CASCADE,
+    CONSTRAINT fk_visitante_cat_tren  FOREIGN KEY ("IviIdCategoriaTren")
+        REFERENCES categoria_visitante ("CatIdCategoria") ON DELETE RESTRICT,
+    CONSTRAINT fk_visitante_cat_zona  FOREIGN KEY ("IviIdCategoriaZona")
+        REFERENCES categoria_visitante ("CatIdCategoria") ON DELETE RESTRICT,
+    CONSTRAINT ck_visitante_edad      CHECK ("IviEdad" BETWEEN 0 AND 120),
+    CONSTRAINT ck_visitante_cantidad  CHECK ("IviCantidad" > 0),
+    CONSTRAINT ck_visitante_sub_tren  CHECK ("IviSubtotalTren" >= 0),
+    CONSTRAINT ck_visitante_sub_zona  CHECK ("IviSubtotalZona" >= 0),
+    -- Una sola fila por edad dentro del informe: obliga a agrupar en
+    -- "IviCantidad" en vez de repetir a los acompanantes de la misma edad.
+    CONSTRAINT uq_visitante_informe_edad UNIQUE ("IviIdInforme", "IviEdad")
+);
+ 
+-- ----------------------------------------------------------------------------
+-- 14. CONTROL_AFORO  (RF-16 / RNF-08 concurrencia)
 -- ----------------------------------------------------------------------------
 CREATE TABLE control_aforo (
     "AfoIdAforo"         INTEGER GENERATED ALWAYS AS IDENTITY,
     "AfoIdZona"          INTEGER   NOT NULL,
     "AfoFecha"           DATE      NOT NULL,
+    -- Numero de PERSONAS ya confirmadas, no de informes: un informe de una
+    -- familia de tres descuenta tres cupos del aforo diario de la zona.
     "AfoCupoUtilizado"   INTEGER   NOT NULL DEFAULT 0,
     CONSTRAINT pk_control_aforo      PRIMARY KEY ("AfoIdAforo"),
     CONSTRAINT fk_aforo_zona         FOREIGN KEY ("AfoIdZona")
@@ -237,7 +378,7 @@ CREATE TABLE control_aforo (
 );
  
 -- ----------------------------------------------------------------------------
--- 12. AUDITORIA_LOG  (RNF-07 trazabilidad; sin FK fisica)
+-- 15. AUDITORIA_LOG  (RNF-07 trazabilidad; sin FK fisica)
 -- ----------------------------------------------------------------------------
 CREATE TABLE auditoria_log (
     "AudIdLog"           INTEGER GENERATED ALWAYS AS IDENTITY,
@@ -266,3 +407,7 @@ CREATE INDEX idx_clima_estacion     ON prevision_clima   ("CliIdEstacion");
 CREATE INDEX idx_clima_fecha        ON prevision_clima   ("CliFecha");
 CREATE INDEX idx_auditoria_fecha    ON auditoria_log     ("AudFecha");
 CREATE INDEX idx_aforo_zona_fecha   ON control_aforo     ("AfoIdZona", "AfoFecha");
+CREATE INDEX idx_ruta_dificultad    ON ruta_peatonal     ("RutIdDificultad");
+CREATE INDEX idx_visitante_informe  ON informe_visitante ("IviIdInforme");
+CREATE INDEX idx_informe_usuario    ON informe_planificacion ("InfIdUsuario");
+CREATE INDEX idx_informe_ruta       ON informe_planificacion ("InfIdRuta");

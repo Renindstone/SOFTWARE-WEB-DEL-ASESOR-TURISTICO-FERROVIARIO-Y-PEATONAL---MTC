@@ -55,12 +55,15 @@ END $$;
 
 -- DROP TABLE IF EXISTS auditoria_log;
 -- DROP TABLE IF EXISTS control_aforo;
+-- DROP TABLE IF EXISTS informe_visitante;
 -- DROP TABLE IF EXISTS informe_planificacion;
 -- DROP TABLE IF EXISTS prevision_clima;
 -- DROP TABLE IF EXISTS ruta_peatonal;
 -- DROP TABLE IF EXISTS servicio_tren;
 -- DROP TABLE IF EXISTS zona_turistica;
 -- DROP TABLE IF EXISTS estacion;
+-- DROP TABLE IF EXISTS categoria_visitante;
+-- DROP TABLE IF EXISTS dificultad;
 -- DROP TABLE IF EXISTS tipo_turismo;
 -- DROP TABLE IF EXISTS usuario;
 -- DROP TABLE IF EXISTS rol;
