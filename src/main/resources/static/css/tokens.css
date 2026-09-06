@@ -1,0 +1,186 @@
+/* ==========================================================================
+   Asesor Turistico Ferroviario y Peatonal (MTC)
+   tokens.css - Sistema de diseno: capa primitiva y capa semantica.
+
+   Las reglas de componente NO viven aqui, viven en estilos.css. Este archivo
+   solo declara valores y sus alias de proposito, de modo que un cambio de
+   identidad (por ejemplo, el verde institucional) se haga en un unico sitio
+   y alcance a las 18 vistas Thymeleaf.
+
+   Concepto: "tablero institucional" (base del sistema) con registro de
+   senaletica ferroviaria reservado a las dos pantallas donde el turista
+   decide: cliente/ruta-detalle y informes/informe-consolidado.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Senaletica: Big Shoulders es una condensada derivada de rotulacion publica.
+   Se autoaloja porque es la unica voz distintiva del sistema y no queremos
+   que dependa de un CDN. Las dos familias de trabajo (IBM Plex Sans y Mono)
+   llegan por Google Fonts desde layout/base.html, igual que hacia Manrope.
+
+   Los .ttf viven bajo /css/fonts/ y no bajo /fonts/ a proposito: SecurityConfig
+   solo abre "/css/**", "/js/**" e "/img/**" a las peticiones anonimas, asi que
+   desde /fonts/ la fuente se responderia con una redireccion al login. Con esta
+   ruta se sirve sin tocar la configuracion de seguridad.
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Big Shoulders';
+  src: url('fonts/BigShoulders-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Big Shoulders';
+  src: url('fonts/BigShoulders-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+
+  /* ======================================================================
+     CAPA 1 - PRIMITIVOS
+     Valores crudos. Ningun componente los usa directamente.
+     ====================================================================== */
+
+  /* Verde institucional del MTC. Es patrimonio de marca del proyecto: se
+     conserva el 14453D original y se le construye una escala alrededor. */
+  --verde-900: #0A2A25;
+  --verde-700: #14453D;
+  --verde-300: #7FA096;
+  --verde-100: #E3EBE7;
+
+  /* Neutros. El papel es gris-verdoso frio, no crema calido: la crema
+     tibia es el fondo por defecto de cualquier plantilla generica. */
+  --papel:     #FAFAF7;
+  --blanco:    #FFFFFF;
+  --gris-050:  #F2F2EE;
+  --gris-200:  #D9DBD4;
+  --gris-400:  #9AA29B;
+  --gris-600:  #5F6B62;
+  --tinta:     #17201C;
+
+  /* Sello. El dorado deja de ser decoracion de tarjeta y pasa a marcar
+     una sola cosa: la procedencia institucional del documento. */
+  --sello-500: #C89B3C;
+  --sello-100: #F6EEDC;
+
+  /* Eje meteorologico (SENAMHI). Color = dato, nunca adorno. */
+  --meteo-seco-600:    #0E7C86;
+  --meteo-seco-100:    #DFF0F1;
+  --meteo-lluvia-600:  #3D5AC4;
+  --meteo-lluvia-100:  #E3E8FA;
+  --meteo-nublado-600: #6B7A85;
+  --meteo-nublado-100: #EAEDEF;
+
+  /* Eje de dificultad y de aforo. Tres escalones, misma familia. */
+  --nivel-ok-600:      #2E6B45;
+  --nivel-ok-100:      #E4F2E9;
+  --nivel-medio-600:   #B8791B;
+  --nivel-medio-100:   #FBF1DD;
+  --nivel-critico-600: #A8341F;
+  --nivel-critico-100: #FBE8E6;
+
+  /* Senaletica ferroviaria. Solo lo usan .placa y .boleto, en las dos
+     pantallas de decision. Fuera de ahi, este eje no aparece. */
+  --esmalte:        #0E4034;
+  --senal-amarilla: #F0B323;
+  --senal-roja:     #C1362B;
+
+  /* Escala tipografica. Tercera mayor (1.25) sobre 16px. */
+  --paso--2: 0.75rem;
+  --paso--1: 0.8125rem;
+  --paso-0:  1rem;
+  --paso-1:  1.25rem;
+  --paso-2:  1.5rem;
+  --paso-3:  1.875rem;
+  --paso-4:  2.5rem;
+  --paso-5:  3.5rem;
+
+  /* Escala de espaciado, base 4px. */
+  --esp-1: 0.25rem;
+  --esp-2: 0.5rem;
+  --esp-3: 0.75rem;
+  --esp-4: 1rem;
+  --esp-5: 1.5rem;
+  --esp-6: 2rem;
+  --esp-7: 3rem;
+
+  /* Radios. Deliberadamente distintos por jerarquia: una superficie de
+     lectura no puede tener el mismo radio que un control pulsable. */
+  --radio-control:   6px;
+  --radio-superficie: 10px;
+  --radio-pildora:   999px;
+  --radio-placa:     0;
+
+  /* Sombras. Una sola sombra difusa en todo el sistema, mas la sombra
+     dura de la senaletica (sin blur, como una placa esmaltada). */
+  --sombra-superficie: 0 1px 2px rgba(10, 42, 37, 0.04);
+  --sombra-elevada:    0 8px 24px -12px rgba(10, 42, 37, 0.22);
+  --sombra-placa:      4px 4px 0 var(--tinta);
+
+
+  /* ======================================================================
+     CAPA 2 - SEMANTICOS
+     Alias de proposito. Es la capa que consumen los componentes.
+     ====================================================================== */
+
+  --bg-page:      var(--papel);
+  --bg-surface:   var(--blanco);
+  --bg-sunken:    var(--gris-050);
+  --bg-inverse:   var(--verde-700);
+  --bg-inverse-strong: var(--verde-900);
+
+  --fg-strong:    var(--verde-900);
+  --fg-default:   var(--tinta);
+  --fg-muted:     var(--gris-600);
+  --fg-faint:     var(--gris-400);
+  --fg-on-dark:   #F4F7F5;
+  --fg-on-dark-muted: rgba(244, 247, 245, 0.72);
+
+  --border-default: var(--gris-200);
+  --border-strong:  var(--verde-300);
+  --border-inverse: rgba(244, 247, 245, 0.18);
+
+  --accent:        var(--verde-700);
+  --accent-hover:  var(--verde-900);
+  --accent-soft:   var(--verde-100);
+  --seal:          var(--sello-500);
+  --seal-soft:     var(--sello-100);
+
+  --focus-ring:    0 0 0 3px rgba(20, 69, 61, 0.22);
+
+  /* Tipografia por rol. Una familia de trabajo con dos anchos: Plex Sans
+     para prosa, Plex Mono para cifras que el turista compara entre si
+     (kilometros, minutos, soles, aforo). El mono no rotula: mide. */
+  --fuente-texto:  'IBM Plex Sans', system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fuente-cifra:  'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fuente-senal:  'Big Shoulders', 'IBM Plex Sans Condensed', Impact, sans-serif;
+}
+
+/* Modo de contraste alto del sistema operativo: el turista consulta esto a
+   pleno sol andino. Se endurecen bordes y se apaga la sombra difusa. */
+@media (prefers-contrast: more) {
+  :root {
+    --border-default: var(--gris-400);
+    --fg-muted: var(--tinta);
+    --sombra-superficie: none;
+    --sombra-elevada: none;
+  }
+}
+
+/* La unica animacion del sistema es la del mapa al enfocar una zona.
+   Aun asi, se respeta la preferencia de movimiento reducido. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

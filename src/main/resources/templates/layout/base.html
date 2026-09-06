@@ -17,8 +17,16 @@
   <!-- RNF-02: Bootstrap 5 responsive para smartphones y tablets. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- IBM Plex Sans para la prosa y Plex Mono para las cifras que el turista
+       compara (km, minutos, soles, aforo). La condensada de senaletica
+       (Big Shoulders) se autoaloja desde tokens.css. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- tokens.css antes que estilos.css: declara las variables que este consume. -->
+  <link rel="stylesheet" th:href="@{/css/tokens.css}">
   <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
 
@@ -31,6 +39,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script th:src="@{/js/mapa-leaflet.js}"></script>
+  </div>
+
+  <!-- Mapa del buscador de zonas. Es un fragmento aparte del de la ruta
+       porque mapa-leaflet.js dibuja un unico circuito origen-destino,
+       mientras que aqui se sitúan todas las zonas del resultado. -->
+  <div th:fragment="scripts-buscador">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script th:src="@{/js/mapa-buscador.js}"></script>
   </div>
 </body>
 

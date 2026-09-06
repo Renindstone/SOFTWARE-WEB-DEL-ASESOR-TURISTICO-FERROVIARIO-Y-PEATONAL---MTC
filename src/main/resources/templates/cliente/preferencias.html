@@ -6,7 +6,7 @@
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
-<main class="container py-4" style="max-width: 1100px;">
+<main class="container py-4" style="max-width: 1320px;">
 
   <div class="mb-4">
     <h1 class="h4 fw-bold page-title mb-1">¿Qué quieres visitar?</h1>
@@ -16,24 +16,31 @@
     </p>
   </div>
 
-  <!-- RF-01/RF-02/RF-03: los cuatro criterios son opcionales y se acumulan. -->
-  <div class="card pref-card mb-4">
-    <div class="card-body p-4">
-      <form method="get" th:action="@{/preferencias}" th:object="${busqueda}" id="filtros-zonas">
+  <div class="row g-4">
 
-        <!-- CN-05: un tiempo fuera de rango se avisa aqui. #fields solo
-             resuelve dentro del elemento que declara th:object. -->
-        <div class="alert alert-warning" th:if="${#fields.hasAnyErrors()}" role="alert">
-          <ul class="mb-0 ps-3">
-            <li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li>
-          </ul>
-        </div>
+    <!-- ================================================== RAIL DE FILTROS
+         RF-01/RF-02/RF-03: los cuatro criterios son opcionales y se acumulan.
+         Acompana al listado en escritorio en vez de ocupar una tarjeta ancha
+         encima, para que el turista vea el efecto de cada filtro sin perder
+         de vista los resultados. -->
+    <div class="col-12 col-lg-3">
+      <div class="rail-filtros">
+        <form method="get" th:action="@{/preferencias}" th:object="${busqueda}" id="filtros-zonas">
 
-        <div class="row g-3">
+          <!-- CN-05: un tiempo fuera de rango se avisa aqui. #fields solo
+               resuelve dentro del elemento que declara th:object. -->
+          <div class="alert alert-warning" th:if="${#fields.hasAnyErrors()}" role="alert">
+            <ul class="mb-0 ps-3">
+              <li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li>
+            </ul>
+          </div>
+
           <!-- RF-02: el selector solo lista estaciones activas (CN-02). -->
-          <div class="col-12 col-lg-4">
-            <div class="section-label"><i class="bi bi-train-front"></i> Estación de partida</div>
-            <select class="form-select" th:field="*{idEstacionOrigen}">
+          <div class="mb-4">
+            <label class="section-label" for="idEstacionOrigen">
+              <i class="bi bi-train-front"></i> Estación de partida
+            </label>
+            <select class="form-select" id="idEstacionOrigen" th:field="*{idEstacionOrigen}">
               <option value="">Cualquier estación</option>
               <option th:each="est : ${estaciones}" th:value="${est.id}"
                       th:text="${est.nombre} + ' (' + ${est.ciudad} + ')'"></option>
@@ -41,129 +48,167 @@
             <div class="form-text">Sin elegir ninguna, cada zona se mide desde su estación de acceso.</div>
           </div>
 
-          <div class="col-6 col-lg-4">
-            <div class="section-label"><i class="bi bi-clock-history"></i> Tiempo disponible</div>
+          <div class="mb-4">
+            <label class="section-label" for="tiempoDisponibleMin">
+              <i class="bi bi-clock-history"></i> Tiempo disponible
+            </label>
             <div class="input-group">
-              <input type="number" min="1" class="form-control" th:field="*{tiempoDisponibleMin}"
-                     placeholder="Sin límite">
+              <input type="number" min="1" class="form-control" id="tiempoDisponibleMin"
+                     th:field="*{tiempoDisponibleMin}" placeholder="Sin límite">
               <span class="input-group-text bg-white">min</span>
             </div>
             <div class="form-text">Ida y vuelta caminando.</div>
           </div>
 
           <!-- RNF-06: los niveles vienen de la tabla dificultad. -->
-          <div class="col-6 col-lg-4">
-            <div class="section-label"><i class="bi bi-bar-chart-steps"></i> Dificultad máxima</div>
-            <select class="form-select" th:field="*{dificultad}">
+          <div class="mb-4">
+            <label class="section-label" for="dificultad">
+              <i class="bi bi-bar-chart-steps"></i> Dificultad máxima
+            </label>
+            <select class="form-select" id="dificultad" th:field="*{dificultad}">
               <option value="">Cualquier dificultad</option>
               <option th:each="dif : ${dificultades}" th:value="${dif.nombre}"
                       th:text="${dif.nombre}" th:title="${dif.descripcion}"></option>
             </select>
             <div class="form-text">Se muestran esa dificultad o menor.</div>
           </div>
-        </div>
 
-        <div class="divider-soft"></div>
-
-        <!-- RNF-06: las preferencias vienen de la tabla parametrica preferencia. -->
-        <div>
-          <div class="section-label"><i class="bi bi-compass"></i> Preferencia</div>
-          <div class="row g-2">
-            <div class="col-12 col-sm-6 col-lg-3" th:each="pref : ${preferencias}">
-              <div class="preferencia-check form-check">
-                <input class="form-check-input" type="checkbox" name="idsPreferencia"
+          <!-- RNF-06: las preferencias vienen de la tabla parametrica preferencia. -->
+          <div>
+            <div class="section-label"><i class="bi bi-compass"></i> Preferencia</div>
+            <div class="d-flex flex-wrap gap-2">
+              <div class="chip-pref" th:each="pref : ${preferencias}">
+                <input type="checkbox" name="idsPreferencia"
                        th:id="${'preferencia-' + pref.id}" th:value="${pref.id}"
                        th:checked="${busqueda.idsPreferencia != null
                                     and #lists.contains(busqueda.idsPreferencia, pref.id)}">
-                <label class="form-check-label" th:for="${'preferencia-' + pref.id}"
+                <label th:for="${'preferencia-' + pref.id}"
                        th:text="${pref.nombre}" th:title="${pref.descripcion}"></label>
               </div>
             </div>
+            <div class="form-text">Sin marcar ninguna, se muestran todas las categorías.</div>
           </div>
-          <div class="form-text">Sin marcar ninguna, se muestran todas las categorías.</div>
-        </div>
 
-        <div class="d-flex flex-wrap gap-2 mt-4">
-          <button type="submit" class="btn btn-mtc">
-            <i class="bi bi-search me-2"></i>Aplicar filtros
-          </button>
-          <a class="btn btn-mtc-outline" th:href="@{/preferencias}"
-             th:classappend="${busqueda.sinFiltros} ? 'disabled' : ''">
-            <i class="bi bi-x-lg me-1"></i>Limpiar
-          </a>
-        </div>
-      </form>
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="btn btn-mtc btn-sm">
+              <i class="bi bi-search me-2"></i>Aplicar filtros
+            </button>
+            <a class="btn btn-mtc-outline btn-sm" th:href="@{/preferencias}"
+               th:classappend="${busqueda.sinFiltros} ? 'disabled' : ''">
+              <i class="bi bi-x-lg me-1"></i>Limpiar
+            </a>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-3"
-       th:if="${zonas != null}">
-    <h2 class="h6 section-title mb-0">
-      <i class="bi bi-geo-alt"></i>
-      <span th:text="${#lists.size(zonas)}">0</span>
-      <span th:text="${#lists.size(zonas) == 1} ? 'zona turística' : 'zonas turísticas'">zonas turísticas</span>
-    </h2>
-    <span class="page-sub small" th:if="${busqueda.sinFiltros}">
-      Catálogo completo. Marca un filtro para acotarlo.
-    </span>
-    <span class="page-sub small" th:unless="${busqueda.sinFiltros}"
-          th:text="'Filtros activos: ' + ${busqueda.contarFiltrosActivos()}">Filtros activos: 0</span>
-  </div>
+    <!-- ======================================================== TABLERO
+         El listado se lee como un tablero de servicio: prosa a la izquierda
+         y las cifras comparables alineadas en columna a la derecha. -->
+    <div class="col-12 col-lg-5">
 
-  <div class="row g-3" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
-    <div class="col-12 col-md-6 col-lg-4" th:each="zona : ${zonas}">
-      <div class="card section-card h-100">
-        <div class="card-body d-flex flex-column">
-          <h3 class="h6 fw-bold page-title mb-1" th:text="${zona.nombre}">Zona</h3>
-          <p class="small page-sub mb-2">
-            <i class="bi bi-train-front me-1"></i>
-            <span th:text="${zona.nombreEstacionCercana}">estación</span>
-          </p>
-          <p class="card-text small page-sub" th:text="${zona.descripcion}">Descripción</p>
+      <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-3"
+           th:if="${zonas != null}">
+        <h2 class="h6 section-title mb-0">
+          <i class="bi bi-geo-alt"></i>
+          <span class="cifra" th:text="${#lists.size(zonas)}">0</span>
+          <span th:text="${#lists.size(zonas) == 1} ? 'zona turística' : 'zonas turísticas'">zonas turísticas</span>
+        </h2>
+        <span class="page-sub small" th:if="${busqueda.sinFiltros}">
+          Catálogo completo. Marca un filtro para acotarlo.
+        </span>
+        <span class="page-sub small" th:unless="${busqueda.sinFiltros}"
+              th:text="'Filtros activos: ' + ${busqueda.contarFiltrosActivos()}">Filtros activos: 0</span>
+      </div>
 
-          <div class="mb-2 d-flex flex-wrap gap-1">
-            <span class="preferencia-pill" th:each="pref : ${zona.preferencias}" th:text="${pref}">Preferencia</span>
+      <div class="tablero" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
+        <!-- Las coordenadas ya viajaban en ZonaResultadoDTO y no se estaban
+             usando: alimentan los marcadores de mapa-buscador.js sin que el
+             backend cambie nada. -->
+        <article class="tablero-fila" th:each="zona : ${zonas}"
+                 th:attr="data-zona-id=${zona.idZona},
+                          data-lat=${zona.latitud},
+                          data-lon=${zona.longitud},
+                          data-nombre=${zona.nombre},
+                          data-estacion=${zona.nombreEstacionCercana},
+                          data-dificultad=${zona.ruta.dificultad}">
+
+          <div>
+            <h3 class="tablero-nombre" th:text="${zona.nombre}">Zona</h3>
+            <p class="page-sub small mb-2">
+              <i class="bi bi-train-front me-1"></i>
+              <span th:text="${zona.nombreEstacionCercana}">estación</span>
+            </p>
+            <p class="page-sub small mb-2" th:text="${zona.descripcion}">Descripción</p>
+
+            <div class="d-flex flex-wrap gap-1 mb-3">
+              <span class="preferencia-pill" th:each="pref : ${zona.preferencias}" th:text="${pref}">Preferencia</span>
+            </div>
+
+            <p class="page-sub small mb-3">
+              <span th:if="${zona.costoAproximado != null}">
+                Ingreso <span class="cifra fw-semibold" th:text="'S/ ' + ${zona.costoAproximado}">S/ 0</span>
+              </span>
+              <span th:if="${zona.cupoMaximoDiario != null}">
+                &middot; cupo diario <span class="cifra fw-semibold" th:text="${zona.cupoMaximoDiario}">0</span>
+              </span>
+            </p>
+
+            <a class="btn btn-mtc btn-sm"
+               th:href="@{/rutas/detalle(idEstacion=${zona.idEstacionCercana}, idZona=${zona.idZona})}">
+              Ver ruta y clima
+            </a>
           </div>
 
-          <ul class="list-unstyled small mb-3">
-            <li><i class="bi bi-signpost-2 me-1"></i>
-              Ida y vuelta: <strong th:text="${zona.ruta.distanciaKm} + ' km'">0 km</strong></li>
-            <li><i class="bi bi-clock me-1"></i>
-              Tiempo estimado: <strong th:text="${zona.ruta.tiempoEstimadoMin} + ' min'">0 min</strong></li>
-            <li><i class="bi bi-bar-chart-steps me-1"></i>
-              Dificultad:
+          <div class="tablero-cifras">
+            <span class="tablero-dato">
+              <span class="tablero-valor" th:text="${zona.ruta.distanciaKm}">0</span>
+              <span class="tablero-unidad">km</span>
+            </span>
+            <span class="tablero-dato">
+              <span class="tablero-valor" th:text="${zona.ruta.tiempoEstimadoMin}">0</span>
+              <span class="tablero-unidad">min</span>
+            </span>
+            <span class="tablero-dato">
               <span class="badge"
                     th:classappend="${zona.ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
                                      : (${zona.ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
-                    th:text="${zona.ruta.dificultad}">Baja</span></li>
-            <li th:if="${zona.costoAproximado != null}"><i class="bi bi-ticket-perforated me-1"></i>
-              Ingreso aprox.: <strong th:text="'S/ ' + ${zona.costoAproximado}">S/ 0</strong></li>
-            <li th:if="${zona.cupoMaximoDiario != null}"><i class="bi bi-people me-1"></i>
-              Cupo diario: <strong th:text="${zona.cupoMaximoDiario}">0</strong></li>
-          </ul>
+                    th:text="${zona.ruta.dificultad}">Baja</span>
+              <span class="tablero-unidad">dificultad</span>
+            </span>
+          </div>
+        </article>
+      </div>
 
-          <a class="btn btn-mtc btn-sm mt-auto"
-             th:href="@{/rutas/detalle(idEstacion=${zona.idEstacionCercana}, idZona=${zona.idZona})}">
-            <i class="bi bi-map me-1"></i>Ver ruta y clima
-          </a>
+      <div class="card section-card" th:if="${zonas != null and #lists.isEmpty(zonas)}">
+        <div class="card-body text-center py-5">
+          <p class="page-sub mt-3 mb-1 mx-auto">Ninguna zona turística cumple todos los filtros.</p>
+          <p class="small page-sub mx-auto">Prueba con más tiempo disponible, otra dificultad u otras categorías.</p>
+          <a class="btn btn-mtc-outline btn-sm" th:href="@{/preferencias}">Limpiar filtros</a>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="card section-card" th:if="${zonas != null and #lists.isEmpty(zonas)}">
-    <div class="card-body text-center py-5">
-      <i class="bi bi-search fs-1" style="color:#C89B3C;"></i>
-      <p class="page-sub mt-3 mb-1">Ninguna zona turística cumple todos los filtros.</p>
-      <p class="small page-sub">Prueba con más tiempo disponible, otra dificultad u otras categorías.</p>
-      <a class="btn btn-mtc-outline btn-sm" th:href="@{/preferencias}">Limpiar filtros</a>
+    <!-- =========================================================== MAPA
+         Situa el resultado completo. Al pasar por una fila del tablero se
+         resalta su marcador, y al pulsar un marcador se enfoca la fila. -->
+    <div class="col-12 col-lg-4" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
+      <div class="rail-filtros">
+        <div class="section-title"><i class="bi bi-map"></i> Dónde quedan</div>
+        <div id="buscador-mapa"></div>
+        <p class="page-sub small mt-2 mb-0">
+          Cada marcador es una zona del listado. Las distancias se miden en línea
+          recta desde su estación de acceso.
+        </p>
+      </div>
     </div>
+
   </div>
 
 </main>
 
 <div th:replace="~{layout/footer :: footer}"></div>
-<div th:replace="~{layout/base :: scripts}"></div>
+<div th:replace="~{layout/base :: scripts-buscador}"></div>
 <script th:src="@{/js/preferencias.js}"></script>
 </body>
 

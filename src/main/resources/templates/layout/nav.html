@@ -7,58 +7,63 @@
     segun el rol autenticado (RNF-05); el bloque de sesion solo aparece para
     usuarios autenticados, porque el panel del turista tambien es accesible de
     forma anonima y ahi no hay principal del que leer nombre ni authorities.
+
+    Los colores salieron de los style="" inline a las clases .nav-mtc* de
+    estilos.css: mientras vivian en el atributo, ningun token del sistema
+    podia alcanzarlos.
   -->
-  <nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark mb-4" style="background:#14453D;">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center" th:href="@{/}" style="color:#F6F4EF;">
-        <img th:src="@{/img/logo-mtc.png}" alt="MTC" height="28" class="me-2">
-        <span class="d-none d-sm-inline">Asesor Turístico Ferroviario y Peatonal</span>
-        <span class="d-sm-none">Asesor MTC</span>
-      </a>
+  <div th:fragment="nav">
+    <nav class="navbar navbar-expand-lg navbar-dark nav-mtc">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+          <img th:src="@{/img/logo-mtc.png}" alt="MTC" height="28" class="me-2">
+          <span class="d-none d-sm-inline">Asesor Turístico Ferroviario y Peatonal</span>
+          <span class="d-sm-none">Asesor MTC</span>
+        </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMtc"
-        aria-controls="navMtc" aria-expanded="false" aria-label="Abrir menú">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMtc"
+          aria-controls="navMtc" aria-expanded="false" aria-label="Abrir menú">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-      <div class="collapse navbar-collapse" id="navMtc">
-        <div class="navbar-nav me-auto">
-          <a class="nav-link" th:href="@{/preferencias}" style="color:rgba(246,244,239,.85);">Turista</a>
-          <a class="nav-link" th:href="@{/zonas}" sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')"
-            style="color:rgba(246,244,239,.85);">Zonas</a>
-          <a class="nav-link" th:href="@{/estaciones}" sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')"
-            style="color:rgba(246,244,239,.85);">Estaciones</a>
-          <a class="nav-link" th:href="@{/estaciones/zonas-asignadas}"
-            sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')"
-            style="color:rgba(246,244,239,.85);">Zonas por estación</a>
-          <a class="nav-link" th:href="@{/servicios-tren}" sec:authorize="hasAnyRole('ADMIN_MTC','PERURAIL_ADMIN')"
-            style="color:rgba(246,244,239,.85);">Horarios/Tarifas</a>
-          <a class="nav-link" th:href="@{/auditoria}" sec:authorize="hasRole('ADMIN_MTC')"
-            style="color:rgba(246,244,239,.85);">Auditoría</a>
-        </div>
-
-        <div class="d-flex align-items-center gap-2" sec:authorize="isAuthenticated()">
-          <div class="text-end text-white small">
-            <div class="fw-semibold"><span sec:authentication="name">Usuario</span></div>
-            <div class="opacity-75">
-              <span th:text="${#strings.replace(#authentication.principal.authorities, 'ROLE_', '')}">ROLES</span>
-            </div>
+        <div class="collapse navbar-collapse" id="navMtc">
+          <div class="navbar-nav me-auto">
+            <a class="nav-link" th:href="@{/preferencias}">Turista</a>
+            <a class="nav-link" th:href="@{/zonas}" sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')">Zonas</a>
+            <a class="nav-link" th:href="@{/estaciones}"
+              sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')">Estaciones</a>
+            <a class="nav-link" th:href="@{/estaciones/zonas-asignadas}"
+              sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')">Zonas por estación</a>
+            <a class="nav-link" th:href="@{/servicios-tren}"
+              sec:authorize="hasAnyRole('ADMIN_MTC','PERURAIL_ADMIN')">Horarios/Tarifas</a>
+            <a class="nav-link" th:href="@{/auditoria}" sec:authorize="hasRole('ADMIN_MTC')">Auditoría</a>
           </div>
-          <form th:action="@{/logout}" method="post" class="m-0">
-            <button class="btn btn-outline-light btn-sm" type="submit">
-              <i class="bi bi-box-arrow-right me-1"></i> Salir
-            </button>
-          </form>
-        </div>
 
-        <div sec:authorize="!isAuthenticated()">
-          <a class="btn btn-outline-light btn-sm" th:href="@{/login}">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
-          </a>
+          <div class="d-flex align-items-center gap-3" sec:authorize="isAuthenticated()">
+            <div class="text-end nav-mtc-sesion">
+              <div class="fw-semibold"><span sec:authentication="name">Usuario</span></div>
+              <div class="nav-mtc-roles">
+                <span th:text="${#strings.replace(#authentication.principal.authorities, 'ROLE_', '')}">ROLES</span>
+              </div>
+            </div>
+            <form th:action="@{/logout}" method="post" class="m-0">
+              <button class="btn btn-outline-light btn-sm" type="submit">
+                <i class="bi bi-box-arrow-right me-1"></i> Salir
+              </button>
+            </form>
+          </div>
+
+          <div sec:authorize="!isAuthenticated()">
+            <a class="btn btn-outline-light btn-sm" th:href="@{/login}">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+            </a>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
+    </nav>
+    <!-- Unica aparicion del dorado institucional en la pantalla. -->
+    <hr class="sello-regla mb-4">
+  </div>
 </body>
 
 </html>

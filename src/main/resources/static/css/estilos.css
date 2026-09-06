@@ -1,191 +1,311 @@
 /* ==========================================================================
    Asesor Turistico Ferroviario y Peatonal (MTC)
-   Estilos compartidos por las vistas Thymeleaf.
+   estilos.css - Capa de componente del sistema de diseno.
+
+   Los valores viven en tokens.css; aqui solo se componen. Ningun color en
+   crudo debe aparecer en este archivo salvo los rgba() de superposicion.
 
    RNF-02 (Usabilidad y Portabilidad): complementa Bootstrap 5 para el uso
-   responsive desde smartphones y tablets. Las clases de este archivo son las
-   que usan las plantillas que incluyen ~{layout/base :: head(...)}; las
-   pantallas de administracion que traen su propio bloque <style> lo
-   sobrescriben localmente.
+   responsive desde smartphones y tablets. Todos los selectores que ya
+   consumian las 18 vistas Thymeleaf se conservan con el mismo nombre: lo que
+   cambia son sus valores, de modo que ninguna plantilla tenga que tocarse
+   para heredar el sistema nuevo.
+
+   Jerarquia: el dorado institucional (--seal) aparece UNA vez por pantalla,
+   en la regla de procedencia. Dejo de usarlo como borde superior de cada
+   tarjeta, porque cuando marca todo deja de marcar nada.
+
+   CONVENCION DE NOMBRES: bloque-elemento con guion simple, nunca doble guion
+   bajo. En Thymeleaf, __algo__ es la sintaxis de preprocesado de expresiones,
+   asi que una clase como "clima__estado" dentro de un th:classappend parte la
+   expresion por la mitad y la plantilla revienta al parsearse. Con guion
+   simple el mismo nombre es seguro en cualquier atributo th:*.
    ========================================================================== */
 
-:root {
-  --mtc-verde: #14453D;
-  --mtc-verde-oscuro: #0D302A;
-  --mtc-dorado: #C89B3C;
-  --mtc-crema: #F6F4EF;
-  --mtc-borde: #DEDCD2;
-  --mtc-texto-suave: #6B7568;
+body {
+  font-family: var(--fuente-texto);
+  background-color: var(--bg-page);
+  color: var(--fg-default);
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  font-family: 'Manrope', system-ui, -apple-system, "Segoe UI", sans-serif;
-  background-color: var(--mtc-crema);
+/* Foco visible y consistente en todo lo enfocable. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* --------------------------------------------------------------- Titulos */
 .page-title {
-  color: var(--mtc-verde);
-  letter-spacing: -0.01em;
+  color: var(--fg-strong);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 .page-sub {
-  color: var(--mtc-texto-suave);
+  color: var(--fg-muted);
+  max-width: 68ch;
 }
 
 .section-label,
 .section-title {
-  font-weight: 700;
-  color: var(--mtc-verde);
+  font-weight: 600;
+  color: var(--fg-strong);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-2);
+  font-size: var(--paso--1);
+  letter-spacing: 0.005em;
 }
 
 .section-label i,
 .section-title i {
-  color: var(--mtc-dorado);
+  color: var(--fg-faint);
+  font-size: 0.95em;
 }
 
 /* --------------------------------------------------------------- Tarjetas */
+/* Superficie de lectura tranquila: sin borde dorado, sin sombra pesada. */
 .section-card,
 .pref-card {
-  border: none;
-  border-radius: 16px;
-  border-top: 4px solid var(--mtc-dorado);
-  box-shadow: 0 14px 32px -14px rgba(20, 69, 61, 0.20);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radio-superficie);
+  background: var(--bg-surface);
+  box-shadow: var(--sombra-superficie);
+}
+
+/* La unica tarjeta que puede levantar la voz en una pantalla. */
+.section-card--foco {
+  border-color: var(--border-strong);
+  box-shadow: var(--sombra-elevada);
 }
 
 .divider-soft {
-  border-top: 1px solid #E5E2D8;
-  margin: 1.25rem 0;
+  border-top: 1px solid var(--border-default);
+  margin: var(--esp-5) 0;
 }
 
 .readonly-note {
-  background: #FBF8F1;
-  border: 1px solid #EAD9AE;
-  color: #A67C2E;
-  border-radius: 10px;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
+  background: var(--seal-soft);
+  border: 1px solid var(--sello-500);
+  color: var(--nivel-medio-600);
+  border-radius: var(--radio-control);
+  padding: var(--esp-3) var(--esp-4);
+  font-size: var(--paso--1);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--esp-2);
+}
+
+/* Regla de procedencia institucional. Es el unico sitio donde aparece el
+   dorado del MTC: bajo la marca del encabezado y sobre el pie. */
+.sello-regla {
+  height: 3px;
+  background: var(--seal);
+  border: none;
+  opacity: 1;
+  margin: 0;
 }
 
 /* ---------------------------------------------------------------- Botones */
 .btn-mtc {
-  background: var(--mtc-verde);
-  color: #fff;
-  border: none;
-  border-radius: 9px;
-  font-weight: 700;
-  padding: 0.6rem 1.6rem;
+  background: var(--accent);
+  color: var(--fg-on-dark);
+  border: 1px solid var(--accent);
+  border-radius: var(--radio-control);
+  font-weight: 600;
+  padding: var(--esp-3) var(--esp-5);
 }
 
 .btn-mtc:hover,
 .btn-mtc:focus {
-  background: var(--mtc-verde-oscuro);
-  color: #fff;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--fg-on-dark);
 }
 
 .btn-mtc-outline {
-  border: 1.5px solid var(--mtc-verde);
-  color: var(--mtc-verde);
-  border-radius: 9px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radio-control);
   font-weight: 600;
-  background: #fff;
+  background: var(--bg-surface);
 }
 
 .btn-mtc-outline:hover {
-  background: var(--mtc-verde);
-  color: #fff;
+  background: var(--accent);
+  color: var(--fg-on-dark);
+}
+
+/* ------------------------------------------------------------ Navegacion */
+/* Antes los colores iban en style="" repetido en ocho enlaces de nav.html,
+   lo que hacia imposible tematizar la barra desde un token. */
+.nav-mtc {
+  background: var(--bg-inverse);
+}
+
+.nav-mtc .navbar-brand {
+  color: var(--fg-on-dark);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.nav-mtc .nav-link {
+  color: var(--fg-on-dark-muted);
+  border-radius: var(--radio-control);
+  padding-inline: var(--esp-3);
+}
+
+.nav-mtc .nav-link:hover,
+.nav-mtc .nav-link:focus {
+  color: var(--fg-on-dark);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-mtc-sesion {
+  color: var(--fg-on-dark);
+  font-size: var(--paso--1);
+  line-height: 1.25;
+}
+
+.nav-mtc-roles {
+  color: var(--fg-on-dark-muted);
+  font-size: var(--paso--2);
+}
+
+.pie-mtc {
+  color: var(--fg-muted);
+  font-size: var(--paso--1);
 }
 
 /* ----------------------------------------------------------- Formularios */
 .form-select:focus,
 .form-control:focus {
-  border-color: var(--mtc-verde);
-  box-shadow: 0 0 0 3px rgba(20, 69, 61, 0.10);
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .preferencia-check {
-  border: 1.5px solid var(--mtc-borde);
-  border-radius: 9px;
-  padding: 0.6rem 0.75rem 0.6rem 2.25rem;
-  background: #fff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radio-control);
+  padding: var(--esp-3) var(--esp-3) var(--esp-3) 2.25rem;
+  background: var(--bg-surface);
+}
+
+/* Preferencia como ficha pulsable. El <input type="checkbox"> real sigue en
+   el DOM y sigue siendo enfocable: preferencias.js reenvia el formulario
+   escuchando su evento "change", asi que ocultarlo con display:none lo
+   dejaria fuera del recorrido de teclado y romperia el filtrado. */
+.chip-pref {
+  position: relative;
+  display: block;
+}
+
+.chip-pref input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.chip-pref label {
+  display: block;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radio-pildora);
+  background: var(--bg-surface);
+  color: var(--fg-default);
+  padding: var(--esp-2) var(--esp-4);
+  font-size: var(--paso--1);
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.chip-pref input:checked + label {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--fg-strong);
+  font-weight: 600;
+}
+
+.chip-pref input:focus-visible + label {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* --------------------------------------------------------------- Tablas */
 .table-mtc thead {
-  background: var(--mtc-verde);
-  color: #fff;
+  background: var(--bg-inverse);
+  color: var(--fg-on-dark);
 }
 
 .table-mtc thead th {
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: var(--paso--2);
   border: none;
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 .table-mtc tbody td {
   vertical-align: middle;
-  font-size: 0.88rem;
+  font-size: var(--paso--1);
 }
 
 .table-mtc tbody tr:hover {
-  background: #FBF8F1;
+  background: var(--bg-sunken);
 }
 
 /* -------------------------------------------------------------- Insignias */
 .badge-activa,
 .badge-dif-baja {
-  background: #E4F2E9;
-  color: #1F6B45;
+  background: var(--nivel-ok-100);
+  color: var(--nivel-ok-600);
 }
 
 .badge-inactiva,
 .badge-dif-alta {
-  background: #FBE8E6;
-  color: #B3382C;
+  background: var(--nivel-critico-100);
+  color: var(--nivel-critico-600);
 }
 
 .badge-pendiente,
 .badge-mantenimiento,
 .badge-dif-media {
-  background: #FBF1DD;
-  color: #A67C2E;
+  background: var(--nivel-medio-100);
+  color: var(--nivel-medio-600);
 }
 
 .cost-pill,
 .fare-pill {
-  background: #E4F2E9;
-  color: #1F6B45;
+  background: var(--nivel-ok-100);
+  color: var(--nivel-ok-600);
   font-weight: 700;
-  border-radius: 20px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.85rem;
+  border-radius: var(--radio-pildora);
+  padding: var(--esp-1) var(--esp-3);
+  font-size: var(--paso--1);
   display: inline-block;
+  font-family: var(--fuente-cifra);
 }
 
 .code-pill {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: #F0EEE6;
-  color: #4A5348;
-  border-radius: 6px;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.8rem;
+  font-family: var(--fuente-cifra);
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  border-radius: var(--radio-control);
+  padding: var(--esp-1) var(--esp-2);
+  font-size: var(--paso--2);
 }
 
 .preferencia-pill {
-  background: #F0EEE6;
-  color: #4A5348;
-  border-radius: 20px;
-  padding: 0.15rem 0.6rem;
-  font-size: 0.75rem;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radio-pildora);
+  padding: var(--esp-1) var(--esp-3);
+  font-size: var(--paso--2);
   display: inline-block;
 }
 
@@ -194,39 +314,395 @@ body {
 .route-cell {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--esp-2);
   font-weight: 600;
-  color: var(--mtc-verde);
+  color: var(--fg-strong);
 }
 
 .est-name i,
 .zona-name i,
 .route-cell i {
-  color: var(--mtc-dorado);
+  color: var(--fg-faint);
+}
+
+/* =========================================================== TABLERO
+   El listado de zonas se lee como un tablero de servicio: la prosa a la
+   izquierda y las cifras comparables alineadas en una columna fija a la
+   derecha, en cifras tabulares. Es lo que permite comparar catorce zonas
+   de un vistazo sin leerlas una por una.
+   ====================================================================== */
+.cifra {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tablero {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radio-superficie);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.tablero-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--esp-4);
+  align-items: start;
+  padding: var(--esp-4) var(--esp-5);
+  border-top: 1px solid var(--border-default);
+  transition: background-color 0.12s ease;
+}
+
+.tablero-fila:first-child {
+  border-top: none;
+}
+
+.tablero-fila:hover,
+.tablero-fila:focus-within,
+.tablero-fila.is-activa {
+  background: var(--bg-sunken);
+}
+
+.tablero-nombre {
+  font-weight: 600;
+  color: var(--fg-strong);
+  font-size: var(--paso-1);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.tablero-cifras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(3.5rem, auto));
+  gap: var(--esp-4);
+  text-align: right;
+}
+
+.tablero-dato {
+  display: block;
+}
+
+.tablero-valor {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--paso-1);
+  font-weight: 600;
+  color: var(--fg-strong);
+  display: block;
+  line-height: 1.1;
+}
+
+.tablero-unidad {
+  font-size: var(--paso--2);
+  color: var(--fg-faint);
+  display: block;
+}
+
+@media (max-width: 767.98px) {
+  .tablero-fila {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--esp-4);
+  }
+
+  .tablero-cifras {
+    justify-content: start;
+    text-align: left;
+  }
+}
+
+/* Raíl de filtros: acompana el listado en escritorio sin ser una tarjeta. */
+.rail-filtros {
+  position: sticky;
+  top: var(--esp-4);
+}
+
+/* ====================================================== WIDGET DE CLIMA
+   El SENAMHI entrega cuatro variables (min, max, probabilidad de lluvia y
+   estado). Antes se pintaban como cuatro filas identicas a las de la ruta.
+   Aqui el rango termico es una barra y la lluvia un relleno proporcional:
+   una forma por dato, comparable de un vistazo.
+   ====================================================================== */
+.clima-rango {
+  position: relative;
+  height: 6px;
+  border-radius: var(--radio-pildora);
+  background: var(--bg-sunken);
+  margin: var(--esp-3) 0 var(--esp-2);
+  overflow: hidden;
+}
+
+.clima-barra {
+  position: absolute;
+  inset-block: 0;
+  border-radius: var(--radio-pildora);
+  background: linear-gradient(90deg, var(--meteo-lluvia-600), var(--meteo-seco-600));
+}
+
+.clima-temperaturas {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--paso-1);
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+.clima-lluvia {
+  height: 6px;
+  border-radius: var(--radio-pildora);
+  background: var(--meteo-lluvia-100);
+  overflow: hidden;
+  margin-top: var(--esp-2);
+}
+
+.clima-lluvia-relleno {
+  height: 100%;
+  background: var(--meteo-lluvia-600);
+}
+
+.clima-estado {
+  display: inline-block;
+  border-radius: var(--radio-pildora);
+  padding: var(--esp-1) var(--esp-3);
+  font-size: var(--paso--2);
+  font-weight: 600;
+}
+
+.clima-estado--seco {
+  background: var(--meteo-seco-100);
+  color: var(--meteo-seco-600);
+}
+
+.clima-estado--nublado {
+  background: var(--meteo-nublado-100);
+  color: var(--meteo-nublado-600);
+}
+
+.clima-estado--lluvia {
+  background: var(--meteo-lluvia-100);
+  color: var(--meteo-lluvia-600);
+}
+
+/* ============================================================== AFORO
+   El cupo dejaba de ser un numero suelto: una barra segmentada dice de un
+   vistazo si queda sitio, como el indicador de ocupacion de un anden.
+   ====================================================================== */
+.aforo-barra {
+  height: 10px;
+  border-radius: var(--radio-pildora);
+  background: var(--bg-sunken);
+  overflow: hidden;
+  margin: var(--esp-2) 0;
+}
+
+.aforo-relleno {
+  height: 100%;
+  background: var(--nivel-ok-600);
+}
+
+.aforo--justo .aforo-relleno {
+  background: var(--nivel-medio-600);
+}
+
+.aforo--critico .aforo-relleno {
+  background: var(--nivel-critico-600);
+}
+
+.aforo-cifra {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--paso-2);
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+/* ========================================================= SENALETICA
+   Registro reservado a las dos pantallas donde el turista decide:
+   cliente/ruta-detalle e informes/informe-consolidado. Placa esmaltada
+   de anden: radio cero, sombra dura sin difuminar, tipo condensado.
+   ====================================================================== */
+.placa {
+  background: var(--esmalte);
+  color: var(--fg-on-dark);
+  border-radius: var(--radio-placa);
+  padding: var(--esp-5) var(--esp-5) var(--esp-4);
+  box-shadow: var(--sombra-placa);
+}
+
+.placa-trayecto {
+  font-family: var(--fuente-senal);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 6vw, var(--paso-5));
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.placa-origen {
+  color: var(--fg-on-dark-muted);
+  display: block;
+  font-size: 0.55em;
+  letter-spacing: 0.06em;
+}
+
+.placa-meta {
+  color: var(--fg-on-dark-muted);
+  font-size: var(--paso--1);
+  margin: var(--esp-3) 0 0;
+}
+
+/* Ficha tecnica: pares dato/valor con la cifra siempre en la misma columna. */
+.ficha {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ficha-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--esp-4);
+  padding: var(--esp-3) 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.ficha-fila:last-child {
+  border-bottom: none;
+}
+
+.ficha-etiqueta {
+  color: var(--fg-muted);
+  font-size: var(--paso--1);
+}
+
+.ficha-valor {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--fg-strong);
+  text-align: right;
+}
+
+/* ============================================================= BOLETO
+   El informe consolidado se compone como un billete: cabecera de placa,
+   perforacion entre el resumen y el desglose, total en banda invertida.
+   ====================================================================== */
+.boleto-perforacion {
+  border: none;
+  border-top: 2px dashed var(--border-default);
+  margin: var(--esp-5) 0;
+  opacity: 1;
+}
+
+.boleto-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--esp-4);
+  background: var(--esmalte);
+  color: var(--fg-on-dark);
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-placa);
+}
+
+.boleto-total-cifra {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--paso-3);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Desglose por proveedor. Las dos columnas de tarifa obedecen reglas de edad
+   distintas (tren: adulto desde 12; zona: adulto desde 18) y hasta ahora se
+   veian iguales, con la aclaracion a pie de tabla. Ahora cada proveedor es un
+   grupo de columnas rotulado con su propia regla, separado por una linea.
+
+   Se separan con borde y no tintando celdas: Bootstrap 5.3 pinta el fondo de
+   las celdas con --bs-table-bg y una sombra interior de estado, y un
+   background propio entraria en conflicto con el resaltado de fila. */
+.grupo-proveedor {
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--paso--2);
+  line-height: 1.3;
+}
+
+.grupo-proveedor small {
+  display: block;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.tabla-tarifas thead .grupo-proveedor--tren {
+  background: var(--meteo-lluvia-600);
+  color: var(--fg-on-dark);
+}
+
+.tabla-tarifas thead .grupo-proveedor--zona {
+  background: var(--nivel-ok-600);
+  color: var(--fg-on-dark);
+}
+
+.tabla-tarifas .limite-proveedor {
+  border-left: 2px solid var(--border-strong);
+}
+
+.tabla-tarifas .cifra-celda {
+  font-family: var(--fuente-cifra);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* El resaltado de fila debe ganar a cualquier regla de celda del grupo. */
+.table-mtc tbody tr:hover > * {
+  background-color: var(--bg-sunken);
 }
 
 /* ----------------------------------------------------------------- Mapa */
 #mapa-ruta,
+#buscador-mapa,
 [id^="mapa-"] {
-  border-radius: 0.5rem;
-  border: 1px solid var(--mtc-borde);
+  border-radius: var(--radio-superficie);
+  border: 1px solid var(--border-default);
   min-height: 320px;
 }
 
+#buscador-mapa {
+  min-height: 420px;
+  height: clamp(420px, 60vh, 640px);
+}
+
 .leaflet-container {
-  border-radius: 0.5rem;
+  border-radius: var(--radio-superficie);
+  font-family: var(--fuente-texto);
 }
 
 /* ------------------------------------------------------------ Responsive */
 @media (max-width: 576px) {
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: var(--esp-4);
+    padding-right: var(--esp-4);
   }
 
   .table-mtc tbody td,
   .table-mtc thead th {
-    font-size: 0.8rem;
+    font-size: var(--paso--2);
+  }
+
+  .placa {
+    padding: var(--esp-4);
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .rail-filtros {
+    position: static;
   }
 }
 
@@ -241,5 +717,29 @@ body {
 
   body {
     background: #fff;
+  }
+
+  /* Las bandas invertidas gastan toner y salen grises en laser: en papel
+     el mismo dato se marca con regla gruesa en vez de fondo solido. */
+  .placa,
+  .boleto-total {
+    background: #fff !important;
+    color: #000 !important;
+    border-top: 3px solid #000;
+    border-bottom: 3px solid #000;
+    box-shadow: none;
+  }
+
+  .placa-origen,
+  .placa-meta {
+    color: #333 !important;
+  }
+
+  .section-card,
+  .pref-card,
+  .tablero,
+  .proveedor {
+    box-shadow: none;
+    border-color: #999;
   }
 }

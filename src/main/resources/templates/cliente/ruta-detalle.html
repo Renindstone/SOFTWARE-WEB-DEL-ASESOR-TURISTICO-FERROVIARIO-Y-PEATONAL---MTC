@@ -8,12 +8,15 @@
 
 <main class="container py-4" style="max-width: 1000px;">
 
-  <div class="mb-4">
-    <h1 class="h4 fw-bold page-title mb-1" th:text="${destino.nombre}">Zona turística</h1>
-    <p class="page-sub mb-0">
-      Circuito peatonal de ida y vuelta desde
-      <strong th:text="${origen.nombre}">estación</strong>.
-    </p>
+  <!-- Placa de anden: es una de las dos pantallas donde el turista decide,
+       asi que aqui el sistema sube la voz. El destino se compone en
+       condensada de senaletica, no como un titulo mas. -->
+  <div class="placa mb-4">
+    <h1 class="placa-trayecto">
+      <span class="placa-origen" th:text="'Desde ' + ${origen.nombre}">Desde la estación</span>
+      <span th:text="${destino.nombre}">Zona turística</span>
+    </h1>
+    <p class="placa-meta">Circuito peatonal de ida y vuelta. Se regresa a la misma estación.</p>
   </div>
 
   <div class="row g-4">
@@ -23,64 +26,99 @@
       <div class="card section-card h-100">
         <div class="card-body p-4">
           <h2 class="h6 section-title"><i class="bi bi-signpost-split"></i> Ruta peatonal</h2>
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Distancia (ida y vuelta)</span>
-              <strong th:text="${ruta.distanciaKm} + ' km'">0 km</strong>
+          <ul class="ficha">
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Distancia (ida y vuelta)</span>
+              <span class="ficha-valor" th:text="${ruta.distanciaKm} + ' km'">0 km</span>
             </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Tiempo estimado</span>
-              <strong th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</strong>
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Tiempo estimado</span>
+              <span class="ficha-valor" th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</span>
             </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Dificultad</span>
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Dificultad</span>
               <span class="badge"
                     th:classappend="${ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
                                      : (${ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
                     th:text="${ruta.dificultad}">Baja</span>
             </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Trayecto</span>
-              <strong th:text="${ruta.esIdaVuelta} ? 'Circuito cerrado (regresa a la estación)' : '-'">
-                Circuito cerrado</strong>
-            </li>
-            <li class="list-group-item d-flex justify-content-between" th:if="${cupoDisponible != null}">
-              <span>Cupo disponible para la fecha</span>
-              <strong th:text="${cupoDisponible}">0</strong>
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Trayecto</span>
+              <span class="ficha-valor"
+                    th:text="${ruta.esIdaVuelta} ? 'Circuito cerrado' : '-'">Circuito cerrado</span>
             </li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- RF-06: pronostico del SENAMHI para la estacion y la fecha de visita. -->
+    <!-- RF-06: pronostico del SENAMHI para la estacion y la fecha de visita.
+         El estado se colorea a partir de la probabilidad numerica y no de la
+         cadena, porque el SENAMHI devuelve cinco descripciones distintas. -->
     <div class="col-12 col-lg-6">
       <div class="card section-card h-100">
         <div class="card-body p-4">
           <h2 class="h6 section-title"><i class="bi bi-cloud-sun"></i> Pronóstico del SENAMHI</h2>
 
-          <ul class="list-group list-group-flush" th:if="${clima != null}">
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Fecha</span><strong th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</strong>
-            </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Temperatura</span>
-              <strong th:text="${clima.temperaturaMinC} + '°C - ' + ${clima.temperaturaMaxC} + '°C'">0°C</strong>
-            </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Probabilidad de lluvia</span>
-              <strong th:text="${clima.probabilidadLluvia} + ' %'">0 %</strong>
-            </li>
-            <li class="list-group-item d-flex justify-content-between">
-              <span>Estado</span><strong th:text="${clima.estadoClima}">Soleado</strong>
-            </li>
-          </ul>
+          <div th:if="${clima != null}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="page-sub small"
+                    th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
+              <span class="clima-estado"
+                    th:classappend="${clima.probabilidadLluvia &lt; 30} ? 'clima-estado--seco'
+                                     : (${clima.probabilidadLluvia &lt; 60} ? 'clima-estado--nublado'
+                                     : 'clima-estado--lluvia')"
+                    th:text="${clima.estadoClima}">Soleado</span>
+            </div>
+
+            <div class="clima-temperaturas">
+              <span th:text="${clima.temperaturaMinC} + '°'">0°</span>
+              <span th:text="${clima.temperaturaMaxC} + '°'">0°</span>
+            </div>
+            <div class="clima-rango">
+              <span class="clima-barra" style="left:0; right:0;"></span>
+            </div>
+            <p class="page-sub small mb-3">Mínima y máxima previstas</p>
+
+            <div class="d-flex justify-content-between align-items-baseline">
+              <span class="ficha-etiqueta">Probabilidad de lluvia</span>
+              <span class="ficha-valor" th:text="${clima.probabilidadLluvia} + ' %'">0 %</span>
+            </div>
+            <div class="clima-lluvia">
+              <span class="clima-lluvia-relleno"
+                    th:style="'width:' + ${clima.probabilidadLluvia} + '%'"></span>
+            </div>
+          </div>
 
           <p class="page-sub small mb-0" th:if="${clima == null}">
             El SENAMHI aún no publicó el pronóstico de
             <span th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
             para esta estación.
           </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RF-16/RF-17: el cupo deja de ser un numero suelto. La barra dice de un
+       vistazo si todavia queda sitio para la fecha elegida. -->
+  <div class="card section-card mt-4"
+       th:if="${cupoDisponible != null and destino.cupoMaximoDiario != null
+               and destino.cupoMaximoDiario > 0}">
+    <div class="card-body p-4">
+      <h2 class="h6 section-title"><i class="bi bi-people"></i> Aforo de la fecha</h2>
+      <div th:with="porcentaje=${cupoDisponible * 100 / destino.cupoMaximoDiario}"
+           th:classappend="${porcentaje &lt; 25} ? 'aforo--critico'
+                            : (${porcentaje &lt; 50} ? 'aforo--justo' : '')">
+        <div class="d-flex justify-content-between align-items-baseline">
+          <span class="aforo-cifra">
+            <span th:text="${cupoDisponible}">0</span><span class="page-sub"
+              th:text="' / ' + ${destino.cupoMaximoDiario}"> / 0</span>
+          </span>
+          <span class="page-sub small">lugares libres</span>
+        </div>
+        <div class="aforo-barra">
+          <span class="aforo-relleno" th:style="'width:' + ${porcentaje} + '%'"></span>
         </div>
       </div>
     </div>
@@ -104,7 +142,7 @@
   </div>
 
   <!-- RF-07/RF-08: eleccion de servicio de tren y fecha antes del informe. -->
-  <div class="card section-card mt-4">
+  <div class="card section-card section-card--foco mt-4">
     <div class="card-body p-4">
       <h2 class="h6 section-title"><i class="bi bi-file-earmark-text"></i> Generar informe consolidado</h2>
 
@@ -164,9 +202,7 @@
         </div>
 
         <div class="col-12 col-md-3">
-          <button type="submit" class="btn btn-mtc w-100">
-            <i class="bi bi-file-earmark-check me-1"></i>Generar
-          </button>
+          <button type="submit" class="btn btn-mtc w-100">Generar informe</button>
         </div>
       </form>
 

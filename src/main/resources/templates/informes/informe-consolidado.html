@@ -6,9 +6,9 @@
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
-<main class="container py-4" style="max-width: 860px;">
+<main class="container py-4" style="max-width: 880px;">
 
-  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
     <div>
       <h1 class="h4 fw-bold page-title mb-1">Informe consolidado de tu visita</h1>
       <p class="page-sub mb-0">
@@ -35,107 +35,169 @@
     </div>
   </div>
 
-  <div class="card section-card">
-    <div class="card-body p-4">
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Fecha de visita</span>
-          <strong th:text="${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">fecha</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Estación de origen</span><strong th:text="${informe.estacionOrigen}">estación</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Zona turística</span><strong th:text="${informe.zonaDestino}">zona</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Distancia (ida y vuelta)</span>
-          <strong th:text="${informe.ruta.distanciaKm} + ' km'">0 km</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Tiempo estimado</span>
-          <strong th:text="${informe.ruta.tiempoEstimadoMin} + ' min'">0 min</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Dificultad</span>
-          <span class="badge"
-                th:classappend="${informe.ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
-                                 : (${informe.ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
-                th:text="${informe.ruta.dificultad}">Baja</span>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Clima previsto</span>
-          <strong th:if="${informe.estadoClima != null}"
-                  th:text="${informe.temperaturaMinimaC} + '°C - ' + ${informe.temperaturaMaximaC}
-                           + '°C · ' + ${informe.probabilidadLluvia} + '% lluvia ('
-                           + ${informe.estadoClima} + ')'">clima</strong>
-          <strong th:if="${informe.estadoClima == null}" class="page-sub">Sin pronóstico publicado</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Tarifa del tren <span class="page-sub small">(adulto)</span></span>
-          <strong th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Ingreso a la zona <span class="page-sub small">(adulto)</span></span>
-          <strong th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Personas</span>
-          <strong th:text="${informe.totalPersonas}">1</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between" th:if="${informe.cupoDisponible != null}">
-          <span>Cupo restante tras tu reserva</span>
-          <strong th:text="${informe.cupoDisponible}">0</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between bg-light">
-          <span class="fw-bold">Total estimado</span>
-          <strong class="fs-5" th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</strong>
-        </li>
-      </ul>
+  <!-- El informe se compone como un billete: placa de trayecto arriba,
+       perforacion entre el resumen y el desglose, y el total en banda. -->
+  <div class="placa mb-4">
+    <h2 class="placa-trayecto">
+      <span class="placa-origen" th:text="'Desde ' + ${informe.estacionOrigen}">Desde la estación</span>
+      <span th:text="${informe.zonaDestino}">Zona turística</span>
+    </h2>
+    <p class="placa-meta"
+       th:text="'Visita del ' + ${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}
+                + ' · ' + ${informe.totalPersonas}
+                + (${informe.totalPersonas == 1} ? ' persona' : ' personas')">
+      Visita
+    </p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-md-6">
+      <div class="card section-card h-100">
+        <div class="card-body p-4">
+          <h2 class="h6 section-title"><i class="bi bi-signpost-split"></i> Recorrido</h2>
+          <ul class="ficha">
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Distancia (ida y vuelta)</span>
+              <span class="ficha-valor" th:text="${informe.ruta.distanciaKm} + ' km'">0 km</span>
+            </li>
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Tiempo estimado</span>
+              <span class="ficha-valor" th:text="${informe.ruta.tiempoEstimadoMin} + ' min'">0 min</span>
+            </li>
+            <li class="ficha-fila">
+              <span class="ficha-etiqueta">Dificultad</span>
+              <span class="badge"
+                    th:classappend="${informe.ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
+                                     : (${informe.ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
+                    th:text="${informe.ruta.dificultad}">Baja</span>
+            </li>
+            <li class="ficha-fila" th:if="${informe.cupoDisponible != null}">
+              <span class="ficha-etiqueta">Cupo restante tras tu reserva</span>
+              <span class="ficha-valor" th:text="${informe.cupoDisponible}">0</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+      <div class="card section-card h-100">
+        <div class="card-body p-4">
+          <h2 class="h6 section-title"><i class="bi bi-cloud-sun"></i> Clima previsto</h2>
+
+          <div th:if="${informe.estadoClima != null}">
+            <div class="d-flex justify-content-end mb-2">
+              <span class="clima-estado"
+                    th:classappend="${informe.probabilidadLluvia &lt; 30} ? 'clima-estado--seco'
+                                     : (${informe.probabilidadLluvia &lt; 60} ? 'clima-estado--nublado'
+                                     : 'clima-estado--lluvia')"
+                    th:text="${informe.estadoClima}">Soleado</span>
+            </div>
+            <div class="clima-temperaturas">
+              <span th:text="${informe.temperaturaMinimaC} + '°'">0°</span>
+              <span th:text="${informe.temperaturaMaximaC} + '°'">0°</span>
+            </div>
+            <div class="clima-rango">
+              <span class="clima-barra" style="left:0; right:0;"></span>
+            </div>
+            <p class="page-sub small mb-3">Mínima y máxima previstas</p>
+
+            <div class="d-flex justify-content-between align-items-baseline">
+              <span class="ficha-etiqueta">Probabilidad de lluvia</span>
+              <span class="ficha-valor" th:text="${informe.probabilidadLluvia} + ' %'">0 %</span>
+            </div>
+            <div class="clima-lluvia">
+              <span class="clima-lluvia-relleno"
+                    th:style="'width:' + ${informe.probabilidadLluvia} + '%'"></span>
+            </div>
+          </div>
+
+          <p class="page-sub small mb-0" th:if="${informe.estadoClima == null}">
+            Sin pronóstico publicado para esta fecha.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="card section-card mt-4">
+  <hr class="boleto-perforacion">
+
+  <div class="card section-card">
     <div class="card-body p-4">
-      <h2 class="h6 section-title mb-3"><i class="bi bi-people"></i> Detalle por visitante</h2>
+      <h2 class="h6 section-title mb-1"><i class="bi bi-people"></i> Qué paga cada persona</h2>
+      <p class="page-sub small">
+        Los dos proveedores aplican tramos de edad distintos, así que una misma
+        persona puede entrar en una categoría en el tren y en otra en la zona.
+      </p>
 
       <div class="table-responsive">
-        <table class="table table-mtc table-sm mb-0">
+        <table class="table table-mtc tabla-tarifas table-sm mb-0">
           <thead>
             <tr>
-              <th>Edad</th>
-              <th>Personas</th>
-              <th>Tarifa tren</th>
-              <th>Entrada zona</th>
-              <th class="text-end">Subtotal</th>
+              <th colspan="2"></th>
+              <th colspan="2" class="grupo-proveedor grupo-proveedor--tren limite-proveedor">
+                PeruRail
+                <small>tarifa completa desde los 12</small>
+              </th>
+              <th colspan="2" class="grupo-proveedor grupo-proveedor--zona limite-proveedor">
+                Zona turística
+                <small>tarifa reducida hasta los 17</small>
+              </th>
+              <th></th>
+            </tr>
+            <tr>
+              <th scope="col">Edad</th>
+              <th scope="col">Personas</th>
+              <th scope="col" class="limite-proveedor">Categoría</th>
+              <th scope="col">Importe</th>
+              <th scope="col" class="limite-proveedor">Categoría</th>
+              <th scope="col">Importe</th>
+              <th scope="col" class="text-end">Subtotal</th>
             </tr>
           </thead>
           <tbody>
             <tr th:each="v : ${informe.visitantes}">
-              <td th:text="${v.edad} + ' años'">0 años</td>
-              <td th:text="${v.cantidad}">1</td>
-              <td>
+              <td class="cifra-celda" th:text="${v.edad} + ' años'">0 años</td>
+              <td class="cifra-celda" th:text="${v.cantidad}">1</td>
+
+              <td class="limite-proveedor">
                 <span class="preferencia-pill" th:if="${v.categoriaTren != null}"
                       th:text="${v.categoriaTren}">Adulto</span>
                 <span class="page-sub small" th:if="${v.categoriaTren == null}">Sin tren</span>
-                <span class="ms-1" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</span>
               </td>
-              <td>
+              <td class="cifra-celda" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</td>
+
+              <td class="limite-proveedor">
                 <span class="preferencia-pill" th:text="${v.categoriaZona}">Adulto</span>
-                <span class="ms-1" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</span>
               </td>
-              <td class="text-end fw-bold" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
+              <td class="cifra-celda" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</td>
+
+              <td class="cifra-celda text-end fw-bold" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <p class="page-sub small mt-3 mb-0">
-        Los tramos de edad no coinciden entre proveedores: en el tren se paga tarifa
-        completa desde los 12 años, mientras que la entrada a la zona mantiene la tarifa
-        reducida hasta los 17.
-      </p>
+      <div class="divider-soft"></div>
+
+      <ul class="ficha">
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Tarifa del tren, referencia de adulto</span>
+          <span class="ficha-valor"
+                th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</span>
+        </li>
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Ingreso a la zona, referencia de adulto</span>
+          <span class="ficha-valor"
+                th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</span>
+        </li>
+      </ul>
     </div>
+  </div>
+
+  <div class="boleto-total mt-4">
+    <span>Total estimado del grupo</span>
+    <span class="boleto-total-cifra" th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</span>
   </div>
 
   <p class="page-sub small mt-3">
