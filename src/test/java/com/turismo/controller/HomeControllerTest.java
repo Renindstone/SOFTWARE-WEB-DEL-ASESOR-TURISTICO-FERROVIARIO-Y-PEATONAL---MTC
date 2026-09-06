@@ -65,7 +65,7 @@ class HomeControllerTest {
         when(estacionRepository.findByEstado(anyString())).thenReturn(List.of());
         when(informePlanificacionRepository.count()).thenReturn(0L);
         when(auditoriaLogRepository.count()).thenReturn(0L);
-        when(zonaTuristicaService.listarActivasConEstacionYTipos()).thenReturn(List.of());
+        when(zonaTuristicaService.listarActivasConEstacionYPreferencias()).thenReturn(List.of());
     }
 
     /** Sin sesion iniciada no se muestra el panel general. */
@@ -77,7 +77,7 @@ class HomeControllerTest {
         assertThat(homeController.inicio(null, model)).isEqualTo("redirect:/preferencias");
 
         // Ni siquiera se consultan los contadores de gestion.
-        verify(zonaTuristicaService, never()).listarActivasConEstacionYTipos();
+        verify(zonaTuristicaService, never()).listarActivasConEstacionYPreferencias();
     }
 
     /** Un turista registrado tampoco ve el panel de gestion. */

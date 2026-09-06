@@ -1,7 +1,7 @@
 package com.turismo.controller;
 
 import com.turismo.model.ZonaTuristica;
-import com.turismo.repository.TipoTurismoRepository;
+import com.turismo.repository.PreferenciaRepository;
 import com.turismo.service.AuditoriaService;
 import com.turismo.service.EstacionService;
 import com.turismo.service.ZonaTuristicaService;
@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * RF-10/RF-17 (CU-04): CRUD de zonas turisticas para Travel Group Perú, con
- * tipos de turismo y cupo diario.
+ * preferencias y cupo diario.
  */
 @Controller
 @RequestMapping("/zonas")
@@ -29,25 +29,25 @@ public class ZonaTuristicaController {
 
     private final ZonaTuristicaService zonaTuristicaService;
     private final EstacionService estacionService;
-    private final TipoTurismoRepository tipoTurismoRepository;
+    private final PreferenciaRepository preferenciaRepository;
     private final AuditoriaService auditoriaService;
 
     public ZonaTuristicaController(ZonaTuristicaService zonaTuristicaService,
                                     EstacionService estacionService,
-                                    TipoTurismoRepository tipoTurismoRepository,
+                                    PreferenciaRepository preferenciaRepository,
                                     AuditoriaService auditoriaService) {
         this.zonaTuristicaService = zonaTuristicaService;
         this.estacionService = estacionService;
-        this.tipoTurismoRepository = tipoTurismoRepository;
+        this.preferenciaRepository = preferenciaRepository;
         this.auditoriaService = auditoriaService;
     }
 
     @GetMapping
     public String listar(Model model) {
-        model.addAttribute("zonas", zonaTuristicaService.listarTodasConEstacionYTipos());
+        model.addAttribute("zonas", zonaTuristicaService.listarTodasConEstacionYPreferencias());
         if (!model.containsAttribute("zona")) {
             model.addAttribute("zona", new ZonaTuristica());
-            model.addAttribute("idsTipoTurismo", List.of());
+            model.addAttribute("idsPreferencia", List.of());
         }
         cargarCatalogos(model);
         return "admin/zonas-lista";
@@ -57,45 +57,45 @@ public class ZonaTuristicaController {
     @GetMapping("/nueva")
     public String formularioNueva(Model model) {
         model.addAttribute("zona", new ZonaTuristica());
-        model.addAttribute("idsTipoTurismo", List.of());
+        model.addAttribute("idsPreferencia", List.of());
         cargarCatalogos(model);
         return "admin/zona-form";
     }
 
-    /** CU-04: edicion de una zona existente, con sus tipos ya preseleccionados. */
+    /** CU-04: edicion de una zona existente, con sus preferencias ya preseleccionadas. */
     @GetMapping("/{id}/editar")
     public String formularioEditar(@PathVariable Integer id, Model model) {
         ZonaTuristica zona = zonaTuristicaService.buscarParaEdicion(id)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + id));
         model.addAttribute("zona", zona);
-        model.addAttribute("idsTipoTurismo", zonaTuristicaService.listarIdsTipoTurismo(id));
+        model.addAttribute("idsPreferencia", zonaTuristicaService.listarIdsPreferencia(id));
         cargarCatalogos(model);
         return "admin/zona-form";
     }
 
     /**
-     * CN-04/CN-05: guarda la zona con sus tipos de turismo. Si falta el tipo
+     * CN-04/CN-05: guarda la zona con sus preferencias. Si falta la preferencia
      * de turismo o la validacion de campos falla, vuelve al formulario con el
      * mensaje en vez de perder lo ya escrito.
      */
     @PostMapping
     public String guardar(@Valid @ModelAttribute("zona") ZonaTuristica zona,
                            BindingResult errores,
-                           @RequestParam(name = "idsTipoTurismo", required = false) List<Integer> idsTipoTurismo,
+                           @RequestParam(name = "idsPreferencia", required = false) List<Integer> idsPreferencia,
                            Model model) {
-        List<Integer> tipos = idsTipoTurismo == null ? List.of() : idsTipoTurismo;
+        List<Integer> preferencias = idsPreferencia == null ? List.of() : idsPreferencia;
 
-        if (tipos.isEmpty()) {
-            errores.rejectValue("tiposTurismo", "tipos.requeridos",
-                    "Debe seleccionar al menos un tipo de turismo");
+        if (preferencias.isEmpty()) {
+            errores.rejectValue("preferencias", "preferencias.requeridas",
+                    "Debe seleccionar al menos una preferencia");
         }
         if (errores.hasErrors()) {
-            model.addAttribute("idsTipoTurismo", tipos);
+            model.addAttribute("idsPreferencia", preferencias);
             cargarCatalogos(model);
             return "admin/zona-form";
         }
 
-        zonaTuristicaService.registrarOActualizar(zona, tipos, auditoriaService.usuarioActual());
+        zonaTuristicaService.registrarOActualizar(zona, preferencias, auditoriaService.usuarioActual());
         return "redirect:/zonas";
     }
 
@@ -108,6 +108,6 @@ public class ZonaTuristicaController {
 
     private void cargarCatalogos(Model model) {
         model.addAttribute("estaciones", estacionService.listarActivas());
-        model.addAttribute("tipos", tipoTurismoRepository.findAllByOrderByNombreAsc());
+        model.addAttribute("preferencias", preferenciaRepository.findAllByOrderByNombreAsc());
     }
 }

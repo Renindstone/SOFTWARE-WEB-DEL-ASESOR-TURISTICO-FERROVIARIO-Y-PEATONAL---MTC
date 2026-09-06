@@ -1,10 +1,10 @@
 package com.turismo.service;
 
-import com.turismo.model.TipoTurismo;
-import com.turismo.model.ZonaTipoTurismo;
+import com.turismo.model.Preferencia;
+import com.turismo.model.ZonaPreferencia;
 import com.turismo.model.ZonaTuristica;
-import com.turismo.repository.TipoTurismoRepository;
-import com.turismo.repository.ZonaTipoTurismoRepository;
+import com.turismo.repository.PreferenciaRepository;
+import com.turismo.repository.ZonaPreferenciaRepository;
 import com.turismo.repository.ZonaTuristicaRepository;
 
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * RF-10/RF-17: CRUD de zonas turisticas para Travel Group Peru, incluyendo
- * la asignacion N:M con TipoTurismo (tabla ZonaTipoTurismo) y el campo
+ * la asignacion N:M con Preferencia (tabla ZonaPreferencia) y el campo
  * ZonCupoMaximoDiario usado por AforoService. Cada alta, modificacion y
  * baja queda registrada en AuditoriaLog (RF-15/RNF-07).
  */
@@ -26,17 +26,17 @@ public class ZonaTuristicaService {
     private static final String TABLA_AUDITADA = "zona_turistica";
 
     private final ZonaTuristicaRepository zonaTuristicaRepository;
-    private final ZonaTipoTurismoRepository zonaTipoTurismoRepository;
-    private final TipoTurismoRepository tipoTurismoRepository;
+    private final ZonaPreferenciaRepository zonaPreferenciaRepository;
+    private final PreferenciaRepository preferenciaRepository;
     private final AuditoriaService auditoriaService;
 
     public ZonaTuristicaService(ZonaTuristicaRepository zonaTuristicaRepository,
-                                 ZonaTipoTurismoRepository zonaTipoTurismoRepository,
-                                 TipoTurismoRepository tipoTurismoRepository,
+                                 ZonaPreferenciaRepository zonaPreferenciaRepository,
+                                 PreferenciaRepository preferenciaRepository,
                                  AuditoriaService auditoriaService) {
         this.zonaTuristicaRepository = zonaTuristicaRepository;
-        this.zonaTipoTurismoRepository = zonaTipoTurismoRepository;
-        this.tipoTurismoRepository = tipoTurismoRepository;
+        this.zonaPreferenciaRepository = zonaPreferenciaRepository;
+        this.preferenciaRepository = preferenciaRepository;
         this.auditoriaService = auditoriaService;
     }
 
@@ -48,14 +48,14 @@ public class ZonaTuristicaService {
         return zonaTuristicaRepository.findAll();
     }
 
-    /** Listado de mantenimiento con estacion y tipos ya cargados (RNF-01). */
-    public List<ZonaTuristica> listarTodasConEstacionYTipos() {
-        return zonaTuristicaRepository.listarTodasConEstacionYTipos();
+    /** Listado de mantenimiento con estacion y preferencias ya cargadas (RNF-01). */
+    public List<ZonaTuristica> listarTodasConEstacionYPreferencias() {
+        return zonaTuristicaRepository.listarTodasConEstacionYPreferencias();
     }
 
-    /** RF-09: zonas activas con estacion y tipos ya cargados, para el listado asignado. */
-    public List<ZonaTuristica> listarActivasConEstacionYTipos() {
-        return zonaTuristicaRepository.listarActivasConEstacionYTipos();
+    /** RF-09: zonas activas con estacion y preferencias ya cargadas, para el listado asignado. */
+    public List<ZonaTuristica> listarActivasConEstacionYPreferencias() {
+        return zonaTuristicaRepository.listarActivasConEstacionYPreferencias();
     }
 
     /** RF-03: solo zonas activas alcanzables desde la estacion elegida. */
@@ -73,14 +73,14 @@ public class ZonaTuristicaService {
     }
 
     /**
-     * CU-04: valida que la zona tenga al menos un tipo de turismo asociado
+     * CU-04: valida que la zona tenga al menos una preferencia asociada
      * (CN-05) y una estacion cercana, guarda el registro y deja constancia en
      * la auditoria indicando si fue alta o modificacion.
      */
     @Transactional
-    public ZonaTuristica registrarOActualizar(ZonaTuristica zona, List<Integer> idsTipoTurismo, String usuario) {
-        if (idsTipoTurismo == null || idsTipoTurismo.isEmpty()) {
-            throw new IllegalArgumentException("Debe seleccionar al menos un tipo de turismo");
+    public ZonaTuristica registrarOActualizar(ZonaTuristica zona, List<Integer> idsPreferencia, String usuario) {
+        if (idsPreferencia == null || idsPreferencia.isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar al menos una preferencia");
         }
         if (zona.getEstacionCercana() == null) {
             throw new IllegalArgumentException("Debe seleccionar la estación ferroviaria más cercana");
@@ -93,10 +93,10 @@ public class ZonaTuristicaService {
         String valorAnterior = esAlta ? null : describir(zonaTuristicaRepository.findById(zona.getId()).orElse(null));
 
         ZonaTuristica guardada = zonaTuristicaRepository.save(zona);
-        asignarTiposTurismo(guardada, idsTipoTurismo);
+        asignarPreferencias(guardada, idsPreferencia);
 
         auditoriaService.registrarAuditoria(usuario, esAlta ? "INSERT" : "UPDATE", TABLA_AUDITADA,
-                valorAnterior, describir(guardada) + "; tipos=" + nombresDeTipos(idsTipoTurismo));
+                valorAnterior, describir(guardada) + "; preferencias=" + nombresDePreferencias(idsPreferencia));
 
         return guardada;
     }
@@ -121,30 +121,30 @@ public class ZonaTuristicaService {
     }
 
     @Transactional
-    public void asignarTiposTurismo(ZonaTuristica zona, List<Integer> idsTipoTurismo) {
-        zonaTipoTurismoRepository.deleteAll(
-                zonaTipoTurismoRepository.findByZonaTuristica_Id(zona.getId()));
+    public void asignarPreferencias(ZonaTuristica zona, List<Integer> idsPreferencia) {
+        zonaPreferenciaRepository.deleteAll(
+                zonaPreferenciaRepository.findByZonaTuristica_Id(zona.getId()));
 
-        for (Integer idTipo : idsTipoTurismo) {
-            TipoTurismo tipo = tipoTurismoRepository.findById(idTipo)
-                    .orElseThrow(() -> new IllegalArgumentException("Tipo de turismo no encontrado: " + idTipo));
-            ZonaTipoTurismo relacion = new ZonaTipoTurismo();
+        for (Integer idPreferencia : idsPreferencia) {
+            Preferencia preferencia = preferenciaRepository.findById(idPreferencia)
+                    .orElseThrow(() -> new IllegalArgumentException("Preferencia no encontrada: " + idPreferencia));
+            ZonaPreferencia relacion = new ZonaPreferencia();
             relacion.setZonaTuristica(zona);
-            relacion.setTipoTurismo(tipo);
-            zonaTipoTurismoRepository.save(relacion);
+            relacion.setPreferencia(preferencia);
+            zonaPreferenciaRepository.save(relacion);
         }
     }
 
-    /** Ids de TipoTurismo ya asociados a la zona, para preseleccionarlos en el formulario. */
-    public List<Integer> listarIdsTipoTurismo(Integer idZona) {
-        return zonaTipoTurismoRepository.findByZonaTuristica_Id(idZona).stream()
-                .map(relacion -> relacion.getTipoTurismo().getId())
+    /** Ids de Preferencia ya asociados a la zona, para preseleccionarlos en el formulario. */
+    public List<Integer> listarIdsPreferencia(Integer idZona) {
+        return zonaPreferenciaRepository.findByZonaTuristica_Id(idZona).stream()
+                .map(relacion -> relacion.getPreferencia().getId())
                 .collect(Collectors.toList());
     }
 
-    private String nombresDeTipos(List<Integer> idsTipoTurismo) {
-        return tipoTurismoRepository.findAllById(idsTipoTurismo).stream()
-                .map(TipoTurismo::getNombre)
+    private String nombresDePreferencias(List<Integer> idsPreferencia) {
+        return preferenciaRepository.findAllById(idsPreferencia).stream()
+                .map(Preferencia::getNombre)
                 .collect(Collectors.joining(", "));
     }
 

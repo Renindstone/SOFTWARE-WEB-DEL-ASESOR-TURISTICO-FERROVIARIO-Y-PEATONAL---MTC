@@ -1,6 +1,6 @@
 package com.turismo.service;
 
-import com.turismo.dto.PreferenciaDTO;
+import com.turismo.dto.BusquedaZonaDTO;
 import com.turismo.dto.ZonaResultadoDTO;
 import com.turismo.model.Dificultad;
 import com.turismo.model.Estacion;
@@ -111,7 +111,7 @@ class PreferenciaServiceIntegracionTest {
      */
     @Test
     void descartarZonasNoInvalidaLaBusquedaCompleta() {
-        PreferenciaDTO sinFiltros = new PreferenciaDTO();
+        BusquedaZonaDTO sinFiltros = new BusquedaZonaDTO();
 
         assertThatCode(() -> preferenciaService.buscarZonasRecomendadas(sinFiltros))
                 .doesNotThrowAnyException();
@@ -125,10 +125,10 @@ class PreferenciaServiceIntegracionTest {
     /** Y lo mismo filtrando por la estacion activa, que es el otro camino del metodo. */
     @Test
     void devuelveLaZonaAlcanzableAlFiltrarPorEstacion() {
-        PreferenciaDTO preferencia = new PreferenciaDTO();
-        preferencia.setIdEstacionOrigen(activa.getId());
+        BusquedaZonaDTO busqueda = new BusquedaZonaDTO();
+        busqueda.setIdEstacionOrigen(activa.getId());
 
-        List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(preferencia);
+        List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(busqueda);
 
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactly("Zona alcanzable");

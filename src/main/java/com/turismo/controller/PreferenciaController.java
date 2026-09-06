@@ -1,8 +1,8 @@
 package com.turismo.controller;
 
-import com.turismo.dto.PreferenciaDTO;
+import com.turismo.dto.BusquedaZonaDTO;
 import com.turismo.dto.ZonaResultadoDTO;
-import com.turismo.repository.TipoTurismoRepository;
+import com.turismo.repository.PreferenciaRepository;
 import com.turismo.service.EstacionService;
 import com.turismo.service.PreferenciaService;
 import jakarta.validation.Valid;
@@ -31,14 +31,14 @@ public class PreferenciaController {
 
     private final PreferenciaService preferenciaService;
     private final EstacionService estacionService;
-    private final TipoTurismoRepository tipoTurismoRepository;
+    private final PreferenciaRepository preferenciaRepository;
 
     public PreferenciaController(PreferenciaService preferenciaService,
                                   EstacionService estacionService,
-                                  TipoTurismoRepository tipoTurismoRepository) {
+                                  PreferenciaRepository preferenciaRepository) {
         this.preferenciaService = preferenciaService;
         this.estacionService = estacionService;
-        this.tipoTurismoRepository = tipoTurismoRepository;
+        this.preferenciaRepository = preferenciaRepository;
     }
 
     /**
@@ -47,23 +47,23 @@ public class PreferenciaController {
      * lo que el turista ya habia marcado.
      */
     @GetMapping
-    public String buscar(@Valid @ModelAttribute("preferencia") PreferenciaDTO preferencia,
+    public String buscar(@Valid @ModelAttribute("busqueda") BusquedaZonaDTO busqueda,
                           BindingResult errores, Model model) {
         cargarCatalogos(model);
         if (errores.hasErrors()) {
             return "cliente/preferencias";
         }
 
-        List<ZonaResultadoDTO> zonas = preferenciaService.buscarZonasRecomendadas(preferencia);
+        List<ZonaResultadoDTO> zonas = preferenciaService.buscarZonasRecomendadas(busqueda);
         model.addAttribute("zonas", zonas);
         model.addAttribute("hayBusqueda", Boolean.TRUE);
         return "cliente/preferencias";
     }
 
-    /** RF-02: solo estaciones activas; RNF-06: tipos de turismo desde la tabla parametrica. */
+    /** RF-02: solo estaciones activas; RNF-06: preferencias desde la tabla parametrica. */
     private void cargarCatalogos(Model model) {
         model.addAttribute("estaciones", estacionService.listarActivas());
-        model.addAttribute("tipos", tipoTurismoRepository.findAllByOrderByNombreAsc());
+        model.addAttribute("preferencias", preferenciaRepository.findAllByOrderByNombreAsc());
         model.addAttribute("dificultades", preferenciaService.listarDificultades());
     }
 }

@@ -7,28 +7,28 @@ import lombok.NoArgsConstructor;
 
 /**
  * Entidad intermedia que resuelve la relacion N:M entre ZonaTuristica y
- * TipoTurismo (una zona puede pertenecer simultaneamente a mas de una
+ * Preferencia (una zona puede pertenecer simultaneamente a mas de una
  * categoria turistica). Ver seccion 6.1 y 6.4 de ProyectoFinalSOftware.docx.
  */
 @Entity
-@Table(name = "zona_tipo_turismo",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"ZtiIdZonaTuristica", "ZtiIdTipoTurismo"}))
+@Table(name = "zona_preferencia",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"ZprIdZonaTuristica", "ZprIdPreferencia"}))
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZonaTipoTurismo {
+public class ZonaPreferencia {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ZtiIdZonaTipo")
+    @Column(name = "ZprIdZonaPreferencia")
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ZtiIdZonaTuristica", nullable = false)
+    @JoinColumn(name = "ZprIdZonaTuristica", nullable = false)
     private ZonaTuristica zonaTuristica;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ZtiIdTipoTurismo", nullable = false)
-    private TipoTurismo tipoTurismo;
+    @JoinColumn(name = "ZprIdPreferencia", nullable = false)
+    private Preferencia preferencia;
 
 }

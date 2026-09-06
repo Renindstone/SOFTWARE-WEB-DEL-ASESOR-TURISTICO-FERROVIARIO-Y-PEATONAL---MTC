@@ -19,7 +19,7 @@
   <!-- RF-01/RF-02/RF-03: los cuatro criterios son opcionales y se acumulan. -->
   <div class="card pref-card mb-4">
     <div class="card-body p-4">
-      <form method="get" th:action="@{/preferencias}" th:object="${preferencia}" id="filtros-zonas">
+      <form method="get" th:action="@{/preferencias}" th:object="${busqueda}" id="filtros-zonas">
 
         <!-- CN-05: un tiempo fuera de rango se avisa aqui. #fields solo
              resuelve dentro del elemento que declara th:object. -->
@@ -65,18 +65,18 @@
 
         <div class="divider-soft"></div>
 
-        <!-- RNF-06: los tipos vienen de la tabla parametrica tipo_turismo. -->
+        <!-- RNF-06: las preferencias vienen de la tabla parametrica preferencia. -->
         <div>
-          <div class="section-label"><i class="bi bi-compass"></i> Tipo de turismo</div>
+          <div class="section-label"><i class="bi bi-compass"></i> Preferencia</div>
           <div class="row g-2">
-            <div class="col-12 col-sm-6 col-lg-3" th:each="tipo : ${tipos}">
-              <div class="tipo-check form-check">
-                <input class="form-check-input" type="checkbox" name="idsTipoTurismo"
-                       th:id="${'tipo-' + tipo.id}" th:value="${tipo.id}"
-                       th:checked="${preferencia.idsTipoTurismo != null
-                                    and #lists.contains(preferencia.idsTipoTurismo, tipo.id)}">
-                <label class="form-check-label" th:for="${'tipo-' + tipo.id}"
-                       th:text="${tipo.nombre}" th:title="${tipo.descripcion}"></label>
+            <div class="col-12 col-sm-6 col-lg-3" th:each="pref : ${preferencias}">
+              <div class="preferencia-check form-check">
+                <input class="form-check-input" type="checkbox" name="idsPreferencia"
+                       th:id="${'preferencia-' + pref.id}" th:value="${pref.id}"
+                       th:checked="${busqueda.idsPreferencia != null
+                                    and #lists.contains(busqueda.idsPreferencia, pref.id)}">
+                <label class="form-check-label" th:for="${'preferencia-' + pref.id}"
+                       th:text="${pref.nombre}" th:title="${pref.descripcion}"></label>
               </div>
             </div>
           </div>
@@ -88,7 +88,7 @@
             <i class="bi bi-search me-2"></i>Aplicar filtros
           </button>
           <a class="btn btn-mtc-outline" th:href="@{/preferencias}"
-             th:classappend="${preferencia.sinFiltros} ? 'disabled' : ''">
+             th:classappend="${busqueda.sinFiltros} ? 'disabled' : ''">
             <i class="bi bi-x-lg me-1"></i>Limpiar
           </a>
         </div>
@@ -103,11 +103,11 @@
       <span th:text="${#lists.size(zonas)}">0</span>
       <span th:text="${#lists.size(zonas) == 1} ? 'zona turística' : 'zonas turísticas'">zonas turísticas</span>
     </h2>
-    <span class="page-sub small" th:if="${preferencia.sinFiltros}">
+    <span class="page-sub small" th:if="${busqueda.sinFiltros}">
       Catálogo completo. Marca un filtro para acotarlo.
     </span>
-    <span class="page-sub small" th:unless="${preferencia.sinFiltros}"
-          th:text="'Filtros activos: ' + ${preferencia.contarFiltrosActivos()}">Filtros activos: 0</span>
+    <span class="page-sub small" th:unless="${busqueda.sinFiltros}"
+          th:text="'Filtros activos: ' + ${busqueda.contarFiltrosActivos()}">Filtros activos: 0</span>
   </div>
 
   <div class="row g-3" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
@@ -122,7 +122,7 @@
           <p class="card-text small page-sub" th:text="${zona.descripcion}">Descripción</p>
 
           <div class="mb-2 d-flex flex-wrap gap-1">
-            <span class="tipo-pill" th:each="tipo : ${zona.tiposTurismo}" th:text="${tipo}">Tipo</span>
+            <span class="preferencia-pill" th:each="pref : ${zona.preferencias}" th:text="${pref}">Preferencia</span>
           </div>
 
           <ul class="list-unstyled small mb-3">

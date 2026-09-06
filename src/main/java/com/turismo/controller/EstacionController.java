@@ -42,7 +42,7 @@ public class EstacionController {
     /** RF-09: estaciones con las zonas turisticas que tienen asignadas. */
     @GetMapping("/zonas-asignadas")
     public String listarConZonas(Model model) {
-        model.addAttribute("zonas", zonaTuristicaService.listarActivasConEstacionYTipos());
+        model.addAttribute("zonas", zonaTuristicaService.listarActivasConEstacionYPreferencias());
         return "admin/estaciones-zonas";
     }
 

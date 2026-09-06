@@ -5,14 +5,14 @@ import java.util.List;
 
 /**
  * Zona turistica filtrada segun las preferencias del turista (RF-03),
- * ya asociada a su(s) tipo(s) de turismo (relacion N:M ZonaTipoTurismo).
+ * ya asociada a sus preferencias (relacion N:M ZonaPreferencia).
  */
 public class ZonaResultadoDTO {
 
     private Integer idZona;
     private String nombre;
     private String descripcion;
-    private List<String> tiposTurismo;
+    private List<String> preferencias;
     private BigDecimal costoAproximado;
     private Integer cupoMaximoDiario;
     /**
@@ -51,12 +51,12 @@ public class ZonaResultadoDTO {
         this.descripcion = descripcion;
     }
 
-    public List<String> getTiposTurismo() {
-        return tiposTurismo;
+    public List<String> getPreferencias() {
+        return preferencias;
     }
 
-    public void setTiposTurismo(List<String> tiposTurismo) {
-        this.tiposTurismo = tiposTurismo;
+    public void setPreferencias(List<String> preferencias) {
+        this.preferencias = preferencias;
     }
 
     public BigDecimal getCostoAproximado() {

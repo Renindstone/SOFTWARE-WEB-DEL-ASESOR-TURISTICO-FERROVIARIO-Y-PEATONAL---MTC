@@ -57,6 +57,6 @@ public class ZonaTuristica {
     @OneToMany(mappedBy = "zonaTuristica", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ZonaTipoTurismo> tiposTurismo = new ArrayList<>();
+    private List<ZonaPreferencia> preferencias = new ArrayList<>();
 
 }

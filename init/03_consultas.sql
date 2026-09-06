@@ -27,7 +27,7 @@
 
 -- ----------------------------------------------------------------------------
 -- vw_zonas_turisticas
--- Zona turistica con su estacion, sus tipos de turismo agrupados y su ruta.
+-- Zona turistica con su estacion, sus preferencias agrupados y su ruta.
 -- Es la vista mas util para revisar de un vistazo el catalogo completo.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_zonas_turisticas AS
@@ -38,8 +38,8 @@ SELECT
     e."EstCiudad"                                       AS ciudad,
     z."ZonLatitud"                                      AS latitud_zona,
     z."ZonLongitud"                                     AS longitud_zona,
-    string_agg(DISTINCT t."TipNombre", ' + '
-               ORDER BY t."TipNombre")                  AS tipos_turismo,
+    string_agg(DISTINCT p."PreNombre", ' + '
+               ORDER BY p."PreNombre")                  AS preferencias,
     r."RutDescripcion"                                   AS descripcion_ruta,
     r."RutDistanciaKm"                                  AS km_ida_vuelta,
     r."RutTiempoEstimadoMin"                            AS minutos,
@@ -49,8 +49,8 @@ SELECT
     z."ZonEstado"                                       AS estado
 FROM zona_turistica z
 JOIN estacion e            ON e."EstIdEstacion"    = z."ZonIdEstacionCercana"
-LEFT JOIN zona_tipo_turismo zt ON zt."ZtiIdZonaTuristica" = z."ZonIdZona"
-LEFT JOIN tipo_turismo t   ON t."TipIdTipoTurismo" = zt."ZtiIdTipoTurismo"
+LEFT JOIN zona_preferencia zp ON zp."ZprIdZonaTuristica" = z."ZonIdZona"
+LEFT JOIN preferencia p   ON p."PreIdPreferencia" = zp."ZprIdPreferencia"
 LEFT JOIN ruta_peatonal r  ON r."RutIdZonaDestino" = z."ZonIdZona"
 LEFT JOIN dificultad d     ON d."DifIdDificultad"  = r."RutIdDificultad"
 GROUP BY z."ZonIdZona", z."ZonNombre", e."EstNombre", e."EstCiudad",
@@ -184,9 +184,9 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 
 -- ----------------------------------------------------------------------------
--- fn_buscar_zonas(codigo_estacion, tipo_turismo, dificultad)
+-- fn_buscar_zonas(codigo_estacion, preferencia, dificultad)
 -- Busqueda principal del turista (RF-03).
---   - p_tipo y p_dificultad son opcionales: pasar NULL para no filtrar.
+--   - p_preferencia y p_dificultad son opcionales: pasar NULL para no filtrar.
 --   - Excluye estaciones y zonas inactivas (RF-02).
 -- Ejemplos:
 --   SELECT * FROM fn_buscar_zonas('CUS-OLL', 'Naturaleza', NULL);
@@ -194,11 +194,11 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_buscar_zonas(
     p_codigo_estacion VARCHAR,
-    p_tipo            VARCHAR DEFAULT NULL,
+    p_preferencia     VARCHAR DEFAULT NULL,
     p_dificultad      VARCHAR DEFAULT NULL
 ) RETURNS TABLE (
     zona            VARCHAR,
-    tipos_turismo   TEXT,
+    preferencias   TEXT,
     descripcion_ruta VARCHAR,
     km_ida_vuelta   NUMERIC,
     minutos         INTEGER,
@@ -208,7 +208,7 @@ CREATE OR REPLACE FUNCTION fn_buscar_zonas(
 BEGIN
     RETURN QUERY
     SELECT z."ZonNombre",
-           string_agg(DISTINCT t2."TipNombre", ' + ' ORDER BY t2."TipNombre"),
+           string_agg(DISTINCT p2."PreNombre", ' + ' ORDER BY p2."PreNombre"),
            r."RutDescripcion",
            r."RutDistanciaKm",
            r."RutTiempoEstimadoMin",
@@ -218,18 +218,18 @@ BEGIN
     JOIN estacion e           ON e."EstIdEstacion"      = z."ZonIdEstacionCercana"
     JOIN ruta_peatonal r      ON r."RutIdZonaDestino"   = z."ZonIdZona"
     JOIN dificultad d         ON d."DifIdDificultad"    = r."RutIdDificultad"
-    JOIN zona_tipo_turismo zt ON zt."ZtiIdZonaTuristica" = z."ZonIdZona"
-    JOIN tipo_turismo t2      ON t2."TipIdTipoTurismo"  = zt."ZtiIdTipoTurismo"
+    JOIN zona_preferencia zp ON zp."ZprIdZonaTuristica" = z."ZonIdZona"
+    JOIN preferencia p2      ON p2."PreIdPreferencia"  = zp."ZprIdPreferencia"
     WHERE e."EstCodigo" = p_codigo_estacion
       AND e."EstEstado" = 'Activa'
       AND z."ZonEstado" = 'Activa'
       AND (p_dificultad IS NULL OR d."DifNombre" = p_dificultad)
-      AND (p_tipo IS NULL OR EXISTS (
+      AND (p_preferencia IS NULL OR EXISTS (
             SELECT 1
-            FROM zona_tipo_turismo zt2
-            JOIN tipo_turismo t3 ON t3."TipIdTipoTurismo" = zt2."ZtiIdTipoTurismo"
-            WHERE zt2."ZtiIdZonaTuristica" = z."ZonIdZona"
-              AND t3."TipNombre" = p_tipo))
+            FROM zona_preferencia zp2
+            JOIN preferencia p3 ON p3."PreIdPreferencia" = zp2."ZprIdPreferencia"
+            WHERE zp2."ZprIdZonaTuristica" = z."ZonIdZona"
+              AND p3."PreNombre" = p_preferencia))
     GROUP BY z."ZonNombre", r."RutDescripcion", r."RutDistanciaKm", r."RutTiempoEstimadoMin",
              d."DifNombre", z."ZonCostoAprox"
     ORDER BY r."RutDistanciaKm";
@@ -416,13 +416,13 @@ BEGIN
     RETURN QUERY
     SELECT 'rol'::TEXT,                   COUNT(*) FROM rol
     UNION ALL SELECT 'usuario',           COUNT(*) FROM usuario
-    UNION ALL SELECT 'tipo_turismo',      COUNT(*) FROM tipo_turismo
+    UNION ALL SELECT 'preferencia',      COUNT(*) FROM preferencia
     UNION ALL SELECT 'dificultad',        COUNT(*) FROM dificultad
     UNION ALL SELECT 'categoria_visitante', COUNT(*) FROM categoria_visitante
     UNION ALL SELECT 'estacion',          COUNT(*) FROM estacion
     UNION ALL SELECT 'servicio_tren',     COUNT(*) FROM servicio_tren
     UNION ALL SELECT 'zona_turistica',    COUNT(*) FROM zona_turistica
-    UNION ALL SELECT 'zona_tipo_turismo', COUNT(*) FROM zona_tipo_turismo
+    UNION ALL SELECT 'zona_preferencia', COUNT(*) FROM zona_preferencia
     UNION ALL SELECT 'ruta_peatonal',     COUNT(*) FROM ruta_peatonal
     UNION ALL SELECT 'prevision_clima',   COUNT(*) FROM prevision_clima
     UNION ALL SELECT 'informe_planificacion', COUNT(*) FROM informe_planificacion

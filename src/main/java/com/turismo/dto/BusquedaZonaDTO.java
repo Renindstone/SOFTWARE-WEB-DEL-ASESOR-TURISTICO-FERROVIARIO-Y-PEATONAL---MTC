@@ -13,10 +13,10 @@ import java.util.List;
  * aqui solo queda la validacion de rango del tiempo, que sigue teniendo
  * sentido cuando el campo viene informado.
  */
-public class PreferenciaDTO {
+public class BusquedaZonaDTO {
 
-    /** Ids de TipoTurismo seleccionados de la tabla parametrica (RNF-06). */
-    private List<Integer> idsTipoTurismo;
+    /** Ids de Preferencia seleccionados de la tabla parametrica (RNF-06). */
+    private List<Integer> idsPreferencia;
 
     @Min(value = 1, message = "El tiempo disponible debe ser mayor a cero")
     private Integer tiempoDisponibleMin;
@@ -32,7 +32,7 @@ public class PreferenciaDTO {
         if (idEstacionOrigen != null) {
             filtros++;
         }
-        if (idsTipoTurismo != null && !idsTipoTurismo.isEmpty()) {
+        if (idsPreferencia != null && !idsPreferencia.isEmpty()) {
             filtros++;
         }
         if (tiempoDisponibleMin != null) {
@@ -48,12 +48,12 @@ public class PreferenciaDTO {
         return contarFiltrosActivos() == 0;
     }
 
-    public List<Integer> getIdsTipoTurismo() {
-        return idsTipoTurismo;
+    public List<Integer> getIdsPreferencia() {
+        return idsPreferencia;
     }
 
-    public void setIdsTipoTurismo(List<Integer> idsTipoTurismo) {
-        this.idsTipoTurismo = idsTipoTurismo;
+    public void setIdsPreferencia(List<Integer> idsPreferencia) {
+        this.idsPreferencia = idsPreferencia;
     }
 
     public Integer getTiempoDisponibleMin() {

@@ -1,11 +1,11 @@
 package com.turismo.service;
 
-import com.turismo.dto.PreferenciaDTO;
+import com.turismo.dto.BusquedaZonaDTO;
 import com.turismo.dto.ZonaResultadoDTO;
 import com.turismo.model.Dificultad;
 import com.turismo.model.Estacion;
-import com.turismo.model.TipoTurismo;
-import com.turismo.model.ZonaTipoTurismo;
+import com.turismo.model.Preferencia;
+import com.turismo.model.ZonaPreferencia;
 import com.turismo.model.ZonaTuristica;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +38,9 @@ class PreferenciaServiceTest {
 
     private static final Integer ID_OLLANTAYTAMBO = 4;
     private static final Integer ID_AGUAS_CALIENTES = 5;
-    private static final TipoTurismo HISTORIA = crearTipo(1, "Historia/Cultura");
-    private static final TipoTurismo NATURALEZA = crearTipo(2, "Naturaleza");
-    private static final TipoTurismo AVENTURA = crearTipo(3, "Aventura");
+    private static final Preferencia HISTORIA = crearPreferencia(1, "Historia/Cultura");
+    private static final Preferencia NATURALEZA = crearPreferencia(2, "Naturaleza");
+    private static final Preferencia AVENTURA = crearPreferencia(3, "Aventura");
 
     /** Mismos valores que siembra 02_datos.sql en la tabla dificultad. */
     private static final List<Dificultad> NIVELES = List.of(
@@ -75,11 +75,11 @@ class PreferenciaServiceTest {
         return dificultad;
     }
 
-    private static TipoTurismo crearTipo(Integer id, String nombre) {
-        TipoTurismo tipo = new TipoTurismo();
-        tipo.setId(id);
-        tipo.setNombre(nombre);
-        return tipo;
+    private static Preferencia crearPreferencia(Integer id, String nombre) {
+        Preferencia preferencia = new Preferencia();
+        preferencia.setId(id);
+        preferencia.setNombre(nombre);
+        return preferencia;
     }
 
     private static Estacion crearEstacion(Integer id, String nombre, String lat, String lon) {
@@ -93,7 +93,7 @@ class PreferenciaServiceTest {
     }
 
     private ZonaTuristica crearZona(Integer id, String nombre, String lat, String lon,
-                                     Estacion estacionCercana, TipoTurismo... tipos) {
+                                     Estacion estacionCercana, Preferencia... preferencias) {
         ZonaTuristica zona = new ZonaTuristica();
         zona.setId(id);
         zona.setNombre(nombre);
@@ -101,20 +101,20 @@ class PreferenciaServiceTest {
         zona.setLongitud(new BigDecimal(lon));
         zona.setEstacionCercana(estacionCercana);
         zona.setEstado("Activa");
-        zona.setTiposTurismo(Arrays.stream(tipos).map(tipo -> {
-            ZonaTipoTurismo rel = new ZonaTipoTurismo();
+        zona.setPreferencias(Arrays.stream(preferencias).map(pref -> {
+            ZonaPreferencia rel = new ZonaPreferencia();
             rel.setZonaTuristica(zona);
-            rel.setTipoTurismo(tipo);
+            rel.setPreferencia(pref);
             return rel;
         }).collect(java.util.stream.Collectors.toList()));
         return zona;
     }
 
-    private PreferenciaDTO preferencia(Integer idEstacion, List<Integer> tipos,
+    private BusquedaZonaDTO busqueda(Integer idEstacion, List<Integer> idsPreferencia,
                                         Integer minutos, String dificultad) {
-        PreferenciaDTO dto = new PreferenciaDTO();
+        BusquedaZonaDTO dto = new BusquedaZonaDTO();
         dto.setIdEstacionOrigen(idEstacion);
-        dto.setIdsTipoTurismo(tipos);
+        dto.setIdsPreferencia(idsPreferencia);
         dto.setTiempoDisponibleMin(minutos);
         dto.setDificultad(dificultad);
         return dto;
@@ -149,7 +149,7 @@ class PreferenciaServiceTest {
 
         when(estacionService.buscarActivaPorId(ID_OLLANTAYTAMBO)).thenReturn(ollantaytambo);
         when(estacionService.buscarActivaPorId(ID_AGUAS_CALIENTES)).thenReturn(aguasCalientes);
-        when(zonaTuristicaService.listarActivasConEstacionYTipos())
+        when(zonaTuristicaService.listarActivasConEstacionYPreferencias())
                 .thenReturn(List.of(fortaleza, llaqta, termales));
     }
 
@@ -157,7 +157,7 @@ class PreferenciaServiceTest {
     @Test
     void devuelveTodasLasZonasCuandoNoSeDeclaraNingunFiltro() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, null));
+                busqueda(null, null, null, null));
 
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactlyInAnyOrder(
@@ -173,7 +173,7 @@ class PreferenciaServiceTest {
     @Test
     void mideCadaZonaDesdeSuEstacionDeAccesoCuandoNoSeEligeEstacion() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, null));
+                busqueda(null, null, null, null));
 
         assertThat(resultado)
                 .extracting(ZonaResultadoDTO::getNombre, ZonaResultadoDTO::getNombreEstacionCercana)
@@ -188,7 +188,7 @@ class PreferenciaServiceTest {
     @Test
     void recortaPorEstacionDePartida() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_AGUAS_CALIENTES, null, null, null));
+                busqueda(ID_AGUAS_CALIENTES, null, null, null));
 
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactlyInAnyOrder(
@@ -199,22 +199,22 @@ class PreferenciaServiceTest {
     @Test
     void cadaFiltroAnadidoRecortaElListado() {
         assertThat(preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, null))).hasSize(3);
+                busqueda(null, null, null, null))).hasSize(3);
         assertThat(preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_AGUAS_CALIENTES, null, null, null))).hasSize(2);
+                busqueda(ID_AGUAS_CALIENTES, null, null, null))).hasSize(2);
         assertThat(preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_AGUAS_CALIENTES, null, null, "Baja"))).hasSize(1);
+                busqueda(ID_AGUAS_CALIENTES, null, null, "Baja"))).hasSize(1);
         assertThat(preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_AGUAS_CALIENTES, List.of(AVENTURA.getId()), null, "Baja"))).isEmpty();
+                busqueda(ID_AGUAS_CALIENTES, List.of(AVENTURA.getId()), null, "Baja"))).isEmpty();
     }
 
     /** CN-10: una zona con dos categorias aparece buscando por cualquiera de ellas. */
     @Test
     void devuelveLaZonaTantoPorNaturalezaComoPorHistoriaCultura() {
         List<ZonaResultadoDTO> porNaturaleza = preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_OLLANTAYTAMBO, List.of(NATURALEZA.getId()), 600, "Alta"));
+                busqueda(ID_OLLANTAYTAMBO, List.of(NATURALEZA.getId()), 600, "Alta"));
         List<ZonaResultadoDTO> porHistoria = preferenciaService.buscarZonasRecomendadas(
-                preferencia(ID_OLLANTAYTAMBO, List.of(HISTORIA.getId()), 600, "Alta"));
+                busqueda(ID_OLLANTAYTAMBO, List.of(HISTORIA.getId()), 600, "Alta"));
 
         assertThat(porNaturaleza).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactly("Conjunto Arqueologico de Ollantaytambo");
@@ -226,7 +226,7 @@ class PreferenciaServiceTest {
     @Test
     void descartaLasZonasQueNoCabenEnElTiempoDisponible() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, 30, null));
+                busqueda(null, null, 30, null));
 
         // Fortaleza 14 min y termales 19 min entran; la llaqta, 250 min, no.
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
@@ -239,7 +239,7 @@ class PreferenciaServiceTest {
     @Test
     void descartaLasZonasQueSuperanLaDificultadAceptada() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, "Baja"));
+                busqueda(null, null, null, "Baja"));
 
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactlyInAnyOrder(
@@ -253,7 +253,7 @@ class PreferenciaServiceTest {
         aguasCalientes.setEstado("Inactiva");
 
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, null));
+                busqueda(null, null, null, null));
 
         assertThat(resultado).extracting(ZonaResultadoDTO::getNombre)
                 .containsExactly("Conjunto Arqueologico de Ollantaytambo");
@@ -263,7 +263,7 @@ class PreferenciaServiceTest {
     @Test
     void adjuntaLaRutaCalculadaACadaResultado() {
         List<ZonaResultadoDTO> resultado = preferenciaService.buscarZonasRecomendadas(
-                preferencia(null, null, null, null));
+                busqueda(null, null, null, null));
 
         assertThat(resultado).hasSize(3);
         assertThat(resultado.get(0).getRuta().getDistanciaKm()).isEqualByComparingTo("1.20");

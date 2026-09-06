@@ -49,14 +49,14 @@ CREATE TABLE usuario (
 );
  
 -- ----------------------------------------------------------------------------
--- 3. TIPO_TURISMO  (parametrica - RNF-06 Escalabilidad)
+-- 3. PREFERENCIA  (parametrica - RNF-06 Escalabilidad)
 -- ----------------------------------------------------------------------------
-CREATE TABLE tipo_turismo (
-    "TipIdTipoTurismo"  INTEGER GENERATED ALWAYS AS IDENTITY,
-    "TipNombre"         VARCHAR(30)   NOT NULL,
-    "TipDescripcion"    VARCHAR(150)  NULL,
-    CONSTRAINT pk_tipo_turismo    PRIMARY KEY ("TipIdTipoTurismo"),
-    CONSTRAINT uq_tipo_nombre     UNIQUE ("TipNombre")
+CREATE TABLE preferencia (
+    "PreIdPreferencia"  INTEGER GENERATED ALWAYS AS IDENTITY,
+    "PreNombre"         VARCHAR(30)   NOT NULL,
+    "PreDescripcion"    VARCHAR(150)  NULL,
+    CONSTRAINT pk_preferencia    PRIMARY KEY ("PreIdPreferencia"),
+    CONSTRAINT uq_preferencia_nombre     UNIQUE ("PreNombre")
 );
  
 -- ----------------------------------------------------------------------------
@@ -180,9 +180,9 @@ CREATE TABLE servicio_tren (
 -- ----------------------------------------------------------------------------
 -- 8. ZONA_TURISTICA  (fuente Travel Group Peru)
 --
--- NOTA 1: la columna "ZonIdTipoTurismo" fue retirada de esta tabla. La
+-- NOTA 1: la columna "ZonIdPreferencia" fue retirada de esta tabla. La
 -- categorizacion turistica pasa a resolverse mediante la tabla intermedia
--- zona_tipo_turismo (punto 9), ya que una misma zona puede pertenecer a mas
+-- zona_preferencia (punto 9), ya que una misma zona puede pertenecer a mas
 -- de una categoria a la vez (relacion N:M).
 --
 -- NOTA 2: "ZonLatitud"/"ZonLongitud" son la ubicacion propia del punto de
@@ -205,7 +205,7 @@ CREATE TABLE zona_turistica (
     "ZonCupoMaximoDiario"   INTEGER        NULL,
     "ZonEstado"             VARCHAR(10)    NOT NULL DEFAULT 'Activa',
     CONSTRAINT pk_zona_turistica    PRIMARY KEY ("ZonIdZona"),
-    -- 02_datos.sql resuelve las llaves foraneas de zona_tipo_turismo y
+    -- 02_datos.sql resuelve las llaves foraneas de zona_preferencia y
     -- ruta_peatonal haciendo JOIN por "ZonNombre": si hubiera dos zonas con el
     -- mismo nombre, esa carga duplicaria filas en silencio.
     CONSTRAINT uq_zona_nombre       UNIQUE ("ZonNombre"),
@@ -219,24 +219,24 @@ CREATE TABLE zona_turistica (
 );
  
 -- ----------------------------------------------------------------------------
--- 9. ZONA_TIPO_TURISMO  (tabla intermedia N:M)
+-- 9. ZONA_PREFERENCIA  (tabla intermedia N:M)
 --
--- Resuelve la relacion muchos a muchos entre zona_turistica y tipo_turismo.
+-- Resuelve la relacion muchos a muchos entre zona_turistica y preferencia.
 -- Ejemplo: la Fortaleza de Ollantaytambo puede clasificarse simultaneamente
 -- como "Historia/Cultura" y como "Naturaleza", y debe aparecer en las
 -- busquedas de ambas preferencias (RF-03).
 -- ----------------------------------------------------------------------------
-CREATE TABLE zona_tipo_turismo (
-    "ZtiIdZonaTipo"        INTEGER GENERATED ALWAYS AS IDENTITY,
-    "ZtiIdZonaTuristica"   INTEGER   NOT NULL,
-    "ZtiIdTipoTurismo"     INTEGER   NOT NULL,
-    CONSTRAINT pk_zona_tipo_turismo    PRIMARY KEY ("ZtiIdZonaTipo"),
-    CONSTRAINT fk_zti_zona             FOREIGN KEY ("ZtiIdZonaTuristica")
+CREATE TABLE zona_preferencia (
+    "ZprIdZonaPreferencia"        INTEGER GENERATED ALWAYS AS IDENTITY,
+    "ZprIdZonaTuristica"   INTEGER   NOT NULL,
+    "ZprIdPreferencia"     INTEGER   NOT NULL,
+    CONSTRAINT pk_zona_preferencia    PRIMARY KEY ("ZprIdZonaPreferencia"),
+    CONSTRAINT fk_zpr_zona             FOREIGN KEY ("ZprIdZonaTuristica")
         REFERENCES zona_turistica ("ZonIdZona") ON DELETE CASCADE,
-    CONSTRAINT fk_zti_tipo             FOREIGN KEY ("ZtiIdTipoTurismo")
-        REFERENCES tipo_turismo ("TipIdTipoTurismo") ON DELETE RESTRICT,
-    CONSTRAINT uq_zti_zona_tipo        UNIQUE ("ZtiIdZonaTuristica",
-                                               "ZtiIdTipoTurismo")
+    CONSTRAINT fk_zpr_preferencia             FOREIGN KEY ("ZprIdPreferencia")
+        REFERENCES preferencia ("PreIdPreferencia") ON DELETE RESTRICT,
+    CONSTRAINT uq_zpr_zona_preferencia        UNIQUE ("ZprIdZonaTuristica",
+                                               "ZprIdPreferencia")
 );
  
 -- ----------------------------------------------------------------------------
@@ -397,8 +397,8 @@ CREATE TABLE auditoria_log (
 -- INDICES  (soporte al RNF-01: tiempo de respuesta menor a 2 segundos)
 -- ============================================================================
 CREATE INDEX idx_zona_estacion      ON zona_turistica    ("ZonIdEstacionCercana");
-CREATE INDEX idx_zti_zona           ON zona_tipo_turismo ("ZtiIdZonaTuristica");
-CREATE INDEX idx_zti_tipo           ON zona_tipo_turismo ("ZtiIdTipoTurismo");
+CREATE INDEX idx_zpr_zona           ON zona_preferencia ("ZprIdZonaTuristica");
+CREATE INDEX idx_zpr_preferencia           ON zona_preferencia ("ZprIdPreferencia");
 CREATE INDEX idx_servicio_origen    ON servicio_tren     ("SerIdEstacionOrigen");
 CREATE INDEX idx_servicio_destino   ON servicio_tren     ("SerIdEstacionDestino");
 CREATE INDEX idx_ruta_estacion      ON ruta_peatonal     ("RutIdEstacionOrigen");

@@ -104,7 +104,7 @@
                 <tr>
                   <th>Zona</th>
                   <th>Estación</th>
-                  <th>Tipos</th>
+                  <th>Preferencias</th>
                   <th>Cupo diario</th>
                 </tr>
               </thead>
@@ -113,8 +113,8 @@
                   <td th:text="${zona.nombre}">Zona</td>
                   <td th:text="${zona.estacionCercana.nombre}">Estación</td>
                   <td>
-                    <span class="tipo-pill me-1" th:each="rel : ${zona.tiposTurismo}"
-                          th:text="${rel.tipoTurismo.nombre}">Tipo</span>
+                    <span class="preferencia-pill me-1" th:each="rel : ${zona.preferencias}"
+                          th:text="${rel.preferencia.nombre}">Preferencia</span>
                   </td>
                   <td>
                     <span th:if="${zona.cupoMaximoDiario != null}" th:text="${zona.cupoMaximoDiario}">0</span>

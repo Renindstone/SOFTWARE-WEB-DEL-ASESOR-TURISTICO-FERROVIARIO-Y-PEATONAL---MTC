@@ -115,13 +115,13 @@
               <td th:text="${v.edad} + ' años'">0 años</td>
               <td th:text="${v.cantidad}">1</td>
               <td>
-                <span class="tipo-pill" th:if="${v.categoriaTren != null}"
+                <span class="preferencia-pill" th:if="${v.categoriaTren != null}"
                       th:text="${v.categoriaTren}">Adulto</span>
                 <span class="page-sub small" th:if="${v.categoriaTren == null}">Sin tren</span>
                 <span class="ms-1" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</span>
               </td>
               <td>
-                <span class="tipo-pill" th:text="${v.categoriaZona}">Adulto</span>
+                <span class="preferencia-pill" th:text="${v.categoriaZona}">Adulto</span>
                 <span class="ms-1" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</span>
               </td>
               <td class="text-end fw-bold" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>

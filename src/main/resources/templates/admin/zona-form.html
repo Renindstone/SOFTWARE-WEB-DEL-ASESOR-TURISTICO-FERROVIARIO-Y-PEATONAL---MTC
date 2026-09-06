@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <!--
   CU-04 (RF-10/RF-17): alta y edicion de zonas turisticas por Travel Group
-  Perú. Incluye los tipos de turismo (relacion N:M, CN-10), las coordenadas
+  Perú. Incluye las preferencias (relacion N:M, CN-10), las coordenadas
   que usa el motor de rutas y el cupo maximo diario que valida AforoService.
 -->
 <head th:replace="~{layout/base :: head('Zona turística')}"></head>
@@ -25,7 +25,7 @@
       <form method="post" th:action="@{/zonas}" th:object="${zona}">
         <input type="hidden" th:field="*{id}">
 
-        <!-- CN-05: "Debe seleccionar al menos un tipo de turismo". #fields solo
+        <!-- CN-05: "Debe seleccionar al menos una preferencia". #fields solo
              resuelve dentro del elemento que declara th:object. -->
         <div class="alert alert-warning" th:if="${#fields.hasAnyErrors()}" role="alert">
           <ul class="mb-0 ps-3">
@@ -59,15 +59,15 @@
         <div class="divider-soft"></div>
 
         <!-- CN-10: una zona puede combinar varias categorias a la vez. -->
-        <div class="section-label"><i class="bi bi-compass"></i> Tipos de turismo</div>
+        <div class="section-label"><i class="bi bi-compass"></i> Preferencias</div>
         <div class="row g-2 mb-3">
-          <div class="col-12 col-sm-6" th:each="tipo : ${tipos}">
-            <div class="tipo-check form-check">
-              <input class="form-check-input" type="checkbox" name="idsTipoTurismo"
-                     th:id="${'tipo-' + tipo.id}" th:value="${tipo.id}"
-                     th:checked="${#lists.contains(idsTipoTurismo, tipo.id)}">
-              <label class="form-check-label" th:for="${'tipo-' + tipo.id}"
-                     th:text="${tipo.nombre}" th:title="${tipo.descripcion}"></label>
+          <div class="col-12 col-sm-6" th:each="pref : ${preferencias}">
+            <div class="preferencia-check form-check">
+              <input class="form-check-input" type="checkbox" name="idsPreferencia"
+                     th:id="${'preferencia-' + pref.id}" th:value="${pref.id}"
+                     th:checked="${#lists.contains(idsPreferencia, pref.id)}">
+              <label class="form-check-label" th:for="${'preferencia-' + pref.id}"
+                     th:text="${pref.nombre}" th:title="${pref.descripcion}"></label>
             </div>
           </div>
         </div>

@@ -1,11 +1,11 @@
 package com.turismo.service;
 
 import com.turismo.model.Estacion;
-import com.turismo.model.TipoTurismo;
-import com.turismo.model.ZonaTipoTurismo;
+import com.turismo.model.Preferencia;
+import com.turismo.model.ZonaPreferencia;
 import com.turismo.model.ZonaTuristica;
-import com.turismo.repository.TipoTurismoRepository;
-import com.turismo.repository.ZonaTipoTurismoRepository;
+import com.turismo.repository.PreferenciaRepository;
+import com.turismo.repository.ZonaPreferenciaRepository;
 import com.turismo.repository.ZonaTuristicaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * RF-10/RF-15/RF-17 (CU-04, CN-04/CN-05/CN-10): CRUD de zonas turisticas de
- * Travel Group Peru, con su validacion de tipos de turismo y el registro de
+ * Travel Group Peru, con su validacion de preferencias y el registro de
  * auditoria de cada operacion.
  */
 @ExtendWith(MockitoExtension.class)
@@ -43,9 +43,9 @@ class ZonaTuristicaServiceTest {
     @Mock
     private ZonaTuristicaRepository zonaTuristicaRepository;
     @Mock
-    private ZonaTipoTurismoRepository zonaTipoTurismoRepository;
+    private ZonaPreferenciaRepository zonaPreferenciaRepository;
     @Mock
-    private TipoTurismoRepository tipoTurismoRepository;
+    private PreferenciaRepository preferenciaRepository;
     @Mock
     private AuditoriaService auditoriaService;
 
@@ -54,11 +54,11 @@ class ZonaTuristicaServiceTest {
 
     private ZonaTuristica zona;
 
-    private static TipoTurismo crearTipo(Integer id, String nombre) {
-        TipoTurismo tipo = new TipoTurismo();
-        tipo.setId(id);
-        tipo.setNombre(nombre);
-        return tipo;
+    private static Preferencia crearPreferencia(Integer id, String nombre) {
+        Preferencia preferencia = new Preferencia();
+        preferencia.setId(id);
+        preferencia.setNombre(nombre);
+        return preferencia;
     }
 
     @BeforeEach
@@ -81,11 +81,11 @@ class ZonaTuristicaServiceTest {
                     }
                     return guardada;
                 });
-        when(tipoTurismoRepository.findById(2)).thenReturn(Optional.of(crearTipo(2, "Naturaleza")));
-        when(tipoTurismoRepository.findById(1)).thenReturn(Optional.of(crearTipo(1, "Historia/Cultura")));
-        when(tipoTurismoRepository.findAllById(any()))
-                .thenReturn(List.of(crearTipo(2, "Naturaleza")));
-        when(zonaTipoTurismoRepository.findByZonaTuristica_Id(any())).thenReturn(List.of());
+        when(preferenciaRepository.findById(2)).thenReturn(Optional.of(crearPreferencia(2, "Naturaleza")));
+        when(preferenciaRepository.findById(1)).thenReturn(Optional.of(crearPreferencia(1, "Historia/Cultura")));
+        when(preferenciaRepository.findAllById(any()))
+                .thenReturn(List.of(crearPreferencia(2, "Naturaleza")));
+        when(zonaPreferenciaRepository.findByZonaTuristica_Id(any())).thenReturn(List.of());
     }
 
     /** CN-04: alta valida -> se guarda y genera un registro INSERT en la auditoria. */
@@ -103,12 +103,12 @@ class ZonaTuristicaServiceTest {
         assertThat(operacion.getValue()).isEqualTo("INSERT");
     }
 
-    /** CN-05: sin ningun tipo de turismo seleccionado, no se guarda el registro. */
+    /** CN-05: sin ninguna preferencia seleccionada, no se guarda el registro. */
     @Test
-    void cn05_rechazaLaZonaSinNingunTipoDeTurismo() {
+    void cn05_rechazaLaZonaSinNingunaPreferencia() {
         assertThatThrownBy(() -> zonaTuristicaService.registrarOActualizar(zona, List.of(), "travel_ana"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("al menos un tipo de turismo");
+                .hasMessageContaining("al menos una preferencia");
 
         verify(zonaTuristicaRepository, never()).save(any());
         verify(auditoriaService, never()).registrarAuditoria(any(), any(), any(), any(), any());
@@ -126,12 +126,12 @@ class ZonaTuristicaServiceTest {
         verify(zonaTuristicaRepository, never()).save(any());
     }
 
-    /** CN-10: se persiste una fila de ZonaTipoTurismo por cada categoria marcada. */
+    /** CN-10: se persiste una fila de ZonaPreferencia por cada categoria marcada. */
     @Test
-    void cn10_guardaUnaFilaPorCadaTipoDeTurismoAsociado() {
+    void cn10_guardaUnaFilaPorCadaPreferenciaAsociada() {
         zonaTuristicaService.registrarOActualizar(zona, List.of(1, 2), "travel_ana");
 
-        verify(zonaTipoTurismoRepository, times(2)).save(any(ZonaTipoTurismo.class));
+        verify(zonaPreferenciaRepository, times(2)).save(any(ZonaPreferencia.class));
     }
 
     /**

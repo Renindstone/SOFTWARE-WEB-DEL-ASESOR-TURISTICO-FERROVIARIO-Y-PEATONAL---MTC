@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
         return "error";
     }
 
-    /** CN-05: validaciones del CRUD de zonas turisticas (tipo de turismo, estacion). */
+    /** CN-05: validaciones del CRUD de zonas turisticas (preferencia, estacion). */
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String manejarValidacionDeNegocio(IllegalArgumentException ex, Model model) {

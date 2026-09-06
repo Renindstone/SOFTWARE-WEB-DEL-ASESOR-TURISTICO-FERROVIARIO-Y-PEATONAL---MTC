@@ -36,7 +36,7 @@ END $$;
 -- ============================================================================
 -- OPCION B - Reset total del esquema
 -- Mas agresivo: elimina el esquema completo y lo recrea vacio. Ademas de las
--- tablas, borra vistas, funciones, secuencias y tipos personalizados.
+-- tablas, borra vistas, funciones, secuencias y tipos de dato personalizados.
 -- Util cuando el esquema quedo en un estado inconsistente.
 -- ============================================================================
 
@@ -64,7 +64,7 @@ END $$;
 -- DROP TABLE IF EXISTS estacion;
 -- DROP TABLE IF EXISTS categoria_visitante;
 -- DROP TABLE IF EXISTS dificultad;
--- DROP TABLE IF EXISTS tipo_turismo;
+-- DROP TABLE IF EXISTS preferencia;
 -- DROP TABLE IF EXISTS usuario;
 -- DROP TABLE IF EXISTS rol;
 

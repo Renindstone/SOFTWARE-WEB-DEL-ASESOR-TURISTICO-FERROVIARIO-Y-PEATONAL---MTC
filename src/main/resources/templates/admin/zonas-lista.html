@@ -26,7 +26,7 @@
             <tr>
               <th>Nombre</th>
               <th>Estación cercana</th>
-              <th>Tipos de turismo</th>
+              <th>Preferencias</th>
               <th>Costo aprox.</th>
               <th>Cupo máx. diario</th>
               <th>Estado</th>
@@ -43,8 +43,8 @@
               </td>
               <td th:text="${z.estacionCercana.nombre}">Estación</td>
               <td>
-                <span class="tipo-pill me-1" th:each="rel : ${z.tiposTurismo}"
-                      th:text="${rel.tipoTurismo.nombre}">Tipo</span>
+                <span class="preferencia-pill me-1" th:each="rel : ${z.preferencias}"
+                      th:text="${rel.preferencia.nombre}">Preferencia</span>
               </td>
               <td>
                 <span class="cost-pill" th:if="${z.costoAprox != null}"

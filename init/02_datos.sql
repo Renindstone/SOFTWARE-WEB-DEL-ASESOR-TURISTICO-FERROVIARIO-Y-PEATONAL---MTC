@@ -55,9 +55,9 @@ INSERT INTO usuario ("UsuNombreUsuario", "UsuContrasenia", "UsuNombre",
      (SELECT "RolIdRol" FROM rol WHERE "RolNombreRol" = 'TURISTA_PUBLICO'), 'Activo');
 
 -- ----------------------------------------------------------------------------
--- 3. TIPO_TURISMO  (tabla parametrica - RNF-06)
+-- 3. PREFERENCIA  (tabla parametrica - RNF-06)
 -- ----------------------------------------------------------------------------
-INSERT INTO tipo_turismo ("TipNombre", "TipDescripcion") VALUES
+INSERT INTO preferencia ("PreNombre", "PreDescripcion") VALUES
     ('Historia/Cultura', 'Sitios arqueologicos, templos, museos y centros historicos'),
     ('Naturaleza',       'Paisajes, miradores, jardines, aguas termales y flora local'),
     ('Aventura',         'Rutas de ascenso, senderos exigentes y actividades al aire libre'),
@@ -259,14 +259,14 @@ INSERT INTO zona_turistica ("ZonNombre", "ZonDescripcion",
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL'), 0.00, NULL, 'Inactiva');
 
 -- ----------------------------------------------------------------------------
--- 9. ZONA_TIPO_TURISMO  (relacion N:M)
+-- 9. ZONA_PREFERENCIA  (relacion N:M)
 --
 -- Varias zonas combinan mas de una categoria a la vez: por ejemplo, el
 -- Conjunto Arqueologico de Ollantaytambo es Historia/Cultura Y Naturaleza,
 -- por lo que debe aparecer en las busquedas de ambas preferencias (CN-10).
 -- ----------------------------------------------------------------------------
-INSERT INTO zona_tipo_turismo ("ZtiIdZonaTuristica", "ZtiIdTipoTurismo")
-SELECT z."ZonIdZona", t."TipIdTipoTurismo"
+INSERT INTO zona_preferencia ("ZprIdZonaTuristica", "ZprIdPreferencia")
+SELECT z."ZonIdZona", p."PreIdPreferencia"
 FROM (VALUES
     ('Mercado Central de San Pedro',            'Gastronomia'),
     ('Mercado Central de San Pedro',            'Historia/Cultura'),
@@ -295,9 +295,9 @@ FROM (VALUES
     ('Mirador de Yanahuara',                    'Historia/Cultura'),
     ('Mirador de Yanahuara',                    'Naturaleza'),
     ('Sendero Antiguo del Rio Vilcanota',       'Naturaleza')
-) AS v(zona, tipo)
+) AS v(zona, preferencia)
 JOIN zona_turistica z ON z."ZonNombre"  = v.zona
-JOIN tipo_turismo   t ON t."TipNombre"  = v.tipo;
+JOIN preferencia   p ON p."PreNombre"  = v.preferencia;
 
 -- ----------------------------------------------------------------------------
 -- 10. RUTA_PEATONAL  (circuitos de ida y vuelta - RNF-04)

@@ -1,13 +1,14 @@
 package com.turismo.service;
 
-import com.turismo.dto.PreferenciaDTO;
+import com.turismo.dto.BusquedaZonaDTO;
 import com.turismo.dto.RutaCalculadaDTO;
 import com.turismo.dto.ZonaResultadoDTO;
 import com.turismo.exception.EstacionInactivaException;
 import com.turismo.exception.RutaInvalidaException;
 import com.turismo.model.Dificultad;
 import com.turismo.model.Estacion;
-import com.turismo.model.ZonaTipoTurismo;
+import com.turismo.model.Preferencia;
+import com.turismo.model.ZonaPreferencia;
 import com.turismo.model.ZonaTuristica;
 import com.turismo.repository.DificultadRepository;
 
@@ -58,26 +59,26 @@ public class PreferenciaService {
      * filtros conservan sentido sin haber declarado estacion.
      */
     @Transactional(readOnly = true)
-    public List<ZonaResultadoDTO> buscarZonasRecomendadas(PreferenciaDTO preferencia) {
-        Estacion estacionElegida = preferencia.getIdEstacionOrigen() == null
+    public List<ZonaResultadoDTO> buscarZonasRecomendadas(BusquedaZonaDTO busqueda) {
+        Estacion estacionElegida = busqueda.getIdEstacionOrigen() == null
                 ? null
-                : estacionService.buscarActivaPorId(preferencia.getIdEstacionOrigen());
+                : estacionService.buscarActivaPorId(busqueda.getIdEstacionOrigen());
 
-        // Una sola consulta con estacion y tipos ya resueltos: el listado sin
+        // Una sola consulta con estacion y preferencias ya resueltas: el listado
         // filtros pinta el catalogo entero y no puede permitirse un N+1.
-        List<ZonaTuristica> zonas = zonaTuristicaService.listarActivasConEstacionYTipos();
+        List<ZonaTuristica> zonas = zonaTuristicaService.listarActivasConEstacionYPreferencias();
 
         // Los niveles y el techo de dificultad se leen una vez para toda la
         // busqueda, no una vez por zona.
         List<Dificultad> niveles = dificultadRepository.findAllByOrderByOrdenAsc();
-        Short techoDificultad = resolverTechoDificultad(preferencia.getDificultad());
+        Short techoDificultad = resolverTechoDificultad(busqueda.getDificultad());
 
         List<ZonaResultadoDTO> resultados = new ArrayList<>();
         for (ZonaTuristica zona : zonas) {
             Estacion origen = estacionElegida != null ? estacionElegida : zona.getEstacionCercana();
             if (!cumpleEstacion(zona, estacionElegida)
                     || !esAlcanzable(origen)
-                    || !cumpleTipoTurismo(zona, preferencia.getIdsTipoTurismo())) {
+                    || !cumplePreferencia(zona, busqueda.getIdsPreferencia())) {
                 continue;
             }
             RutaCalculadaDTO ruta;
@@ -88,7 +89,7 @@ public class PreferenciaService {
                 // estacion y no hay nada que caminar.
                 continue;
             }
-            if (!cumpleTiempoDisponible(ruta, preferencia.getTiempoDisponibleMin())
+            if (!cumpleTiempoDisponible(ruta, busqueda.getTiempoDisponibleMin())
                     || !cumpleDificultad(ruta, techoDificultad)) {
                 continue;
             }
@@ -115,12 +116,12 @@ public class PreferenciaService {
     }
 
     /** CN-10: basta con que la zona tenga una de las categorias marcadas. */
-    private boolean cumpleTipoTurismo(ZonaTuristica zona, List<Integer> idsTipoTurismo) {
-        if (idsTipoTurismo == null || idsTipoTurismo.isEmpty()) {
+    private boolean cumplePreferencia(ZonaTuristica zona, List<Integer> idsPreferencia) {
+        if (idsPreferencia == null || idsPreferencia.isEmpty()) {
             return true;
         }
-        return zona.getTiposTurismo().stream()
-                .anyMatch(rel -> idsTipoTurismo.contains(rel.getTipoTurismo().getId()));
+        return zona.getPreferencias().stream()
+                .anyMatch(rel -> idsPreferencia.contains(rel.getPreferencia().getId()));
     }
 
     /** El circuito completo debe caber en el tiempo que declaro el turista. */
@@ -168,9 +169,9 @@ public class PreferenciaService {
         dto.setLatitud(zona.getLatitud());
         dto.setLongitud(zona.getLongitud());
         dto.setRuta(ruta);
-        dto.setTiposTurismo(zona.getTiposTurismo().stream()
-                .map(ZonaTipoTurismo::getTipoTurismo)
-                .map(tipo -> tipo.getNombre())
+        dto.setPreferencias(zona.getPreferencias().stream()
+                .map(ZonaPreferencia::getPreferencia)
+                .map(Preferencia::getNombre)
                 .collect(Collectors.toList()));
         return dto;
     }

@@ -60,7 +60,7 @@ public class HomeController {
         model.addAttribute("totalEstaciones", estacionRepository.findByEstado("Activa").size());
         model.addAttribute("totalInformes", informePlanificacionRepository.count());
         model.addAttribute("totalAuditorias", auditoriaLogRepository.count());
-        model.addAttribute("zonasRecientes", zonaTuristicaService.listarActivasConEstacionYTipos()
+        model.addAttribute("zonasRecientes", zonaTuristicaService.listarActivasConEstacionYPreferencias()
                 .stream().limit(ZONAS_RECIENTES).toList());
         return "dashboard";
     }
