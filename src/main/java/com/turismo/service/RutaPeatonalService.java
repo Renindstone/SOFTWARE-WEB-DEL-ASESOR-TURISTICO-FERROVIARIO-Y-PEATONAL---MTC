@@ -44,8 +44,23 @@ public class RutaPeatonalService {
      * ambos puntos (seccion 5.1). Si la distancia de ida es cero, lanza
      * RutaInvalidaException (no existe circuito caminable).
      */
-    @Transactional(readOnly = true)
     public RutaCalculadaDTO calcularRutaPeatonalIdaVuelta(Estacion origen, ZonaTuristica destino) {
+        return calcularRutaPeatonalIdaVuelta(origen, destino,
+                dificultadRepository.findAllByOrderByOrdenAsc());
+    }
+
+    /**
+     * Variante para quien calcula muchas rutas seguidas (el buscador de
+     * zonas): recibe los niveles ya leidos y no vuelve a consultarlos una vez
+     * por zona (RNF-01).
+     *
+     * Deliberadamente sin @Transactional: esto es un calculo, no una unidad
+     * de trabajo. Con una transaccion propia, la excepcion de una zona
+     * descartable marcaba como rollback-only la transaccion del llamador y
+     * tumbaba la busqueda entera aunque el llamador capturase la excepcion.
+     */
+    public RutaCalculadaDTO calcularRutaPeatonalIdaVuelta(Estacion origen, ZonaTuristica destino,
+                                                           List<Dificultad> niveles) {
         validarOrigenActivo(origen);
 
         BigDecimal distanciaIda = HaversineCalculator.calcularDistanciaKm(
@@ -58,7 +73,7 @@ public class RutaPeatonalService {
         }
 
         BigDecimal distanciaIdaVuelta = distanciaIda.multiply(BigDecimal.valueOf(2));
-        Dificultad dificultad = clasificarDificultad(distanciaIdaVuelta);
+        Dificultad dificultad = clasificarDificultad(distanciaIdaVuelta, niveles);
 
         RutaCalculadaDTO dto = new RutaCalculadaDTO();
         dto.setNombre("Circuito " + origen.getNombre() + " - " + destino.getNombre());
@@ -87,9 +102,8 @@ public class RutaPeatonalService {
      * exigente no tiene tope (DifDistanciaMaximaKm nulo) y actua de cajon de
      * sastre para los recorridos largos.
      */
-    private Dificultad clasificarDificultad(BigDecimal distanciaIdaVuelta) {
-        List<Dificultad> niveles = dificultadRepository.findAllByOrderByOrdenAsc();
-        if (niveles.isEmpty()) {
+    private Dificultad clasificarDificultad(BigDecimal distanciaIdaVuelta, List<Dificultad> niveles) {
+        if (niveles == null || niveles.isEmpty()) {
             throw new IllegalStateException(
                     "No hay niveles de dificultad configurados en la tabla dificultad");
         }

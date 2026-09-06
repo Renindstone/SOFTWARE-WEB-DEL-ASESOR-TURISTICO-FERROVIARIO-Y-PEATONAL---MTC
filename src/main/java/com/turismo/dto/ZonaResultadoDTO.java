@@ -15,7 +15,13 @@ public class ZonaResultadoDTO {
     private List<String> tiposTurismo;
     private BigDecimal costoAproximado;
     private Integer cupoMaximoDiario;
+    /**
+     * Estacion desde la que se midio el circuito. Coincide con la que eligio
+     * el turista cuando declaro una; si no filtro por estacion, es la
+     * estacion cercana de la propia zona (ZonIdEstacionCercana).
+     */
     private Integer idEstacionCercana;
+    private String nombreEstacionCercana;
     private BigDecimal latitud;
     private BigDecimal longitud;
     /** Circuito de ida y vuelta ya calculado para esta zona (RF-04/RF-05). */
@@ -75,6 +81,14 @@ public class ZonaResultadoDTO {
 
     public void setIdEstacionCercana(Integer idEstacionCercana) {
         this.idEstacionCercana = idEstacionCercana;
+    }
+
+    public String getNombreEstacionCercana() {
+        return nombreEstacionCercana;
+    }
+
+    public void setNombreEstacionCercana(String nombreEstacionCercana) {
+        this.nombreEstacionCercana = nombreEstacionCercana;
     }
 
     public BigDecimal getLatitud() {

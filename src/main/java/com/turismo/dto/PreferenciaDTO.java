@@ -1,31 +1,52 @@
 package com.turismo.dto;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
  * Datos ingresados por el turista en el formulario de preferencias
  * (RF-01) y en la seleccion de estacion de partida (RF-02).
+ *
+ * Los cuatro campos son opcionales y funcionan como filtros que se van
+ * sumando: sin ninguno, el buscador muestra el catalogo completo de zonas
+ * activas; cada filtro que el turista anade recorta ese listado. Por eso
+ * aqui solo queda la validacion de rango del tiempo, que sigue teniendo
+ * sentido cuando el campo viene informado.
  */
 public class PreferenciaDTO {
 
     /** Ids de TipoTurismo seleccionados de la tabla parametrica (RNF-06). */
-    @NotEmpty(message = "Debe seleccionar al menos un tipo de turismo")
     private List<Integer> idsTipoTurismo;
 
-    @NotNull(message = "Indique el tiempo disponible para la caminata")
     @Min(value = 1, message = "El tiempo disponible debe ser mayor a cero")
     private Integer tiempoDisponibleMin;
 
-    /** Baja, Media, Alta (RutDificultad del diccionario de datos). */
-    @NotBlank(message = "Seleccione el nivel de dificultad")
+    /** Nombre de un nivel de la tabla dificultad; actua como techo. */
     private String dificultad;
 
-    @NotNull(message = "Seleccione la estación ferroviaria de partida")
     private Integer idEstacionOrigen;
+
+    /** Numero de filtros activos, para que la vista pueda anunciarlos. */
+    public int contarFiltrosActivos() {
+        int filtros = 0;
+        if (idEstacionOrigen != null) {
+            filtros++;
+        }
+        if (idsTipoTurismo != null && !idsTipoTurismo.isEmpty()) {
+            filtros++;
+        }
+        if (tiempoDisponibleMin != null) {
+            filtros++;
+        }
+        if (dificultad != null && !dificultad.isBlank()) {
+            filtros++;
+        }
+        return filtros;
+    }
+
+    public boolean isSinFiltros() {
+        return contarFiltrosActivos() == 0;
+    }
 
     public List<Integer> getIdsTipoTurismo() {
         return idsTipoTurismo;

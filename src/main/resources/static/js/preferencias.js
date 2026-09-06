@@ -1,26 +1,19 @@
-// Validaciones ligeras del formulario de preferencias (RF-01) en el cliente,
-// complementarias a las validaciones @Valid del backend (PreferenciaDTO).
-// El backend vuelve a validar siempre: esto solo evita un viaje al servidor.
+// Los filtros del buscador de zonas se aplican solos al cambiarlos, para que
+// el listado se recorte a medida que el turista los va marcando en vez de
+// obligarle a pulsar "Aplicar" cada vez. El boton sigue ahi para quien
+// navegue con el teclado o tenga el JavaScript desactivado: el formulario
+// funciona igual sin este archivo.
 document.addEventListener("DOMContentLoaded", function () {
-  var formulario = document.querySelector("form[action$='/preferencias']");
+  var formulario = document.getElementById("filtros-zonas");
   if (!formulario) {
     return;
   }
 
-  var aviso = document.createElement("div");
-  aviso.className = "alert alert-warning mt-3 d-none";
-  aviso.setAttribute("role", "alert");
-  aviso.textContent = "Selecciona al menos un tipo de turismo.";
-  formulario.appendChild(aviso);
-
-  formulario.addEventListener("submit", function (evento) {
-    var marcados = formulario.querySelectorAll("input[name='idsTipoTurismo']:checked");
-    if (marcados.length === 0) {
-      evento.preventDefault();
-      aviso.classList.remove("d-none");
-      aviso.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+  // "change" y no "input": en el campo de minutos, reenviar en cada pulsacion
+  // dispararia una busqueda por cada digito tecleado.
+  formulario.addEventListener("change", function (evento) {
+    if (evento.target.matches("select, input[type='checkbox'], input[type='number']")) {
+      formulario.submit();
     }
-    aviso.classList.add("d-none");
   });
 });
