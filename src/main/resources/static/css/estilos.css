@@ -372,6 +372,18 @@ body {
   margin: 0;
 }
 
+/* Fila entera pulsable (seleccion de estacion): el area de toque es la fila
+   completa, no solo el nombre, que es lo que se agradece en movil. */
+a.tablero-enlace {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.tablero-enlace:hover .tablero-nombre,
+a.tablero-enlace:focus-visible .tablero-nombre {
+  text-decoration: underline;
+}
+
 .tablero-cifras {
   display: grid;
   grid-template-columns: repeat(3, minmax(3.5rem, auto));
@@ -737,9 +749,25 @@ body {
 
   .section-card,
   .pref-card,
-  .tablero,
-  .proveedor {
+  .tablero {
     box-shadow: none;
     border-color: #999;
+  }
+
+  /* Las cabeceras de proveedor son bandas solidas en pantalla. En papel se
+     reducen a texto negro con regla gruesa: separan igual de bien y no salen
+     grises ni gastan toner. La linea vertical .limite-proveedor sigue siendo
+     la que mantiene los dos grupos distinguibles. */
+  .tabla-tarifas thead .grupo-proveedor--tren,
+  .tabla-tarifas thead .grupo-proveedor--zona {
+    background: #fff !important;
+    color: #000 !important;
+    border-bottom: 3px solid #000;
+  }
+
+  .table-mtc thead {
+    background: #fff !important;
+    color: #000 !important;
+    border-bottom: 1px solid #000;
   }
 }

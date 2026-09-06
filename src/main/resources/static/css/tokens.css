@@ -59,27 +59,33 @@
   --blanco:    #FFFFFF;
   --gris-050:  #F2F2EE;
   --gris-200:  #D9DBD4;
-  --gris-400:  #9AA29B;
+  --gris-400:  #6B756D;
   --gris-600:  #5F6B62;
   --tinta:     #17201C;
 
   /* Sello. El dorado deja de ser decoracion de tarjeta y pasa a marcar
-     una sola cosa: la procedencia institucional del documento. */
+     una sola cosa: la procedencia institucional del documento.
+
+     Contra el papel da 2.45:1, por debajo del 3:1 de la WCAG 1.4.11. Se
+     conserva a proposito: es el dorado de marca del MTC, se usa como regla
+     decorativa de 3px pegada bajo la barra verde (contra la que si contrasta)
+     y no transmite ninguna informacion que no este ademas escrita en el pie.
+     Nunca debe usarse para texto ni para el borde de un control. */
   --sello-500: #C89B3C;
   --sello-100: #F6EEDC;
 
   /* Eje meteorologico (SENAMHI). Color = dato, nunca adorno. */
-  --meteo-seco-600:    #0E7C86;
+  --meteo-seco-600:    #0D767F;
   --meteo-seco-100:    #DFF0F1;
   --meteo-lluvia-600:  #3D5AC4;
   --meteo-lluvia-100:  #E3E8FA;
-  --meteo-nublado-600: #6B7A85;
+  --meteo-nublado-600: #606D77;
   --meteo-nublado-100: #EAEDEF;
 
   /* Eje de dificultad y de aforo. Tres escalones, misma familia. */
   --nivel-ok-600:      #2E6B45;
   --nivel-ok-100:      #E4F2E9;
-  --nivel-medio-600:   #B8791B;
+  --nivel-medio-600:   #976316;
   --nivel-medio-100:   #FBF1DD;
   --nivel-critico-600: #A8341F;
   --nivel-critico-100: #FBE8E6;

@@ -6,7 +6,7 @@
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
-<main class="container py-4" style="max-width: 760px;">
+<main class="container py-4" style="max-width: 780px;">
 
   <div class="mb-4">
     <h1 class="h4 fw-bold page-title mb-1">¿Desde qué estación viajas?</h1>
@@ -14,21 +14,38 @@
     <p class="page-sub mb-0">Solo se muestran las estaciones activas de la red de PeruRail.</p>
   </div>
 
-  <div class="list-group">
-    <a th:each="est : ${estaciones}" class="list-group-item list-group-item-action d-flex
-       justify-content-between align-items-center"
+  <!-- Mismo tablero que el buscador: la altitud acompana a la ciudad porque a
+       estas alturas condiciona la caminata tanto como la distancia. -->
+  <div class="tablero" th:if="${not #lists.isEmpty(estaciones)}">
+    <a class="tablero-fila tablero-enlace" th:each="est : ${estaciones}"
        th:href="@{/preferencias(idEstacionOrigen=${est.id})}">
-      <span class="est-name">
-        <i class="bi bi-train-front"></i>
-        <span th:text="${est.nombre}">Estación</span>
-      </span>
-      <span class="small page-sub" th:text="${est.ciudad}">Ciudad</span>
+      <div>
+        <h2 class="tablero-nombre" th:text="${est.nombre}">Estación</h2>
+        <p class="page-sub small mb-0">
+          <span th:text="${est.ciudad}">Ciudad</span>
+          <span th:if="${est.codigo != null}">
+            &middot; <span class="cifra" th:text="${est.codigo}">COD</span>
+          </span>
+        </p>
+      </div>
+
+      <div class="tablero-cifras" th:if="${est.altitud != null}">
+        <span class="tablero-dato">
+          <span class="tablero-valor" th:text="${est.altitud}">0</span>
+          <span class="tablero-unidad">m s. n. m.</span>
+        </span>
+      </div>
     </a>
   </div>
 
-  <p class="page-sub small mt-3 mb-0" th:if="${#lists.isEmpty(estaciones)}">
-    No hay estaciones activas registradas. La sincronización con PeruRail aún no ha traído datos.
-  </p>
+  <div class="card section-card" th:if="${#lists.isEmpty(estaciones)}">
+    <div class="card-body text-center py-5">
+      <p class="page-sub mb-1 mx-auto">Todavía no hay estaciones activas registradas.</p>
+      <p class="small page-sub mb-0 mx-auto">
+        La sincronización con PeruRail aún no ha traído datos.
+      </p>
+    </div>
+  </div>
 
 </main>
 

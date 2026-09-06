@@ -4,33 +4,131 @@
   Version HTML imprimible del informe consolidado (RF-08). El PDF descargable
   lo produce GeneradorPdf con OpenPDF; esta plantilla queda como alternativa
   autocontenida (sin CSS externo) para archivar o adjuntar por correo.
+
+  Por eso los valores del sistema de diseno se repiten aqui en crudo en vez de
+  consumir /css/tokens.css: el archivo tiene que verse igual abierto desde un
+  correo, sin servidor delante. Si cambian los tokens, esta hoja hay que
+  actualizarla a mano; es el precio de que el documento viaje solo.
+
+  Se compone para papel: sin sombras ni fondos amplios que gasten toner, y con
+  la jerarquia marcada por reglas gruesas.
 -->
 <head>
   <meta charset="UTF-8">
   <title>Informe consolidado de visita - MTC</title>
   <style>
-    body { font-family: Helvetica, Arial, sans-serif; color: #2B322A; margin: 32px; }
-    h1 { color: #14453D; font-size: 20px; margin-bottom: 2px; }
-    .sub { color: #6B7568; font-size: 12px; margin-top: 0; }
-    table { border-collapse: collapse; width: 100%; margin-top: 18px; }
-    th, td { border: 1px solid #DEDCD2; padding: 8px 10px; font-size: 13px; text-align: left; }
-    th { background: #F6F4EF; color: #14453D; width: 38%; }
-    .total td, .total th { background: #E4F2E9; font-weight: bold; }
-    .pie { color: #6B7568; font-size: 11px; margin-top: 24px; }
+    body {
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      color: #17201C;
+      margin: 32px;
+      line-height: 1.45;
+    }
+
+    .marca {
+      border-bottom: 3px solid #C89B3C;
+      padding-bottom: 6px;
+      margin-bottom: 18px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: #5F6B62;
+    }
+
+    /* Placa de trayecto: mismo registro de senaletica que la pantalla. */
+    .placa {
+      border-top: 3px solid #17201C;
+      border-bottom: 3px solid #17201C;
+      padding: 14px 0;
+      margin-bottom: 4px;
+    }
+
+    .placa .origen {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #5F6B62;
+      margin-bottom: 2px;
+    }
+
+    .placa .destino {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #0A2A25;
+    }
+
+    .codigo {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      color: #5F6B62;
+      margin: 6px 0 22px;
+    }
+
+    h2 {
+      font-size: 13px;
+      color: #0A2A25;
+      margin: 26px 0 8px;
+    }
+
+    table { border-collapse: collapse; width: 100%; }
+
+    th, td {
+      border: 1px solid #D9DBD4;
+      padding: 7px 10px;
+      font-size: 12px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    /* Tabla resumen: etiqueta a la izquierda, cifra a la derecha. */
+    .resumen th { width: 42%; font-weight: 600; color: #5F6B62; background: #FAFAF7; }
+    .resumen td { font-family: Consolas, "Courier New", monospace; }
+
+    /* Los dos proveedores aplican tramos de edad distintos: cada grupo de
+       columnas declara el suyo, para que un mismo visitante pueda salir en
+       categorias diferentes sin que parezca un error. */
+    .proveedor { text-align: center; font-size: 11px; }
+    .proveedor small { display: block; font-weight: 400; }
+    .proveedor-tren { background: #3D5AC4; color: #FFFFFF; }
+    .proveedor-zona { background: #2E6B45; color: #FFFFFF; }
+    .limite { border-left: 2px solid #17201C; }
+    .cifra { font-family: Consolas, "Courier New", monospace; white-space: nowrap; }
+    .detalle th { background: #FAFAF7; color: #5F6B62; font-size: 11px; }
+
+    .total {
+      margin-top: 18px;
+      border-top: 3px solid #17201C;
+      border-bottom: 3px solid #17201C;
+      padding: 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+    }
+
+    .total .importe {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 22px;
+    }
+
+    .pie { color: #5F6B62; font-size: 10px; margin-top: 26px; }
   </style>
 </head>
 <body>
-  <h1>Informe consolidado de visita - MTC</h1>
-  <p class="sub">
-    Asesor Turístico Ferroviario y Peatonal &middot;
-    Código <span th:text="${informe.codigo}">INF-0001</span>
+
+  <p class="marca">Ministerio de Transportes y Comunicaciones &middot; Asesor Turístico Ferroviario y Peatonal</p>
+
+  <div class="placa">
+    <span class="origen" th:text="'Desde ' + ${informe.estacionOrigen}">Desde la estación</span>
+    <span class="destino" th:text="${informe.zonaDestino}">Zona turística</span>
+  </div>
+  <p class="codigo">
+    Código <span th:text="${informe.codigo}">INF-0001</span> &middot;
+    visita del <span th:text="${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">fecha</span>
   </p>
 
-  <table>
-    <tr><th>Fecha de visita</th>
-        <td th:text="${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">fecha</td></tr>
-    <tr><th>Estación de origen</th><td th:text="${informe.estacionOrigen}">estación</td></tr>
-    <tr><th>Zona turística</th><td th:text="${informe.zonaDestino}">zona</td></tr>
+  <h2>Recorrido y condiciones</h2>
+  <table class="resumen">
     <tr><th>Distancia (ida y vuelta)</th>
         <td th:text="${informe.ruta.distanciaKm} + ' km'">0 km</td></tr>
     <tr><th>Tiempo estimado</th>
@@ -41,32 +139,52 @@
                      ? ${informe.temperaturaMinimaC} + '°C - ' + ${informe.temperaturaMaximaC}
                        + '°C, ' + ${informe.probabilidadLluvia} + '% lluvia (' + ${informe.estadoClima} + ')'
                      : 'Sin pronóstico publicado'">clima</td></tr>
-    <tr><th>Tarifa del tren (adulto)</th>
-        <td th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</td></tr>
-    <tr><th>Ingreso a la zona (adulto)</th>
-        <td th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</td></tr>
     <tr><th>Personas</th><td th:text="${informe.totalPersonas}">1</td></tr>
-    <tr class="total"><th>Total estimado</th>
-        <td th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</td></tr>
+    <tr th:if="${informe.cupoDisponible != null}">
+        <th>Cupo restante tras la reserva</th>
+        <td th:text="${informe.cupoDisponible}">0</td></tr>
+    <tr><th>Tarifa del tren, referencia de adulto</th>
+        <td th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</td></tr>
+    <tr><th>Ingreso a la zona, referencia de adulto</th>
+        <td th:text="${informe.costoZona != null and informe.costoZona > 0} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</td></tr>
   </table>
 
-  <h2 style="color:#14453D; font-size:15px; margin-top:22px;">Detalle por visitante</h2>
-  <table>
+  <h2>Qué paga cada persona</h2>
+  <table class="detalle">
     <tr>
-      <th style="width:14%;">Edad</th>
-      <th style="width:14%;">Personas</th>
-      <th style="width:26%;">Tarifa tren</th>
-      <th style="width:26%;">Entrada zona</th>
-      <th style="width:20%;">Subtotal</th>
+      <th colspan="2"></th>
+      <th colspan="2" class="proveedor proveedor-tren limite">
+        PeruRail<small>tarifa completa desde los 12</small>
+      </th>
+      <th colspan="2" class="proveedor proveedor-zona limite">
+        Zona turística<small>tarifa reducida hasta los 17</small>
+      </th>
+      <th></th>
+    </tr>
+    <tr>
+      <th>Edad</th>
+      <th>Personas</th>
+      <th class="limite">Categoría</th>
+      <th>Importe</th>
+      <th class="limite">Categoría</th>
+      <th>Importe</th>
+      <th>Subtotal</th>
     </tr>
     <tr th:each="v : ${informe.visitantes}">
-      <td th:text="${v.edad} + ' años'">0 años</td>
-      <td th:text="${v.cantidad}">1</td>
-      <td th:text="(${v.categoriaTren} ?: 'Sin tren') + '  ·  S/ ' + ${v.subtotalTren}">Adulto</td>
-      <td th:text="${v.categoriaZona} + '  ·  S/ ' + ${v.subtotalZona}">Adulto</td>
-      <td th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
+      <td class="cifra" th:text="${v.edad} + ' años'">0 años</td>
+      <td class="cifra" th:text="${v.cantidad}">1</td>
+      <td class="limite" th:text="${v.categoriaTren} ?: 'Sin tren'">Adulto</td>
+      <td class="cifra" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</td>
+      <td class="limite" th:text="${v.categoriaZona}">Adulto</td>
+      <td class="cifra" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</td>
+      <td class="cifra" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
     </tr>
   </table>
+
+  <div class="total">
+    <span>Total estimado del grupo</span>
+    <span class="importe" th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</span>
+  </div>
 
   <p class="pie">
     Tarifa referencial: el sistema no vende ni reserva pasajes.

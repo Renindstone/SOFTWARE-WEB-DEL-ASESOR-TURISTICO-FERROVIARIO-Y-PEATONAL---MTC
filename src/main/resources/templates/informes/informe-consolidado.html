@@ -189,7 +189,7 @@
         <li class="ficha-fila">
           <span class="ficha-etiqueta">Ingreso a la zona, referencia de adulto</span>
           <span class="ficha-valor"
-                th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</span>
+                th:text="${informe.costoZona != null and informe.costoZona > 0} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</span>
         </li>
       </ul>
     </div>

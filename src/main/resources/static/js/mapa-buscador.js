@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // escala que usan las insignias del tablero.
   var COLOR_POR_DIFICULTAD = {
     "Baja": "#2E6B45",
-    "Media": "#B8791B",
+    "Media": "#976316",
     "Alta": "#A8341F"
   };
 

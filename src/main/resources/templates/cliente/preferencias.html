@@ -124,7 +124,12 @@
       <div class="tablero" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
         <!-- Las coordenadas ya viajaban en ZonaResultadoDTO y no se estaban
              usando: alimentan los marcadores de mapa-buscador.js sin que el
-             backend cambie nada. -->
+             backend cambie nada.
+
+             El ingreso se distingue entre gratuito y de pago: un "S/ 0.00" se
+             lee como un dato pendiente de cargar y no como entrada libre. Los
+             comentarios que explican el interior de la fila van aqui fuera,
+             porque dentro del th:each se emitirian una vez por zona. -->
         <article class="tablero-fila" th:each="zona : ${zonas}"
                  th:attr="data-zona-id=${zona.idZona},
                           data-lat=${zona.latitud},
@@ -146,9 +151,10 @@
             </div>
 
             <p class="page-sub small mb-3">
-              <span th:if="${zona.costoAproximado != null}">
+              <span th:if="${zona.costoAproximado != null and zona.costoAproximado > 0}">
                 Ingreso <span class="cifra fw-semibold" th:text="'S/ ' + ${zona.costoAproximado}">S/ 0</span>
               </span>
+              <span th:if="${zona.costoAproximado != null and zona.costoAproximado == 0}">Ingreso libre</span>
               <span th:if="${zona.cupoMaximoDiario != null}">
                 &middot; cupo diario <span class="cifra fw-semibold" th:text="${zona.cupoMaximoDiario}">0</span>
               </span>
