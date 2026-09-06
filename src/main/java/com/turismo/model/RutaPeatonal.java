@@ -30,9 +30,10 @@ public class RutaPeatonal {
     @Column(name = "RutTiempoEstimadoMin", nullable = false)
     private Integer tiempoEstimadoMin;
 
-    /** Valores permitidos: Baja, Media, Alta. */
-    @Column(name = "RutDificultad", length = 10, nullable = false)
-    private String dificultad;
+    /** Nivel de dificultad, ahora tabla parametrica propia (RNF-06). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "RutIdDificultad", nullable = false)
+    private Dificultad dificultad;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RutIdEstacionOrigen", nullable = false)

@@ -3,9 +3,11 @@ package com.turismo.service;
 import com.turismo.dto.RutaCalculadaDTO;
 import com.turismo.exception.EstacionInactivaException;
 import com.turismo.exception.RutaInvalidaException;
+import com.turismo.model.Dificultad;
 import com.turismo.model.Estacion;
 import com.turismo.model.RutaPeatonal;
 import com.turismo.model.ZonaTuristica;
+import com.turismo.repository.DificultadRepository;
 import com.turismo.repository.RutaPeatonalRepository;
 import com.turismo.util.HaversineCalculator;
 import org.springframework.stereotype.Service;
@@ -13,23 +15,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 /**
  * RF-04/RF-05/RNF-04: motor de calculo de la ruta peatonal de ida y
  * vuelta, usando la formula de Haversine (ver 5.1 del documento).
  * Caja Blanca: CB-01 (ruta valida), CB-02 (distancia cero -> excepcion).
+ *
+ * Los umbrales de distancia y el ritmo de caminata salen de la tabla
+ * parametrica dificultad, no de constantes de esta clase: el RNF-06 pide
+ * poder ajustarlos sin tocar el codigo fuente.
  */
 @Service
 public class RutaPeatonalService {
 
-    private static final BigDecimal UMBRAL_DIFICULTAD_MEDIA_KM = BigDecimal.valueOf(3);
-    private static final BigDecimal UMBRAL_DIFICULTAD_ALTA_KM = BigDecimal.valueOf(6);
-    private static final int VELOCIDAD_CAMINATA_MIN_POR_KM = 12;
-
     private final RutaPeatonalRepository rutaPeatonalRepository;
+    private final DificultadRepository dificultadRepository;
 
-    public RutaPeatonalService(RutaPeatonalRepository rutaPeatonalRepository) {
+    public RutaPeatonalService(RutaPeatonalRepository rutaPeatonalRepository,
+                                DificultadRepository dificultadRepository) {
         this.rutaPeatonalRepository = rutaPeatonalRepository;
+        this.dificultadRepository = dificultadRepository;
     }
 
     /**
@@ -38,6 +44,7 @@ public class RutaPeatonalService {
      * ambos puntos (seccion 5.1). Si la distancia de ida es cero, lanza
      * RutaInvalidaException (no existe circuito caminable).
      */
+    @Transactional(readOnly = true)
     public RutaCalculadaDTO calcularRutaPeatonalIdaVuelta(Estacion origen, ZonaTuristica destino) {
         validarOrigenActivo(origen);
 
@@ -51,12 +58,14 @@ public class RutaPeatonalService {
         }
 
         BigDecimal distanciaIdaVuelta = distanciaIda.multiply(BigDecimal.valueOf(2));
+        Dificultad dificultad = clasificarDificultad(distanciaIdaVuelta);
 
         RutaCalculadaDTO dto = new RutaCalculadaDTO();
         dto.setNombre("Circuito " + origen.getNombre() + " - " + destino.getNombre());
         dto.setDistanciaKm(distanciaIdaVuelta);
-        dto.setTiempoEstimadoMin(calcularTiempoEstimadoMin(distanciaIdaVuelta));
-        dto.setDificultad(calcularDificultad(distanciaIdaVuelta));
+        dto.setTiempoEstimadoMin(calcularTiempoEstimadoMin(distanciaIdaVuelta, dificultad));
+        dto.setDificultad(dificultad.getNombre());
+        dto.setOrdenDificultad(dificultad.getOrden());
         dto.setEsIdaVuelta(Boolean.TRUE);
         return dto;
     }
@@ -74,10 +83,37 @@ public class RutaPeatonalService {
     }
 
     /**
+     * Primer nivel cuyo tope de distancia cubre el circuito. El nivel mas
+     * exigente no tiene tope (DifDistanciaMaximaKm nulo) y actua de cajon de
+     * sastre para los recorridos largos.
+     */
+    private Dificultad clasificarDificultad(BigDecimal distanciaIdaVuelta) {
+        List<Dificultad> niveles = dificultadRepository.findAllByOrderByOrdenAsc();
+        if (niveles.isEmpty()) {
+            throw new IllegalStateException(
+                    "No hay niveles de dificultad configurados en la tabla dificultad");
+        }
+        return niveles.stream()
+                .filter(nivel -> nivel.getDistanciaMaximaKm() == null
+                        || distanciaIdaVuelta.compareTo(nivel.getDistanciaMaximaKm()) <= 0)
+                .findFirst()
+                .orElse(niveles.get(niveles.size() - 1));
+    }
+
+    /** Tiempo minimo de 1 minuto: RutTiempoEstimadoMin tiene CHECK > 0. */
+    private int calcularTiempoEstimadoMin(BigDecimal distanciaIdaVuelta, Dificultad dificultad) {
+        int minutos = distanciaIdaVuelta
+                .multiply(BigDecimal.valueOf(dificultad.getVelocidadMinPorKm()))
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+        return Math.max(minutos, 1);
+    }
+
+    /**
      * RNF-04: persiste el circuito calculado como RutaPeatonal, reutilizando
      * la ruta ya registrada para el mismo par estacion-zona en vez de
-     * duplicarla en cada consulta. La entidad exige RutEsIdaVuelta = TRUE
-     * (regla de negocio del caso, tambien validada por CHECK en la BD).
+     * duplicarla en cada consulta (uq_ruta_origen_zona). La entidad exige
+     * RutEsIdaVuelta = TRUE, regla de negocio del caso.
      */
     @Transactional
     public RutaPeatonal obtenerOCrearRuta(Estacion origen, ZonaTuristica destino, RutaCalculadaDTO calculo) {
@@ -92,31 +128,14 @@ public class RutaPeatonalService {
         }
         ruta.setDistanciaKm(calculo.getDistanciaKm());
         ruta.setTiempoEstimadoMin(calculo.getTiempoEstimadoMin());
-        ruta.setDificultad(calculo.getDificultad());
+        ruta.setDificultad(dificultadRepository.findByNombre(calculo.getDificultad())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Nivel de dificultad no registrado: " + calculo.getDificultad())));
         ruta.setEstacionOrigen(origen);
         ruta.setZonaDestino(destino);
         ruta.setEsIdaVuelta(Boolean.TRUE);
 
         return rutaPeatonalRepository.save(ruta);
-    }
-
-    /** Tiempo minimo de 1 minuto: RutTiempoEstimadoMin tiene CHECK > 0. */
-    private int calcularTiempoEstimadoMin(BigDecimal distanciaIdaVuelta) {
-        int minutos = distanciaIdaVuelta
-                .multiply(BigDecimal.valueOf(VELOCIDAD_CAMINATA_MIN_POR_KM))
-                .setScale(0, RoundingMode.HALF_UP)
-                .intValue();
-        return Math.max(minutos, 1);
-    }
-
-    private String calcularDificultad(BigDecimal distanciaIdaVuelta) {
-        if (distanciaIdaVuelta.compareTo(UMBRAL_DIFICULTAD_ALTA_KM) > 0) {
-            return "Alta";
-        }
-        if (distanciaIdaVuelta.compareTo(UMBRAL_DIFICULTAD_MEDIA_KM) > 0) {
-            return "Media";
-        }
-        return "Baja";
     }
 
     private String recortar(String texto, int maximo) {

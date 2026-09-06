@@ -11,8 +11,10 @@ public class RutaCalculadaDTO {
     private String nombre;
     private BigDecimal distanciaKm;
     private Integer tiempoEstimadoMin;
-    /** Baja, Media, Alta. */
+    /** Nombre del nivel: Baja, Media, Alta (tabla dificultad). */
     private String dificultad;
+    /** DifOrden del nivel; permite compararlo sin depender de su nombre. */
+    private Short ordenDificultad;
     private Boolean esIdaVuelta = Boolean.TRUE;
 
     public String getNombre() {
@@ -45,6 +47,14 @@ public class RutaCalculadaDTO {
 
     public void setDificultad(String dificultad) {
         this.dificultad = dificultad;
+    }
+
+    public Short getOrdenDificultad() {
+        return ordenDificultad;
+    }
+
+    public void setOrdenDificultad(Short ordenDificultad) {
+        this.ordenDificultad = ordenDificultad;
     }
 
     public Boolean getEsIdaVuelta() {

@@ -15,8 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import com.turismo.model.Dificultad;
+
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -36,6 +39,12 @@ class PreferenciaServiceTest {
     private static final TipoTurismo NATURALEZA = crearTipo(2, "Naturaleza");
     private static final TipoTurismo AVENTURA = crearTipo(3, "Aventura");
 
+    /** Mismos valores que siembra 02_datos.sql en la tabla dificultad. */
+    private static final List<Dificultad> NIVELES = List.of(
+            crearDificultad(1, "Baja", (short) 1, "3.00", (short) 12),
+            crearDificultad(2, "Media", (short) 2, "6.00", (short) 18),
+            crearDificultad(3, "Alta", (short) 3, null, (short) 25));
+
     @Mock
     private ZonaTuristicaService zonaTuristicaService;
     @Mock
@@ -43,12 +52,25 @@ class PreferenciaServiceTest {
     @Mock
     private com.turismo.repository.RutaPeatonalRepository rutaPeatonalRepository;
     @Mock
+    private com.turismo.repository.DificultadRepository dificultadRepository;
+    @Mock
     private EstacionService estacionService;
 
     private PreferenciaService preferenciaService;
     private Estacion origen;
     private ZonaTuristica fortaleza;
     private ZonaTuristica llaqta;
+
+    private static Dificultad crearDificultad(Integer id, String nombre, Short orden,
+                                               String distanciaMaximaKm, Short velocidad) {
+        Dificultad dificultad = new Dificultad();
+        dificultad.setId(id);
+        dificultad.setNombre(nombre);
+        dificultad.setOrden(orden);
+        dificultad.setDistanciaMaximaKm(distanciaMaximaKm == null ? null : new BigDecimal(distanciaMaximaKm));
+        dificultad.setVelocidadMinPorKm(velocidad);
+        return dificultad;
+    }
 
     private static TipoTurismo crearTipo(Integer id, String nombre) {
         TipoTurismo tipo = new TipoTurismo();
@@ -87,7 +109,13 @@ class PreferenciaServiceTest {
     @BeforeEach
     void prepararEscenario() {
         preferenciaService = new PreferenciaService(zonaTuristicaService, zonaTipoTurismoRepository,
-                new RutaPeatonalService(rutaPeatonalRepository), estacionService);
+                new RutaPeatonalService(rutaPeatonalRepository, dificultadRepository),
+                estacionService, dificultadRepository);
+
+        // RNF-06: los umbrales y el ritmo de caminata salen de la tabla.
+        when(dificultadRepository.findAllByOrderByOrdenAsc()).thenReturn(NIVELES);
+        NIVELES.forEach(nivel ->
+                when(dificultadRepository.findByNombre(nivel.getNombre())).thenReturn(Optional.of(nivel)));
 
         origen = new Estacion();
         origen.setId(ID_ESTACION);
@@ -98,7 +126,7 @@ class PreferenciaServiceTest {
 
         // 0.60 km de ida -> 1.20 km de circuito, 14 min, dificultad Baja.
         fortaleza = crearZona(6, "Conjunto Arqueologico de Ollantaytambo", "-13.254466", "-72.268563");
-        // 5.00 km de ida -> 10.00 km de circuito, 120 min, dificultad Alta.
+        // 5.00 km de ida -> 10.00 km de circuito, 250 min, dificultad Alta.
         llaqta = crearZona(8, "Llaqta de Machu Picchu", "-13.298600", "-72.288000");
 
         when(estacionService.buscarActivaPorId(ID_ESTACION)).thenReturn(origen);

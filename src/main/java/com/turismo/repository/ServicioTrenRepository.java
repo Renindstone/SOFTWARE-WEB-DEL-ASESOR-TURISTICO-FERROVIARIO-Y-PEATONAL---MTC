@@ -43,4 +43,12 @@ public interface ServicioTrenRepository extends JpaRepository<ServicioTren, Inte
              WHERE s.id = :id
             """)
     java.util.Optional<ServicioTren> buscarConEstaciones(@Param("id") Integer id);
+
+    /**
+     * Clave natural del feed de PeruRail (tramo + hora de salida). La usa la
+     * sincronizacion para reconocer un servicio ya cargado en vez de volver a
+     * insertarlo, y se corresponde con uq_servicio_tramo_hora.
+     */
+    java.util.Optional<ServicioTren> findByEstacionOrigen_IdAndEstacionDestino_IdAndHorarioSalida(
+            Integer idEstacionOrigen, Integer idEstacionDestino, java.time.LocalTime horarioSalida);
 }

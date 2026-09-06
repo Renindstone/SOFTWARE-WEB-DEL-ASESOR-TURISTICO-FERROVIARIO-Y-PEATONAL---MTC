@@ -1,6 +1,7 @@
 package com.turismo.util;
 
 import com.turismo.dto.InformeConsolidadoDTO;
+import com.turismo.dto.VisitanteDTO;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
@@ -57,11 +58,15 @@ public class GeneradorPdf {
                     valor(informe.getTemperaturaMinimaC(), "") + " - " + valor(informe.getTemperaturaMaximaC(), "°C, ")
                             + valor(informe.getProbabilidadLluvia(), "% lluvia")
                             + (informe.getEstadoClima() != null ? " (" + informe.getEstadoClima() + ")" : ""));
-            agregarFila(tabla, "Tarifa del tren", valor(informe.getTarifaTren(), null));
+            agregarFila(tabla, "Tarifa del tren (adulto)", valor(informe.getTarifaTren(), null));
+            agregarFila(tabla, "Ingreso a la zona (adulto)", valor(informe.getCostoZona(), null));
+            agregarFila(tabla, "Personas", informe.getTotalPersonas());
             agregarFila(tabla, "Total estimado", valor(informe.getTotalEstimado(), null));
 
             documento.add(tabla);
             documento.add(Chunk.NEWLINE);
+
+            agregarDetalleDelGrupo(documento, informe);
             documento.add(new Paragraph("Generado automáticamente por el sistema del MTC.", FUENTE_SUBTITULO));
 
             documento.close();
@@ -70,6 +75,52 @@ public class GeneradorPdf {
         }
 
         return salida.toByteArray();
+    }
+
+    /**
+     * RF-18: desglose por edad. Deja ver de donde sale el total cuando viaja
+     * mas de una persona, que es justo lo que el turista quiere comprobar.
+     */
+    private void agregarDetalleDelGrupo(Document documento, InformeConsolidadoDTO informe)
+            throws DocumentException {
+        if (informe.getVisitantes() == null || informe.getVisitantes().isEmpty()) {
+            return;
+        }
+
+        documento.add(new Paragraph("Detalle por visitante", FUENTE_ETIQUETA));
+        documento.add(Chunk.NEWLINE);
+
+        PdfPTable detalle = new PdfPTable(5);
+        detalle.setWidthPercentage(100);
+        detalle.setWidths(new float[]{0.8f, 0.8f, 1.4f, 1.4f, 1f});
+
+        for (String cabecera : new String[]{"Edad", "Personas", "Tarifa tren", "Entrada zona", "Subtotal"}) {
+            PdfPCell celda = new PdfPCell(new Paragraph(cabecera, FUENTE_ETIQUETA));
+            celda.setBorderColor(Color.LIGHT_GRAY);
+            celda.setPadding(5);
+            detalle.addCell(celda);
+        }
+
+        for (VisitanteDTO visitante : informe.getVisitantes()) {
+            agregarCelda(detalle, visitante.getEdad() + " años");
+            agregarCelda(detalle, String.valueOf(visitante.getCantidad()));
+            agregarCelda(detalle, (visitante.getCategoriaTren() == null
+                    ? "Sin tren" : visitante.getCategoriaTren())
+                    + "  ·  S/ " + visitante.getSubtotalTren());
+            agregarCelda(detalle, visitante.getCategoriaZona()
+                    + "  ·  S/ " + visitante.getSubtotalZona());
+            agregarCelda(detalle, "S/ " + visitante.getSubtotal());
+        }
+
+        documento.add(detalle);
+        documento.add(Chunk.NEWLINE);
+    }
+
+    private void agregarCelda(PdfPTable tabla, String texto) {
+        PdfPCell celda = new PdfPCell(new Paragraph(texto, FUENTE_VALOR));
+        celda.setBorderColor(Color.LIGHT_GRAY);
+        celda.setPadding(5);
+        tabla.addCell(celda);
     }
 
     private void agregarFila(PdfPTable tabla, String etiqueta, Object valor) {

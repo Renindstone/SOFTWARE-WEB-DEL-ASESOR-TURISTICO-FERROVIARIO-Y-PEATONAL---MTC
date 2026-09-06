@@ -1,6 +1,7 @@
 package com.turismo.controller;
 
 import com.turismo.dto.InformeConsolidadoDTO;
+import com.turismo.dto.VisitanteDTO;
 import com.turismo.model.Estacion;
 import com.turismo.model.ServicioTren;
 import com.turismo.model.Usuario;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * RF-08 (CU-03/CU-08): genera el informe consolidado de la visita, en vista
@@ -57,6 +60,7 @@ public class InformeController {
                            @RequestParam Integer idZona,
                            @RequestParam(required = false) Integer idServicioTren,
                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaVisita,
+                           @RequestParam(name = "edades", required = false) List<Integer> edades,
                            Authentication autenticacion,
                            Model model) {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
@@ -64,13 +68,15 @@ public class InformeController {
         ServicioTren servicio = buscarServicio(idServicioTren);
 
         InformeConsolidadoDTO informe = informeService.generarInformeConsolidado(
-                origen, destino, servicio, fechaVisita, usuarioAutenticado(autenticacion));
+                origen, destino, servicio, fechaVisita, construirGrupo(edades),
+                usuarioAutenticado(autenticacion));
 
         model.addAttribute("informe", informe);
         model.addAttribute("idEstacion", idEstacion);
         model.addAttribute("idZona", idZona);
         model.addAttribute("idServicioTren", idServicioTren);
         model.addAttribute("fechaVisita", fechaVisita);
+        model.addAttribute("edades", edades);
         return "informes/informe-consolidado";
     }
 
@@ -84,6 +90,7 @@ public class InformeController {
                                                @RequestParam Integer idZona,
                                                @RequestParam(required = false) Integer idServicioTren,
                                                @RequestParam(required = false) String codigo,
+                                               @RequestParam(name = "edades", required = false) List<Integer> edades,
                                                @RequestParam
                                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaVisita) {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
@@ -91,7 +98,7 @@ public class InformeController {
         ServicioTren servicio = buscarServicio(idServicioTren);
 
         InformeConsolidadoDTO informe = informeService.previsualizarInforme(
-                origen, destino, servicio, fechaVisita, codigo);
+                origen, destino, servicio, fechaVisita, construirGrupo(edades), codigo);
         byte[] pdf = informeService.exportarPdf(informe);
 
         String nombreArchivo = "informe-" + (informe.getCodigo() == null ? "visita" : informe.getCodigo()) + ".pdf";
@@ -111,6 +118,7 @@ public class InformeController {
                                 @RequestParam Integer idZona,
                                 @RequestParam(required = false) Integer idServicioTren,
                                 @RequestParam(required = false) String codigo,
+                                @RequestParam(name = "edades", required = false) List<Integer> edades,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaVisita,
                                 Model model) {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
@@ -118,8 +126,26 @@ public class InformeController {
         ServicioTren servicio = buscarServicio(idServicioTren);
 
         model.addAttribute("informe", informeService.previsualizarInforme(
-                origen, destino, servicio, fechaVisita, codigo));
+                origen, destino, servicio, fechaVisita, construirGrupo(edades), codigo));
         return "informes/informe-pdf";
+    }
+
+    /**
+     * RF-18: el formulario envia una edad por acompanante. InformeService las
+     * agrupa despues, de modo que tres personas de 35 anos acaben en una sola
+     * fila con cantidad 3 y no en tres filas.
+     */
+    private List<VisitanteDTO> construirGrupo(List<Integer> edades) {
+        List<VisitanteDTO> grupo = new ArrayList<>();
+        if (edades == null) {
+            return grupo;
+        }
+        for (Integer edad : edades) {
+            if (edad != null) {
+                grupo.add(new VisitanteDTO(edad, 1));
+            }
+        }
+        return grupo;
     }
 
     private ZonaTuristica buscarZona(Integer idZona) {

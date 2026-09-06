@@ -65,12 +65,12 @@ class AforoServiceTest {
 
         when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA))
                 .thenReturn(Optional.of(crearContador(zona, 320)));
-        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 500)).thenReturn(1);
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 1, 500)).thenReturn(1);
 
         boolean resultado = aforoService.validarAforoDisponible(zona, FECHA);
 
         assertThat(resultado).isTrue();
-        verify(controlAforoRepository).incrementarCupoUtilizado(1, FECHA, 500);
+        verify(controlAforoRepository).incrementarCupoUtilizado(1, FECHA, 1, 500);
     }
 
     /** CB-09: AfoCupoUtilizado ya en el maximo -> el UPDATE no afecta filas. */
@@ -80,7 +80,7 @@ class AforoServiceTest {
 
         when(controlAforoRepository.findByZona_IdAndFecha(eq(1), any(LocalDate.class)))
                 .thenReturn(Optional.of(crearContador(zona, 500)));
-        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 500)).thenReturn(0);
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 1, 500)).thenReturn(0);
 
         assertThatThrownBy(() -> aforoService.validarAforoDisponible(zona, FECHA))
                 .isInstanceOf(AforoCompletoException.class)
@@ -94,7 +94,7 @@ class AforoServiceTest {
 
         when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA))
                 .thenReturn(Optional.of(crearContador(zona, 500)));
-        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 500)).thenReturn(0);
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 1, 500)).thenReturn(0);
         // Sin contador para el día siguiente: cupo utilizado = 0, hay lugar.
         when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA.plusDays(1)))
                 .thenReturn(Optional.empty());
@@ -112,7 +112,58 @@ class AforoServiceTest {
         assertThatCode(() -> aforoService.validarAforoDisponible(zona, FECHA))
                 .doesNotThrowAnyException();
 
-        verify(controlAforoRepository, never()).incrementarCupoUtilizado(any(), any(), any());
+        verify(controlAforoRepository, never()).incrementarCupoUtilizado(any(), any(), any(), any());
+    }
+
+    /** RF-18: una familia de tres descuenta tres cupos, no uno. */
+    @Test
+    void descuentaUnCupoPorCadaPersonaDelGrupo() {
+        ZonaTuristica zona = crearZona(500);
+
+        when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA))
+                .thenReturn(Optional.of(crearContador(zona, 320)));
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 3, 500)).thenReturn(1);
+
+        assertThat(aforoService.validarAforoDisponible(zona, FECHA, 3)).isTrue();
+
+        verify(controlAforoRepository).incrementarCupoUtilizado(1, FECHA, 3, 500);
+    }
+
+    /**
+     * Un grupo entra entero o no entra: con 2 cupos libres y 3 personas, el
+     * UPDATE no afecta filas y el mensaje lo explica.
+     */
+    @Test
+    void rechazaElGrupoQueNoCabeCompletoAunqueQuedenCupos() {
+        ZonaTuristica zona = crearZona(500);
+
+        when(controlAforoRepository.findByZona_IdAndFecha(eq(1), any(LocalDate.class)))
+                .thenReturn(Optional.of(crearContador(zona, 498)));
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 3, 500)).thenReturn(0);
+
+        assertThatThrownBy(() -> aforoService.validarAforoDisponible(zona, FECHA, 3))
+                .isInstanceOf(AforoCompletoException.class)
+                .hasMessageContaining("2 cupo(s) libre(s)")
+                .hasMessageContaining("grupo es de 3 personas");
+    }
+
+    /** La fecha alternativa debe tener sitio para todo el grupo, no para uno. */
+    @Test
+    void sugiereUnaFechaConSitioParaTodoElGrupo() {
+        ZonaTuristica zona = crearZona(500);
+
+        when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA))
+                .thenReturn(Optional.of(crearContador(zona, 500)));
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 3, 500)).thenReturn(0);
+        // Al dia siguiente solo quedan 2 cupos: no sirve para un grupo de 3.
+        when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA.plusDays(1)))
+                .thenReturn(Optional.of(crearContador(zona, 498)));
+        when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA.plusDays(2)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> aforoService.validarAforoDisponible(zona, FECHA, 3))
+                .isInstanceOf(AforoCompletoException.class)
+                .hasMessageContaining(FECHA.plusDays(2).toString());
     }
 
     /** El contador del dia se crea la primera vez que se consulta esa fecha. */
@@ -123,7 +174,7 @@ class AforoServiceTest {
         when(controlAforoRepository.findByZona_IdAndFecha(1, FECHA)).thenReturn(Optional.empty());
         when(controlAforoRepository.saveAndFlush(any(ControlAforo.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
-        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 500)).thenReturn(1);
+        when(controlAforoRepository.incrementarCupoUtilizado(1, FECHA, 1, 500)).thenReturn(1);
 
         assertThat(aforoService.validarAforoDisponible(zona, FECHA)).isTrue();
 

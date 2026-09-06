@@ -4,9 +4,11 @@ import com.turismo.dto.PreferenciaDTO;
 import com.turismo.dto.RutaCalculadaDTO;
 import com.turismo.dto.ZonaResultadoDTO;
 import com.turismo.exception.RutaInvalidaException;
+import com.turismo.model.Dificultad;
 import com.turismo.model.Estacion;
 import com.turismo.model.ZonaTipoTurismo;
 import com.turismo.model.ZonaTuristica;
+import com.turismo.repository.DificultadRepository;
 import com.turismo.repository.ZonaTipoTurismoRepository;
 
 import org.springframework.stereotype.Service;
@@ -14,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -26,23 +27,22 @@ import java.util.stream.Collectors;
 @Service
 public class PreferenciaService {
 
-    /** Orden de las tres dificultades del diccionario de datos (RutDificultad). */
-    private static final Map<String, Integer> ORDEN_DIFICULTAD =
-            Map.of("baja", 1, "media", 2, "alta", 3);
-
     private final ZonaTuristicaService zonaTuristicaService;
     private final ZonaTipoTurismoRepository zonaTipoTurismoRepository;
     private final RutaPeatonalService rutaPeatonalService;
     private final EstacionService estacionService;
+    private final DificultadRepository dificultadRepository;
 
     public PreferenciaService(ZonaTuristicaService zonaTuristicaService,
                                ZonaTipoTurismoRepository zonaTipoTurismoRepository,
                                RutaPeatonalService rutaPeatonalService,
-                               EstacionService estacionService) {
+                               EstacionService estacionService,
+                               DificultadRepository dificultadRepository) {
         this.zonaTuristicaService = zonaTuristicaService;
         this.zonaTipoTurismoRepository = zonaTipoTurismoRepository;
         this.rutaPeatonalService = rutaPeatonalService;
         this.estacionService = estacionService;
+        this.dificultadRepository = dificultadRepository;
     }
 
     /**
@@ -92,13 +92,19 @@ public class PreferenciaService {
         return tiempoDisponibleMin == null || ruta.getTiempoEstimadoMin() <= tiempoDisponibleMin;
     }
 
-    /** La dificultad elegida es un techo: quien acepta "Alta" tambien ve las mas suaves. */
+    /**
+     * La dificultad elegida es un techo: quien acepta "Alta" tambien ve las
+     * mas suaves. La comparacion usa DifOrden de la tabla parametrica, de modo
+     * que anadir un nivel nuevo no obliga a tocar este codigo (RNF-06).
+     */
     private boolean cumpleDificultad(RutaCalculadaDTO ruta, String dificultadMaxima) {
         if (dificultadMaxima == null || dificultadMaxima.isBlank()) {
             return true;
         }
-        Integer techo = ORDEN_DIFICULTAD.get(dificultadMaxima.toLowerCase());
-        Integer nivelRuta = ORDEN_DIFICULTAD.get(ruta.getDificultad().toLowerCase());
+        Short techo = dificultadRepository.findByNombre(dificultadMaxima)
+                .map(Dificultad::getOrden)
+                .orElse(null);
+        Short nivelRuta = ruta.getOrdenDificultad();
         return techo == null || nivelRuta == null || nivelRuta <= techo;
     }
 

@@ -19,12 +19,14 @@
       <!-- RF-08: exportacion PDF del mismo informe ya emitido. -->
       <a class="btn btn-mtc btn-sm"
          th:href="@{/informes/consolidado/pdf(idEstacion=${idEstacion}, idZona=${idZona},
-                    idServicioTren=${idServicioTren}, fechaVisita=${fechaVisita}, codigo=${informe.codigo})}">
+                    idServicioTren=${idServicioTren}, fechaVisita=${fechaVisita},
+                    codigo=${informe.codigo}, edades=${edades})}">
         <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
       </a>
       <a class="btn btn-mtc-outline btn-sm" target="_blank"
          th:href="@{/informes/consolidado/html(idEstacion=${idEstacion}, idZona=${idZona},
-                    idServicioTren=${idServicioTren}, fechaVisita=${fechaVisita}, codigo=${informe.codigo})}">
+                    idServicioTren=${idServicioTren}, fechaVisita=${fechaVisita},
+                    codigo=${informe.codigo}, edades=${edades})}">
         <i class="bi bi-filetype-html me-1"></i>Versión HTML
       </a>
       <button type="button" class="btn btn-mtc-outline btn-sm" onclick="window.print();">
@@ -70,12 +72,16 @@
           <strong th:if="${informe.estadoClima == null}" class="page-sub">Sin pronóstico publicado</strong>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-          <span>Tarifa del tren</span>
+          <span>Tarifa del tren <span class="page-sub small">(adulto)</span></span>
           <strong th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</strong>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-          <span>Ingreso a la zona</span>
+          <span>Ingreso a la zona <span class="page-sub small">(adulto)</span></span>
           <strong th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Personas</span>
+          <strong th:text="${informe.totalPersonas}">1</strong>
         </li>
         <li class="list-group-item d-flex justify-content-between" th:if="${informe.cupoDisponible != null}">
           <span>Cupo restante tras tu reserva</span>
@@ -86,6 +92,49 @@
           <strong class="fs-5" th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</strong>
         </li>
       </ul>
+    </div>
+  </div>
+
+  <div class="card section-card mt-4">
+    <div class="card-body p-4">
+      <h2 class="h6 section-title mb-3"><i class="bi bi-people"></i> Detalle por visitante</h2>
+
+      <div class="table-responsive">
+        <table class="table table-mtc table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Edad</th>
+              <th>Personas</th>
+              <th>Tarifa tren</th>
+              <th>Entrada zona</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="v : ${informe.visitantes}">
+              <td th:text="${v.edad} + ' años'">0 años</td>
+              <td th:text="${v.cantidad}">1</td>
+              <td>
+                <span class="tipo-pill" th:if="${v.categoriaTren != null}"
+                      th:text="${v.categoriaTren}">Adulto</span>
+                <span class="page-sub small" th:if="${v.categoriaTren == null}">Sin tren</span>
+                <span class="ms-1" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</span>
+              </td>
+              <td>
+                <span class="tipo-pill" th:text="${v.categoriaZona}">Adulto</span>
+                <span class="ms-1" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</span>
+              </td>
+              <td class="text-end fw-bold" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="page-sub small mt-3 mb-0">
+        Los tramos de edad no coinciden entre proveedores: en el tren se paga tarifa
+        completa desde los 12 años, mientras que la entrada a la zona mantiene la tarifa
+        reducida hasta los 17.
+      </p>
     </div>
   </div>
 

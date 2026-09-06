@@ -2,6 +2,8 @@ package com.turismo.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Informe consolidado (RF-08): ruta, clima, tiempo estimado, dificultad
@@ -23,6 +25,8 @@ public class InformeConsolidadoDTO {
     private BigDecimal totalEstimado;
     /** Cupo restante de la zona para la fecha; null si la zona no controla aforo (RF-16). */
     private Integer cupoDisponible;
+    /** RF-18: composicion del grupo, una linea por edad. */
+    private List<VisitanteDTO> visitantes = new ArrayList<>();
 
     public String getCodigo() {
         return codigo;
@@ -118,6 +122,21 @@ public class InformeConsolidadoDTO {
 
     public void setCupoDisponible(Integer cupoDisponible) {
         this.cupoDisponible = cupoDisponible;
+    }
+
+    public List<VisitanteDTO> getVisitantes() {
+        return visitantes;
+    }
+
+    public void setVisitantes(List<VisitanteDTO> visitantes) {
+        this.visitantes = visitantes;
+    }
+
+    /** Numero de personas del grupo: la suma del detalle, no un dato aparte. */
+    public int getTotalPersonas() {
+        return visitantes.stream()
+                .mapToInt(visitante -> visitante.getCantidad() == null ? 0 : visitante.getCantidad())
+                .sum();
     }
 
     public BigDecimal getTotalEstimado() {

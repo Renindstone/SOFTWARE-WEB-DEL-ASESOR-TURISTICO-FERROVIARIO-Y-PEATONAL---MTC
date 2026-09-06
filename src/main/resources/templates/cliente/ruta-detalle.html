@@ -132,6 +132,37 @@
                  th:value="${#temporals.format(fechaVisita, 'yyyy-MM-dd')}" required>
         </div>
 
+        <!-- RF-18: la edad de cada acompanante decide su tarifa. -->
+        <div class="col-12">
+          <div class="divider-soft"></div>
+          <div class="section-label"><i class="bi bi-people"></i> ¿Quiénes viajan?</div>
+
+          <div id="grupo-visitantes" class="row g-2">
+            <div class="col-6 col-md-3 visitante-fila">
+              <div class="input-group">
+                <span class="input-group-text bg-white">Edad</span>
+                <input type="number" class="form-control" name="edades"
+                       min="0" max="120" value="30" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-2">
+            <button type="button" class="btn btn-mtc-outline btn-sm" id="agregar-visitante">
+              <i class="bi bi-plus-lg me-1"></i>Añadir acompañante
+            </button>
+            <button type="button" class="btn btn-mtc-outline btn-sm" id="quitar-visitante">
+              <i class="bi bi-dash-lg me-1"></i>Quitar
+            </button>
+          </div>
+
+          <div class="form-text">
+            El precio depende de la edad y los tramos no coinciden entre proveedores:
+            en el tren se paga tarifa completa desde los 12 años, mientras que la entrada
+            a la zona mantiene la tarifa reducida hasta los 17.
+          </div>
+        </div>
+
         <div class="col-12 col-md-3">
           <button type="submit" class="btn btn-mtc w-100">
             <i class="bi bi-file-earmark-check me-1"></i>Generar
@@ -141,7 +172,8 @@
 
       <p class="page-sub small mt-3 mb-0" th:if="${destino.cupoMaximoDiario != null}">
         <i class="bi bi-info-circle me-1"></i>
-        Esta zona controla aforo diario: al generar el informe se reserva un cupo para la fecha elegida.
+        Esta zona controla aforo diario: al generar el informe se reserva un cupo
+        <strong>por cada persona del grupo</strong> para la fecha elegida.
       </p>
     </div>
   </div>
@@ -154,6 +186,7 @@
 
 <div th:replace="~{layout/footer :: footer}"></div>
 <div th:replace="~{layout/base :: scripts-mapa}"></div>
+<script th:src="@{/js/grupo-visitantes.js}"></script>
 </body>
 
 </html>

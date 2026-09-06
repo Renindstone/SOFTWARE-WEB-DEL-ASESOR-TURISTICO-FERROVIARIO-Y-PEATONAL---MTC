@@ -112,10 +112,17 @@ public class SincronizacionPeruRailJob {
                 continue;
             }
 
-            ServicioTren servicio = new ServicioTren();
+            // Clave natural del feed (tramo + hora de salida), la misma que
+            // protege uq_servicio_tramo_hora: sin esta busqueda, cada
+            // ejecucion volvia a insertar el catalogo entero.
+            LocalTime horarioSalida = parsearHora(dto.getHorarioSalida());
+            ServicioTren servicio = servicioTrenRepository
+                    .findByEstacionOrigen_IdAndEstacionDestino_IdAndHorarioSalida(
+                            origen.get().getId(), destino.get().getId(), horarioSalida)
+                    .orElseGet(ServicioTren::new);
             servicio.setEstacionOrigen(origen.get());
             servicio.setEstacionDestino(destino.get());
-            servicio.setHorarioSalida(parsearHora(dto.getHorarioSalida()));
+            servicio.setHorarioSalida(horarioSalida);
             servicio.setHorarioLlegada(parsearHora(dto.getHorarioLlegada()));
             servicio.setTiempoTransitoMin(dto.getTiempoTransitoMin());
             servicio.setTarifa(dto.getTarifa());

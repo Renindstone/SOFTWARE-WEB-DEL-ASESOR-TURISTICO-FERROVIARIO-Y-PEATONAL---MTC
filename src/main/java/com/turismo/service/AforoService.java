@@ -30,18 +30,22 @@ public class AforoService {
 
     /**
      * CB-08/CB-09: si la zona no tiene ZonCupoMaximoDiario configurado, no
-     * aplica la validacion (RF-16). Si lo tiene, incrementa el contador de
-     * forma atomica cuando hay cupo disponible; si ya se alcanzo el
-     * maximo, rechaza la operacion con AforoCompletoException, incluyendo
-     * en el mensaje una fecha alternativa con cupo libre.
+     * aplica la validacion (RF-16). Si lo tiene, descuenta del contador
+     * tantos cupos como personas viajen, de forma atomica; si no quedan
+     * suficientes, rechaza la operacion con AforoCompletoException,
+     * incluyendo en el mensaje una fecha alternativa con sitio para todo el
+     * grupo.
      *
      * El incremento se delega en un UPDATE ... SET AfoCupoUtilizado =
-     * AfoCupoUtilizado + 1 con el limite verificado en el mismo WHERE
+     * AfoCupoUtilizado + n con el limite verificado en el mismo WHERE
      * (RNF-08 / seccion 6.3), en lugar de leer, sumar y volver a guardar
      * desde la aplicacion, que dejaria una ventana de condicion de carrera.
      */
     @Transactional
-    public boolean validarAforoDisponible(ZonaTuristica zona, LocalDate fecha) {
+    public boolean validarAforoDisponible(ZonaTuristica zona, LocalDate fecha, int personas) {
+        if (personas <= 0) {
+            throw new IllegalArgumentException("El grupo debe tener al menos una persona");
+        }
         Integer cupoMaximo = zona.getCupoMaximoDiario();
         if (cupoMaximo == null) {
             return true;
@@ -50,14 +54,33 @@ public class AforoService {
         asegurarContador(zona, fecha);
 
         int filasActualizadas = controlAforoRepository
-                .incrementarCupoUtilizado(zona.getId(), fecha, cupoMaximo);
+                .incrementarCupoUtilizado(zona.getId(), fecha, personas, cupoMaximo);
 
         if (filasActualizadas == 0) {
             throw new AforoCompletoException(
-                    "El aforo de la zona para la fecha seleccionada ya fue alcanzado"
-                            + sugerirFechaAlternativa(zona, fecha));
+                    mensajeDeRechazo(zona, fecha, personas)
+                            + sugerirFechaAlternativa(zona, fecha, personas));
         }
         return true;
+    }
+
+    /** Con una sola persona, RF-16 en su forma original. */
+    @Transactional
+    public boolean validarAforoDisponible(ZonaTuristica zona, LocalDate fecha) {
+        return validarAforoDisponible(zona, fecha, 1);
+    }
+
+    /**
+     * Un grupo puede ser rechazado aunque queden cupos, si no alcanzan para
+     * todos; el mensaje lo distingue para que el turista entienda por que.
+     */
+    private String mensajeDeRechazo(ZonaTuristica zona, LocalDate fecha, int personas) {
+        int disponibles = consultarCupoDisponible(zona, fecha).orElse(0);
+        if (personas > 1 && disponibles > 0) {
+            return "El aforo de la zona para la fecha seleccionada solo tiene " + disponibles
+                    + " cupo(s) libre(s) y el grupo es de " + personas + " personas";
+        }
+        return "El aforo de la zona para la fecha seleccionada ya fue alcanzado";
     }
 
     /**
@@ -85,15 +108,18 @@ public class AforoService {
      * DIAS_SUGERENCIA_ALTERNATIVA dias; si no encuentra ninguna, devuelve
      * cadena vacia y el mensaje queda solo con el rechazo.
      */
-    private String sugerirFechaAlternativa(ZonaTuristica zona, LocalDate fecha) {
-        return buscarFechaAlternativa(zona, fecha)
+    private String sugerirFechaAlternativa(ZonaTuristica zona, LocalDate fecha, int personas) {
+        return buscarFechaAlternativa(zona, fecha, personas)
                 .map(alternativa -> ". Fecha alternativa sugerida: " + alternativa)
                 .orElse("");
     }
 
-    /** Expuesto para que la vista pueda ofrecer la fecha alternativa (CN-09). */
+    /**
+     * CU-08: primera fecha posterior con sitio para TODO el grupo. No sirve
+     * proponer un dia en el que solo cabrian algunos.
+     */
     @Transactional(readOnly = true)
-    public Optional<LocalDate> buscarFechaAlternativa(ZonaTuristica zona, LocalDate fecha) {
+    public Optional<LocalDate> buscarFechaAlternativa(ZonaTuristica zona, LocalDate fecha, int personas) {
         Integer cupoMaximo = zona.getCupoMaximoDiario();
         if (cupoMaximo == null) {
             return Optional.empty();
@@ -103,11 +129,17 @@ public class AforoService {
             int usado = controlAforoRepository.findByZona_IdAndFecha(zona.getId(), candidata)
                     .map(ControlAforo::getCupoUtilizado)
                     .orElse(0);
-            if (usado < cupoMaximo) {
+            if (usado + personas <= cupoMaximo) {
                 return Optional.of(candidata);
             }
         }
         return Optional.empty();
+    }
+
+    /** Expuesto para que la vista pueda ofrecer la fecha alternativa (CN-09). */
+    @Transactional(readOnly = true)
+    public Optional<LocalDate> buscarFechaAlternativa(ZonaTuristica zona, LocalDate fecha) {
+        return buscarFechaAlternativa(zona, fecha, 1);
     }
 
     /** Cupo restante de la zona para la fecha, o vacio si la zona no controla aforo. */

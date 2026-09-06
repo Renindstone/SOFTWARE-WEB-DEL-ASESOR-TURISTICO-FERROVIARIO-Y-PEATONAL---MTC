@@ -41,12 +41,31 @@
                      ? ${informe.temperaturaMinimaC} + '°C - ' + ${informe.temperaturaMaximaC}
                        + '°C, ' + ${informe.probabilidadLluvia} + '% lluvia (' + ${informe.estadoClima} + ')'
                      : 'Sin pronóstico publicado'">clima</td></tr>
-    <tr><th>Tarifa del tren</th>
+    <tr><th>Tarifa del tren (adulto)</th>
         <td th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</td></tr>
-    <tr><th>Ingreso a la zona</th>
+    <tr><th>Ingreso a la zona (adulto)</th>
         <td th:text="${informe.costoZona != null} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</td></tr>
+    <tr><th>Personas</th><td th:text="${informe.totalPersonas}">1</td></tr>
     <tr class="total"><th>Total estimado</th>
         <td th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</td></tr>
+  </table>
+
+  <h2 style="color:#14453D; font-size:15px; margin-top:22px;">Detalle por visitante</h2>
+  <table>
+    <tr>
+      <th style="width:14%;">Edad</th>
+      <th style="width:14%;">Personas</th>
+      <th style="width:26%;">Tarifa tren</th>
+      <th style="width:26%;">Entrada zona</th>
+      <th style="width:20%;">Subtotal</th>
+    </tr>
+    <tr th:each="v : ${informe.visitantes}">
+      <td th:text="${v.edad} + ' años'">0 años</td>
+      <td th:text="${v.cantidad}">1</td>
+      <td th:text="(${v.categoriaTren} ?: 'Sin tren') + '  ·  S/ ' + ${v.subtotalTren}">Adulto</td>
+      <td th:text="${v.categoriaZona} + '  ·  S/ ' + ${v.subtotalZona}">Adulto</td>
+      <td th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
+    </tr>
   </table>
 
   <p class="pie">
