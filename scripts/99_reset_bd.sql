@@ -5,7 +5,15 @@
 --
 -- !! ADVERTENCIA !!
 -- Este script BORRA datos de forma irreversible. No ejecutar en produccion.
--- El prefijo 99 evita que Docker lo corra antes que 01_esquema.sql.
+--
+-- NO DEVOLVER ESTE ARCHIVO A init/. El docker-compose monta ese directorio
+-- completo en /docker-entrypoint-initdb.d, y el entrypoint de la imagen de
+-- PostgreSQL ejecuta TODOS los .sql que encuentra alli, en orden alfabetico.
+-- El prefijo 99 no impide que se ejecute: garantiza que se ejecute el ultimo,
+-- justo despues de 01_esquema, 02_datos y 03_consultas, dejando la base vacia
+-- en cada volumen nuevo. Renombrarlo tampoco sirve, porque el entrypoint no
+-- mira el nombre sino la extension. Se ejecuta a mano, con la secuencia de
+-- RehacerElContenedorDocker.txt.
 --
 -- Contiene tres opciones. Ejecutar SOLO UNA de ellas.
 -- ============================================================================

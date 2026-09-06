@@ -122,6 +122,23 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<!-- Solo para VerificacionIntegridadBdTest. Los verificadores de
+			     integridad (fn_verificar_categorias, fn_verificar_rutas) estan
+			     escritos en plpgsql dentro de init/03_consultas.sql, asi que H2 no
+			     puede ejecutarlos: esa prueba levanta un PostgreSQL 15 con los
+			     mismos scripts de init que monta el docker-compose. El resto de la
+			     suite sigue corriendo sobre H2 sin necesitar Docker.
+			     La version la fija el BOM de Spring Boot (testcontainers 2.0.5). -->
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

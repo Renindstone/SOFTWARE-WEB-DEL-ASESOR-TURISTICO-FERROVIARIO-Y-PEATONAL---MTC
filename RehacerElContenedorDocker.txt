@@ -1,6 +1,6 @@
 cd "C:\Users\renzo\Documents\Proyectos\ProyectoFinalSoftware(MTC)\asesor-turistico-mtc\app-mtc"
 
-docker cp init\99_reset_bd.sql postgres-mtc-turismo:/tmp/99_reset_bd.sql
+docker cp scripts\99_reset_bd.sql postgres-mtc-turismo:/tmp/99_reset_bd.sql
 docker exec -it postgres-mtc-turismo psql -U admin_mtc -d bd_asesor_turistico -f /tmp/99_reset_bd.sql
 
 docker cp init\01_esquema.sql postgres-mtc-turismo:/tmp/01_esquema.sql

@@ -34,3 +34,8 @@ build/
 
 ### Artefactos compilados (Eclipse/STS)
 bin/
+
+### Grafo de conocimiento generado por graphify
+# Salida derivada del propio codigo (grafo, informe, cache de extraccion):
+# se regenera con /graphify y no aporta nada al historial del repositorio.
+graphify-out/
