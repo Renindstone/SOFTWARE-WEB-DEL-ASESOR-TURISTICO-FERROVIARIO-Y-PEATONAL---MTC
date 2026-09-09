@@ -65,6 +65,15 @@ public class ServicioTrenService {
         return guardado;
     }
 
+    @Transactional
+    public void eliminar(Integer id, String usuario) {
+        servicioTrenRepository.buscarConEstaciones(id).ifPresent(servicio -> {
+            String valorAnterior = describir(servicio);
+            servicioTrenRepository.delete(servicio);
+            auditoriaService.registrarAuditoria(usuario, "DELETE", TABLA_AUDITADA, valorAnterior, null);
+        });
+    }
+
     private String describir(ServicioTren servicio) {
         return "SerIdEstacionOrigen=" + servicio.getEstacionOrigen().getId()
                 + "; SerIdEstacionDestino=" + servicio.getEstacionDestino().getId()
