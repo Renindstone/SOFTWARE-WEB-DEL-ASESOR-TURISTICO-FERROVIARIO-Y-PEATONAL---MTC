@@ -165,4 +165,19 @@ public class InformeController {
         }
         return usuarioRepository.findByNombreUsuario(autenticacion.getName()).orElse(null);
     }
+
+    /**
+     * Muestra el historial de informes creados por el usuario autenticado
+     */
+    @GetMapping("/mis-informes")
+    public String misInformes(Authentication autenticacion, Model model) {
+        Usuario usuario = usuarioAutenticado(autenticacion);
+        if (usuario == null) {
+            return "redirect:/login";
+        }
+        
+        List<com.turismo.model.InformePlanificacion> informes = informeService.obtenerInformesPorUsuario(usuario.getNombreUsuario());
+        model.addAttribute("informes", informes);
+        return "cliente/mis-informes";
+    }
 }

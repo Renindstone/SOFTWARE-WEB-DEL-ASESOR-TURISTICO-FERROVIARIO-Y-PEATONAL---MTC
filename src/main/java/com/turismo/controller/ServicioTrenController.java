@@ -59,4 +59,9 @@ public class ServicioTrenController {
         servicioTrenService.guardar(servicioTren, auditoriaService.usuarioActual());
         return "redirect:/servicios-tren";
     }
+    @PostMapping("/{id}/eliminar")
+    public String eliminar(@PathVariable Integer id) {
+        servicioTrenService.eliminar(id, auditoriaService.usuarioActual());
+        return "redirect:/servicios-tren?exito=Servicio+eliminado";
+    }
 }

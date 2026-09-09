@@ -118,10 +118,19 @@
               <td th:text="${serv.tiempoTransitoMin} + ' min'">0 min</td>
               <td><span class="fare-pill" th:text="'S/ ' + ${serv.tarifa}">S/ 0</span></td>
               <td class="text-end">
-                <a class="btn btn-sm btn-mtc-outline" th:href="@{'/servicios-tren/' + ${serv.id} + '/editar'}"
-                   title="Editar horario y tarifa">
-                  <i class="bi bi-pencil"></i>
-                </a>
+                <div class="d-flex justify-content-end gap-1">
+                  <a class="btn btn-sm btn-mtc-outline" th:href="@{'/servicios-tren/' + ${serv.id} + '/editar'}"
+                     title="Editar horario y tarifa">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form th:action="@{'/servicios-tren/' + ${serv.id} + '/eliminar'}" method="post" 
+                        onsubmit="return confirm('¿Está seguro de eliminar este servicio de tren? Esta acción no se puede deshacer.');"
+                        class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar servicio">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
             <tr th:if="${#lists.isEmpty(servicios)}">

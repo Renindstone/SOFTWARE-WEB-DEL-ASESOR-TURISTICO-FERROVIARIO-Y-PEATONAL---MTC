@@ -29,6 +29,7 @@
         <div class="collapse navbar-collapse" id="navMtc">
           <div class="navbar-nav me-auto">
             <a class="nav-link" th:href="@{/preferencias}">Turista</a>
+            <a class="nav-link" th:href="@{/mis-informes}" sec:authorize="isAuthenticated()">Mis Informes</a>
             <a class="nav-link" th:href="@{/zonas}" sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')">Zonas</a>
             <a class="nav-link" th:href="@{/estaciones}"
               sec:authorize="hasAnyRole('ADMIN_MTC','TRAVEL_GROUP_USER')">Estaciones</a>
