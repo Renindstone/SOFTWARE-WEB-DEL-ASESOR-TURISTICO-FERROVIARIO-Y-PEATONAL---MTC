@@ -358,4 +358,22 @@ class InformeServiceTest {
         verify(aforoService, never()).validarAforoDisponible(any(), any(), anyInt());
         verify(informePlanificacionRepository, never()).save(any());
     }
+
+    @Test
+    void obtieneLosInformesDelUsuarioOrdenadosPorFecha() {
+        InformePlanificacion inf1 = new InformePlanificacion();
+        inf1.setCodigo("INF-0002");
+        InformePlanificacion inf2 = new InformePlanificacion();
+        inf2.setCodigo("INF-0001");
+
+        when(informePlanificacionRepository.findByUsuario_NombreUsuarioOrderByFechaEmisionDesc("turista_jose"))
+                .thenReturn(List.of(inf1, inf2));
+
+        List<InformePlanificacion> resultado = informeService.obtenerInformesPorUsuario("turista_jose");
+
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado.get(0).getCodigo()).isEqualTo("INF-0002");
+        assertThat(resultado.get(1).getCodigo()).isEqualTo("INF-0001");
+        verify(informePlanificacionRepository).findByUsuario_NombreUsuarioOrderByFechaEmisionDesc("turista_jose");
+    }
 }

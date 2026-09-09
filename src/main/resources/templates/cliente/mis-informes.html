@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{layout/base :: head('Mis Informes')}"></head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+  <div th:replace="~{layout/nav :: nav}"></div>
+
+  <main class="container py-4 flex-grow-1">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+        <h4 class="mb-0 text-dark">Historial de Informes de Visita</h4>
+        <p class="text-muted mb-0">Aquí puedes ver y descargar todos los informes de planificación que has generado.</p>
+      </div>
+
+      <div class="card-body">
+        <div th:if="${informes == null or informes.isEmpty()}" class="alert alert-info" role="alert">
+          <i class="bi bi-info-circle me-2"></i>Aún no has generado ningún informe. Puedes empezar buscando tu ruta desde la pestaña <strong>Turista</strong>.
+        </div>
+
+        <div class="table-responsive" th:if="${informes != null and !informes.isEmpty()}">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Fecha de Emisión</th>
+                <th scope="col">Fecha de Visita</th>
+                <th scope="col">Zona Destino</th>
+                <th scope="col">Costo Estimado</th>
+                <th scope="col" class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="inf : ${informes}">
+                <td class="fw-semibold" th:text="${inf.codigo}">INF-0001</td>
+                <td th:text="${#temporals.format(inf.fechaEmision, 'dd/MM/yyyy HH:mm')}">01/01/2026 12:00</td>
+                <td th:text="${#temporals.format(inf.fechaVisita, 'dd/MM/yyyy')}">15/01/2026</td>
+                <td th:text="${inf.ruta.zonaDestino.nombre}">Zona Sur</td>
+                <td>S/ <span th:text="${#numbers.formatDecimal(inf.totalEstimado, 1, 'COMMA', 2, 'POINT')}">100.00</span></td>
+                <td class="text-center">
+                  <!-- Solo enviamos los IDs y fecha para reconstruir, más el código. -->
+                  <!-- Para la previsualización no se consume aforo, como estipula InformeController.generar() -->
+                  <a th:href="@{/informes/consolidado/html(idEstacion=${inf.ruta.estacionOrigen.id},idZona=${inf.ruta.zonaDestino.id},fechaVisita=${inf.fechaVisita},codigo=${inf.codigo})}"
+                    class="btn btn-sm btn-outline-primary" title="Ver detalle HTML" target="_blank">
+                    <i class="bi bi-eye"></i> Ver
+                  </a>
+                  <a th:href="@{/informes/consolidado/pdf(idEstacion=${inf.ruta.estacionOrigen.id},idZona=${inf.ruta.zonaDestino.id},fechaVisita=${inf.fechaVisita},codigo=${inf.codigo})}"
+                    class="btn btn-sm btn-danger" title="Descargar PDF">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div th:replace="~{layout/footer :: footer}"></div>
+  <div th:replace="~{layout/base :: scripts}"></div>
+</body>
+
+</html>
+

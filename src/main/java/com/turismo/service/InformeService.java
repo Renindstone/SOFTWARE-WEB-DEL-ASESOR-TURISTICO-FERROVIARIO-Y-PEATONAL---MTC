@@ -272,4 +272,9 @@ public class InformeService {
     public byte[] exportarPdf(InformeConsolidadoDTO informe) {
         return generadorPdf.generar(informe);
     }
+
+    @Transactional(readOnly = true)
+    public List<InformePlanificacion> obtenerInformesPorUsuario(String nombreUsuario) {
+        return informePlanificacionRepository.findByUsuario_NombreUsuarioOrderByFechaEmisionDesc(nombreUsuario);
+    }
 }
