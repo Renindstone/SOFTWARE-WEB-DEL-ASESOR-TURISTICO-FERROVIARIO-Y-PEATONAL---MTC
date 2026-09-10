@@ -2,6 +2,7 @@ package com.turismo.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,12 +24,25 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RegistroUsuarioDTO {
 
+    /**
+     * El guion va al final de la clase de caracteres para que se lea como un
+     * guion literal y no como un rango. Se admiten el guion y el apostrofo
+     * porque forman parte de apellidos reales (D'Onofrio, O'Higgins).
+     */
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 50, message = "El nombre no puede superar los 50 caracteres")
+    @Size(min = 2, max = 50, message = "El nombre debe tener entre 2 y 50 caracteres")
+    @Pattern(
+        regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s'-]+$",
+        message = "El nombre solo puede contener letras, espacios, guiones y apóstrofes (sin números ni símbolos)"
+    )
     private String nombre;
 
     @NotBlank(message = "Los apellidos son obligatorios")
-    @Size(max = 50, message = "Los apellidos no pueden superar los 50 caracteres")
+    @Size(min = 2, max = 50, message = "Los apellidos deben tener entre 2 y 50 caracteres")
+    @Pattern(
+        regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s'-]+$",
+        message = "Los apellidos solo pueden contener letras, espacios, guiones y apóstrofes (sin números ni símbolos)"
+    )
     private String apellidos;
 
     @NotBlank(message = "El correo electrónico es obligatorio")
@@ -36,8 +50,13 @@ public class RegistroUsuarioDTO {
     @Size(max = 50, message = "El correo electrónico no puede superar los 50 caracteres")
     private String email;
 
+    /** Sin espacios ni simbolos: es la credencial con la que se inicia sesion. */
     @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(min = 4, max = 50, message = "El nombre de usuario debe tener entre 4 y 50 caracteres")
+    @Pattern(
+        regexp = "^[a-zA-Z0-9_.-]+$",
+        message = "El nombre de usuario solo puede contener letras, números, puntos, guiones y guiones bajos"
+    )
     private String nombreUsuario;
 
     @NotBlank(message = "La contraseña es obligatoria")
