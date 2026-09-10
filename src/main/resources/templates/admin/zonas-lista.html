@@ -109,7 +109,12 @@
     <!-- Modal Zona Turística (RF-10 / RF-17 / CU-04) -->
     <div class="modal fade" id="modalZona" tabindex="-1" aria-labelledby="modalZonaLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content section-card border-0 shadow-lg">
+        <!-- El <form> es a la vez el .modal-content. modal-dialog-scrollable
+             reparte la altura entre cabecera, cuerpo y pie con flexbox, y para
+             eso los tres tienen que ser hijos directos: un <form> intermedio
+             rompe el reparto y empuja los botones fuera de la pantalla. -->
+        <form method="post" th:action="@{/zonas}" th:object="${zona}" id="formZona"
+              class="modal-content section-card border-0 shadow-lg">
           <div class="modal-header border-bottom px-4 pt-4 pb-3">
             <div>
               <h2 class="h5 fw-bold page-title mb-1" id="modalZonaLabel"
@@ -121,8 +126,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
 
-          <form method="post" th:action="@{/zonas}" th:object="${zona}" id="formZona">
-            <div class="modal-body p-4">
+          <div class="modal-body p-4">
               <input type="hidden" th:field="*{id}" id="zonaId">
               <input type="hidden" id="hasValidationErrors" th:value="${#fields.hasAnyErrors() ? 'true' : 'false'}">
 
@@ -225,14 +229,13 @@
 
             </div>
 
-            <div class="modal-footer border-top bg-light-subtle px-4 py-3">
-              <button type="button" class="btn btn-mtc-outline" data-bs-dismiss="modal">Cancelar</button>
-              <button type="submit" class="btn btn-mtc">
-                <i class="bi bi-check2 me-2"></i>Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+          <div class="modal-footer border-top bg-light-subtle px-4 py-3">
+            <button type="button" class="btn btn-mtc-outline" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-mtc">
+              <i class="bi bi-check2 me-2"></i>Guardar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
