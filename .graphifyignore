@@ -1,0 +1,56 @@
+# ============================================================
+# Proyecto : Asesor Turistico Ferroviario y Peatonal - MTC
+#
+# Alcance del grafo de conocimiento (graphify).
+#
+# Se usa junto con `graphify update . --no-gitignore`, porque el
+# .gitignore del repositorio excluye graphify-out/ y eso hacia que
+# cada actualizacion podara los nodos semanticos extraidos del
+# documento formal (graphify-out/converted/*.md).
+#
+# Regla general: el grafo solo debe contener el proyecto en si
+# (codigo fuente, plantillas, esquema SQL, docker y documentacion),
+# nunca herramientas del entorno ni artefactos compilados.
+# ============================================================
+
+# --- Librerias de skills del asistente -----------------------
+# Sin esto, graphify ingiere ~20 000 nodos de las skills instaladas
+# y sepulta el grafo real del proyecto.
+.claude/
+.agents/
+
+# --- Artefactos de compilacion -------------------------------
+target/
+bin/
+build/
+node_modules/
+
+# --- Cache interna de graphify -------------------------------
+# converted/ SI debe indexarse: contiene el documento formal
+# convertido a markdown, que aporta los nodos semanticos
+# (requisitos RF/RNF, arquitectura, casos de uso).
+graphify-out/cache/
+graphify-out/2026-*/
+
+# --- Binarios y entorno --------------------------------------
+*.jar
+*.class
+.mvn/wrapper/
+.idea/
+.vscode/
+
+# --- Documento formal convertido -----------------------------
+# graphify-out/converted/ guarda el documento formal convertido a
+# markdown, de donde salen los nodos semanticos (requisitos RF/RNF,
+# casos de uso, matrices de prueba). El .gitignore del repositorio
+# excluye graphify-out/, asi que sin estas negaciones cada
+# `graphify update` poda esos nodos y el grafo pierde la parte
+# documental.
+!graphify-out/
+!graphify-out/converted/
+!graphify-out/converted/*.md
+
+# El respaldo del documento duplica cada seccion y ensucia las
+# consultas: solo debe indexarse la version vigente.
+graphify-out/converted/*backup*.md
+docs/*_backup.docx
