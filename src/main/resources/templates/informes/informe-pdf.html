@@ -1,194 +1,464 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <!--
-  Version HTML imprimible del informe consolidado (RF-08). El PDF descargable
-  lo produce GeneradorPdf con OpenPDF; esta plantilla queda como alternativa
-  autocontenida (sin CSS externo) para archivar o adjuntar por correo.
+  Version HTML imprimible del informe consolidado (RF-08), compuesta como un
+  voucher de itinerario. El PDF descargable lo produce GeneradorPdf con
+  OpenPDF; esta plantilla queda como alternativa autocontenida para archivar
+  o adjuntar por correo.
 
   Por eso los valores del sistema de diseno se repiten aqui en crudo en vez de
   consumir /css/tokens.css: el archivo tiene que verse igual abierto desde un
   correo, sin servidor delante. Si cambian los tokens, esta hoja hay que
   actualizarla a mano; es el precio de que el documento viaje solo.
 
-  Se compone para papel: sin sombras ni fondos amplios que gasten toner, y con
-  la jerarquia marcada por reglas gruesas.
+  Las tarjetas se reparten con flexbox y no con grid porque degrada mejor
+  cuando el documento se abre fuera de un navegador reciente: si el reparto
+  no se aplica, las tarjetas se apilan y el informe sigue leyendose.
 -->
 <head>
   <meta charset="UTF-8">
   <title>Informe consolidado de visita - MTC</title>
   <style>
+    :root {
+      --mtc: #14453D;
+      --oro: #C89B3C;
+      --crema: #F8F7F4;
+      --linea: #E2E0D8;
+      --linea-tenue: #EBE9E1;
+      --texto: #17201C;
+      --tenue: #5F6B62;
+    }
+
+    /* Sin esto, el flex-basis de las tarjetas se interpreta como ancho de
+       contenido y el padding las empuja por encima del 50%, de modo que solo
+       entra una por fila en vez de dos. */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       font-family: "Segoe UI", Helvetica, Arial, sans-serif;
       color: #17201C;
-      margin: 32px;
       line-height: 1.45;
+      margin: 0;
+      background: #F1EFEA;
     }
 
-    .marca {
-      border-bottom: 3px solid #C89B3C;
-      padding-bottom: 6px;
-      margin-bottom: 18px;
+    /* En pantalla el informe se presenta como una tarjeta centrada; al
+       imprimir se convierte en la hoja misma (ver @media print). */
+    .voucher {
+      max-width: 820px;
+      margin: 30px auto;
+      background: #FFFFFF;
+      border: 1px solid #E2E0D8;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      padding: 36px;
+      overflow: hidden;
+    }
+
+    /* Filete institucional: franja verde con hilo dorado debajo. */
+    .filete { margin: -36px -36px 26px; }
+    .filete .verde { height: 4px; background: #14453D; }
+    .filete .oro { height: 2px; background: #C89B3C; }
+
+    /* ---------- Membrete ---------- */
+    .membrete {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .membrete .entidad {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #14453D;
+      margin: 0 0 2px;
+    }
+
+    .membrete .sistema {
       font-size: 11px;
-      letter-spacing: 0.04em;
       color: #5F6B62;
+      margin: 0;
     }
 
-    /* Placa de trayecto: mismo registro de senaletica que la pantalla. */
-    .placa {
-      border-top: 3px solid #17201C;
-      border-bottom: 3px solid #17201C;
-      padding: 14px 0;
-      margin-bottom: 4px;
+    .sello {
+      border: 1px solid #E2E0D8;
+      border-radius: 8px;
+      background: #F8F7F4;
+      padding: 8px 12px;
+      text-align: right;
+      white-space: nowrap;
     }
 
-    .placa .origen {
+    .sello .codigo {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #14453D;
       display: block;
+    }
+
+    .sello .fecha {
+      font-size: 10px;
+      color: #5F6B62;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ---------- Trayecto ---------- */
+    .trayecto {
+      background: #F8F7F4;
+      border: 1px solid #E6E4DD;
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+
+    .trayecto .rotulo {
+      font-size: 10px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #5F6B62;
+      margin: 0 0 6px;
+    }
+
+    .trayecto .conexion {
+      font-size: 21px;
+      font-weight: 700;
+      color: #14453D;
+      letter-spacing: -0.01em;
+      margin: 0 0 12px;
+      line-height: 1.25;
+    }
+
+    .trayecto .flecha { color: #C89B3C; padding: 0 6px; }
+
+    .insignia {
+      display: inline-block;
       font-size: 11px;
+      color: #17201C;
+      background: #FFFFFF;
+      border: 1px solid #E2E0D8;
+      border-radius: 999px;
+      padding: 3px 11px;
+      margin-right: 6px;
+    }
+
+    /* ---------- Tarjetas de recorrido ---------- */
+    .tarjetas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .tarjeta {
+      flex: 1 1 calc(50% - 12px);
+      min-width: 210px;
+      border: 1px solid #E2E0D8;
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .tarjeta .titulo {
+      font-size: 10px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #5F6B62;
-      margin-bottom: 2px;
+      margin: 0 0 6px;
     }
 
-    .placa .destino {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      color: #0A2A25;
+    .tarjeta .dato {
+      font-size: 15px;
+      font-weight: 600;
+      color: #17201C;
+      margin: 0;
     }
 
-    .codigo {
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 12px;
+    .tarjeta .apunte {
+      font-size: 11px;
       color: #5F6B62;
-      margin: 6px 0 22px;
+      margin: 2px 0 0;
     }
 
-    h2 {
+    .cifra { font-family: Consolas, "Courier New", monospace; }
+
+    /* El color sale de DifOrden y no del nombre: la tabla dificultad es
+       parametrica (RNF-06) y un nivel nuevo no debe quedarse sin color. */
+    .nivel {
+      display: inline-block;
       font-size: 13px;
-      color: #0A2A25;
-      margin: 26px 0 8px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 14px;
+      border: 1px solid;
     }
+    .nivel-suave  { background: #E8F3EC; color: #1E6B41; border-color: #BFDCC9; }
+    .nivel-medio  { background: #FBF3DF; color: #8A6414; border-color: #EBD9A6; }
+    .nivel-fuerte { background: #FBE9E7; color: #A33327; border-color: #F0C4BE; }
+
+    /* ---------- Desglose ---------- */
+    h2 {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #14453D;
+      margin: 0 0 4px;
+    }
+
+    .aclaracion { font-size: 11px; color: #5F6B62; margin: 0 0 10px; }
 
     table { border-collapse: collapse; width: 100%; }
 
+    /* Sin bordes verticales: la lectura la guian las reglas horizontales. */
     th, td {
-      border: 1px solid #D9DBD4;
-      padding: 7px 10px;
+      border: none;
+      border-bottom: 1px solid #EBE9E1;
+      padding: 8px 10px;
       font-size: 12px;
       text-align: left;
       vertical-align: middle;
     }
 
-    /* Tabla resumen: etiqueta a la izquierda, cifra a la derecha. */
-    .resumen th { width: 42%; font-weight: 600; color: #5F6B62; background: #FAFAF7; }
-    .resumen td { font-family: Consolas, "Courier New", monospace; }
+    thead th {
+      background: #EFECE6;
+      font-weight: 600;
+      color: #17201C;
+      font-size: 11px;
+      border-bottom: 1px solid #E2E0D8;
+    }
 
     /* Los dos proveedores aplican tramos de edad distintos: cada grupo de
        columnas declara el suyo, para que un mismo visitante pueda salir en
        categorias diferentes sin que parezca un error. */
-    .proveedor { text-align: center; font-size: 11px; }
-    .proveedor small { display: block; font-weight: 400; }
-    .proveedor-tren { background: #3D5AC4; color: #FFFFFF; }
-    .proveedor-zona { background: #2E6B45; color: #FFFFFF; }
-    .limite { border-left: 2px solid #17201C; }
-    .cifra { font-family: Consolas, "Courier New", monospace; white-space: nowrap; }
-    .detalle th { background: #FAFAF7; color: #5F6B62; font-size: 11px; }
+    .proveedor {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #14453D;
+      background: #E4EAE6;
+    }
+    .proveedor small {
+      display: block;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #5F6B62;
+    }
 
-    .total {
-      margin-top: 18px;
-      border-top: 3px solid #17201C;
-      border-bottom: 3px solid #17201C;
-      padding: 12px 0;
+    .importe { text-align: right; white-space: nowrap; font-family: Consolas, "Courier New", monospace; }
+    thead th.importe { text-align: right; }
+    tbody tr:last-child td { border-bottom: 1px solid #E2E0D8; }
+
+    /* ---------- Cierre ---------- */
+    .cierre {
+      margin-top: 22px;
+      background: #14453D;
+      border-radius: 10px;
+      padding: 18px 22px;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .cierre .rotulo {
+      font-size: 12px;
       font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #C89B3C;
+      margin: 0 0 4px;
     }
 
-    .total .importe {
+    .cierre .aviso {
+      font-size: 10px;
+      color: #AEBDB4;
+      margin: 0;
+      max-width: 380px;
+      line-height: 1.4;
+    }
+
+    .cierre .monto {
       font-family: Consolas, "Courier New", monospace;
-      font-size: 22px;
+      font-size: 25px;
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+    }
+    .cierre .moneda { font-size: 13px; color: #C89B3C; margin-left: 4px; }
+
+    .pie {
+      color: #5F6B62;
+      font-size: 10px;
+      margin: 18px 0 0;
+      text-align: center;
     }
 
-    .pie { color: #5F6B62; font-size: 10px; margin-top: 26px; }
+    /* En papel manda la hoja: sin fondo de escritorio, sin sombra y sin
+       bordes redondeados, que no aportan nada impresos y gastan toner. */
+    @media print {
+      @page { margin: 14mm; }
+      body { background: #FFFFFF; }
+      .voucher {
+        max-width: none;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+      .filete { margin: 0 0 20px; }
+      .tarjeta, .trayecto, .sello { break-inside: avoid; }
+      .cierre { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
 
-  <p class="marca">Ministerio de Transportes y Comunicaciones &middot; Asesor Turístico Ferroviario y Peatonal</p>
+  <div class="voucher">
 
-  <div class="placa">
-    <span class="origen" th:text="'Desde ' + ${informe.estacionOrigen}">Desde la estación</span>
-    <span class="destino" th:text="${informe.zonaDestino}">Zona turística</span>
+    <div class="filete">
+      <div class="verde"></div>
+      <div class="oro"></div>
+    </div>
+
+    <div class="membrete">
+      <div>
+        <p class="entidad">Ministerio de Transportes y Comunicaciones</p>
+        <p class="sistema">Asesor Turístico Ferroviario y Peatonal</p>
+      </div>
+      <div class="sello">
+        <span class="codigo" th:text="${informe.codigo}">INF-0001</span>
+        <span class="fecha"
+              th:text="'Visita del ' + ${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">Visita del 01/01/2026</span>
+      </div>
+    </div>
+
+    <div class="trayecto">
+      <p class="rotulo">Itinerario</p>
+      <p class="conexion">
+        <span th:text="${informe.estacionOrigen}">Estación de origen</span>
+        <span class="flecha">&#8594;</span>
+        <span th:text="${informe.zonaDestino}">Zona turística</span>
+      </p>
+      <span class="insignia"
+            th:text="${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">01/01/2026</span>
+      <span class="insignia"
+            th:text="${informe.totalPersonas} + (${informe.totalPersonas} == 1 ? ' persona' : ' personas')">1 persona</span>
+      <span class="insignia" th:if="${informe.ruta != null and informe.ruta.esIdaVuelta}">Ida y vuelta</span>
+    </div>
+
+    <div class="tarjetas">
+
+      <div class="tarjeta">
+        <p class="titulo">Recorrido a pie</p>
+        <p class="dato cifra" th:text="${informe.ruta != null} ? ${informe.ruta.distanciaKm} + ' km' : '—'">0 km</p>
+        <p class="apunte" th:if="${informe.ruta != null}"
+           th:text="${informe.ruta.tiempoEstimadoMin} + ' min · ida y vuelta a la misma estación'">0 min</p>
+      </div>
+
+      <div class="tarjeta">
+        <p class="titulo">Dificultad</p>
+        <p class="dato" th:if="${informe.ruta != null}">
+          <span class="nivel"
+                th:classappend="${informe.ruta.ordenDificultad == null} ? 'nivel-medio'
+                                : (${informe.ruta.ordenDificultad} &lt;= 1 ? 'nivel-suave'
+                                : (${informe.ruta.ordenDificultad} == 2 ? 'nivel-medio' : 'nivel-fuerte'))"
+                th:text="${informe.ruta.dificultad}">Baja</span>
+        </p>
+        <p class="apunte">Según el desnivel y la distancia del circuito</p>
+      </div>
+
+      <div class="tarjeta">
+        <p class="titulo">Clima previsto</p>
+        <p class="dato cifra" th:if="${informe.estadoClima != null}"
+           th:text="${informe.temperaturaMinimaC} + '° / ' + ${informe.temperaturaMaximaC} + '°C'">0° / 0°C</p>
+        <p class="dato" th:if="${informe.estadoClima == null}">Sin pronóstico</p>
+        <p class="apunte" th:if="${informe.estadoClima != null}"
+           th:text="${informe.estadoClima} + ' · ' + ${informe.probabilidadLluvia} + '% de lluvia'">Despejado</p>
+        <p class="apunte" th:if="${informe.estadoClima == null}">SENAMHI no publicó datos para esta fecha</p>
+      </div>
+
+      <div class="tarjeta">
+        <p class="titulo">Aforo de la zona</p>
+        <p class="dato cifra" th:if="${informe.cupoDisponible != null}"
+           th:text="${informe.cupoDisponible}">0</p>
+        <p class="dato" th:if="${informe.cupoDisponible == null}">Libre</p>
+        <p class="apunte" th:if="${informe.cupoDisponible != null}">Cupos restantes tras esta reserva</p>
+        <p class="apunte" th:if="${informe.cupoDisponible == null}">La zona no controla aforo diario</p>
+      </div>
+
+    </div>
+
+    <h2>Qué paga cada persona</h2>
+    <p class="aclaracion">
+      Los dos proveedores aplican tramos de edad distintos, así que una misma
+      persona puede entrar en una categoría en el tren y en otra en la zona.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th colspan="2"></th>
+          <th colspan="2" class="proveedor">
+            PeruRail<small>tarifa completa desde los 12</small>
+          </th>
+          <th colspan="2" class="proveedor">
+            Zona turística<small>tarifa reducida hasta los 17</small>
+          </th>
+          <th></th>
+        </tr>
+        <tr>
+          <th>Edad</th>
+          <th>Personas</th>
+          <th>Categoría</th>
+          <th class="importe">Importe</th>
+          <th>Categoría</th>
+          <th class="importe">Importe</th>
+          <th class="importe">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="v : ${informe.visitantes}">
+          <td class="cifra" th:text="${v.edad} + ' años'">0 años</td>
+          <td class="cifra" th:text="${v.cantidad}">1</td>
+          <td th:text="${v.categoriaTren} ?: 'Sin tren'">Adulto</td>
+          <td class="importe" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</td>
+          <td th:text="${v.categoriaZona}">Adulto</td>
+          <td class="importe" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</td>
+          <td class="importe" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="cierre">
+      <div>
+        <p class="rotulo">Total estimado del grupo</p>
+        <p class="aviso">
+          Tarifa referencial: no constituye boleto de transporte ni reserva
+          comercial emitida.
+        </p>
+      </div>
+      <div class="monto">
+        <span th:text="'S/ ' + ${informe.totalEstimado}">S/ 0.00</span><span class="moneda">PEN</span>
+      </div>
+    </div>
+
+    <p class="pie">
+      Referencia de tarifas: tren
+      <span th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'no aplica'">S/ 0</span>
+      · ingreso a la zona
+      <span th:text="${informe.costoZona != null and informe.costoZona > 0} ? 'S/ ' + ${informe.costoZona} : 'libre'">S/ 0</span>,
+      ambas por adulto. Generado automáticamente por el sistema del MTC.
+    </p>
+
   </div>
-  <p class="codigo">
-    Código <span th:text="${informe.codigo}">INF-0001</span> &middot;
-    visita del <span th:text="${#temporals.format(informe.fechaVisita, 'dd/MM/yyyy')}">fecha</span>
-  </p>
 
-  <h2>Recorrido y condiciones</h2>
-  <table class="resumen">
-    <tr><th>Distancia (ida y vuelta)</th>
-        <td th:text="${informe.ruta.distanciaKm} + ' km'">0 km</td></tr>
-    <tr><th>Tiempo estimado</th>
-        <td th:text="${informe.ruta.tiempoEstimadoMin} + ' min'">0 min</td></tr>
-    <tr><th>Dificultad</th><td th:text="${informe.ruta.dificultad}">Baja</td></tr>
-    <tr><th>Clima previsto</th>
-        <td th:text="${informe.estadoClima != null}
-                     ? ${informe.temperaturaMinimaC} + '°C - ' + ${informe.temperaturaMaximaC}
-                       + '°C, ' + ${informe.probabilidadLluvia} + '% lluvia (' + ${informe.estadoClima} + ')'
-                     : 'Sin pronóstico publicado'">clima</td></tr>
-    <tr><th>Personas</th><td th:text="${informe.totalPersonas}">1</td></tr>
-    <tr th:if="${informe.cupoDisponible != null}">
-        <th>Cupo restante tras la reserva</th>
-        <td th:text="${informe.cupoDisponible}">0</td></tr>
-    <tr><th>Tarifa del tren, referencia de adulto</th>
-        <td th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'No aplica'">S/ 0</td></tr>
-    <tr><th>Ingreso a la zona, referencia de adulto</th>
-        <td th:text="${informe.costoZona != null and informe.costoZona > 0} ? 'S/ ' + ${informe.costoZona} : 'Libre'">S/ 0</td></tr>
-  </table>
-
-  <h2>Qué paga cada persona</h2>
-  <table class="detalle">
-    <tr>
-      <th colspan="2"></th>
-      <th colspan="2" class="proveedor proveedor-tren limite">
-        PeruRail<small>tarifa completa desde los 12</small>
-      </th>
-      <th colspan="2" class="proveedor proveedor-zona limite">
-        Zona turística<small>tarifa reducida hasta los 17</small>
-      </th>
-      <th></th>
-    </tr>
-    <tr>
-      <th>Edad</th>
-      <th>Personas</th>
-      <th class="limite">Categoría</th>
-      <th>Importe</th>
-      <th class="limite">Categoría</th>
-      <th>Importe</th>
-      <th>Subtotal</th>
-    </tr>
-    <tr th:each="v : ${informe.visitantes}">
-      <td class="cifra" th:text="${v.edad} + ' años'">0 años</td>
-      <td class="cifra" th:text="${v.cantidad}">1</td>
-      <td class="limite" th:text="${v.categoriaTren} ?: 'Sin tren'">Adulto</td>
-      <td class="cifra" th:text="'S/ ' + ${v.subtotalTren}">S/ 0</td>
-      <td class="limite" th:text="${v.categoriaZona}">Adulto</td>
-      <td class="cifra" th:text="'S/ ' + ${v.subtotalZona}">S/ 0</td>
-      <td class="cifra" th:text="'S/ ' + ${v.subtotal}">S/ 0</td>
-    </tr>
-  </table>
-
-  <div class="total">
-    <span>Total estimado del grupo</span>
-    <span class="importe" th:text="'S/ ' + ${informe.totalEstimado}">S/ 0</span>
-  </div>
-
-  <p class="pie">
-    Tarifa referencial: el sistema no vende ni reserva pasajes.
-    Generado automáticamente por el sistema del MTC.
-  </p>
 </body>
 </html>
