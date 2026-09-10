@@ -33,9 +33,9 @@ public class ZonaTuristicaController {
     private final AuditoriaService auditoriaService;
 
     public ZonaTuristicaController(ZonaTuristicaService zonaTuristicaService,
-                                    EstacionService estacionService,
-                                    PreferenciaRepository preferenciaRepository,
-                                    AuditoriaService auditoriaService) {
+            EstacionService estacionService,
+            PreferenciaRepository preferenciaRepository,
+            AuditoriaService auditoriaService) {
         this.zonaTuristicaService = zonaTuristicaService;
         this.estacionService = estacionService;
         this.preferenciaRepository = preferenciaRepository;
@@ -45,24 +45,16 @@ public class ZonaTuristicaController {
     @GetMapping
     public String listar(Model model) {
         model.addAttribute("zonas", zonaTuristicaService.listarTodasConEstacionYPreferencias());
-        if (!model.containsAttribute("zona")) {
-            model.addAttribute("zona", new ZonaTuristica());
-            model.addAttribute("idsPreferencia", List.of());
-        }
+        model.addAttribute("zona", new ZonaTuristica());
+        model.addAttribute("idsPreferencia", List.of());
         cargarCatalogos(model);
         return "admin/zonas-lista";
     }
 
-    /** CU-04: formulario de alta en pagina propia (admin/zona-form.html). */
-    @GetMapping("/nueva")
-    public String formularioNueva(Model model) {
-        model.addAttribute("zona", new ZonaTuristica());
-        model.addAttribute("idsPreferencia", List.of());
-        cargarCatalogos(model);
-        return "admin/zona-form";
-    }
-
-    /** CU-04: edicion de una zona existente, con sus preferencias ya preseleccionadas. */
+    /**
+     * CU-04: edicion de una zona existente, con sus preferencias ya
+     * preseleccionadas.
+     */
     @GetMapping("/{id}/editar")
     public String formularioEditar(@PathVariable Integer id, Model model) {
         ZonaTuristica zona = zonaTuristicaService.buscarParaEdicion(id)
@@ -80,9 +72,9 @@ public class ZonaTuristicaController {
      */
     @PostMapping
     public String guardar(@Valid @ModelAttribute("zona") ZonaTuristica zona,
-                           BindingResult errores,
-                           @RequestParam(name = "idsPreferencia", required = false) List<Integer> idsPreferencia,
-                           Model model) {
+            BindingResult errores,
+            @RequestParam(name = "idsPreferencia", required = false) List<Integer> idsPreferencia,
+            Model model) {
         List<Integer> preferencias = idsPreferencia == null ? List.of() : idsPreferencia;
 
         if (preferencias.isEmpty()) {
@@ -90,9 +82,10 @@ public class ZonaTuristicaController {
                     "Debe seleccionar al menos una preferencia");
         }
         if (errores.hasErrors()) {
+            model.addAttribute("zonas", zonaTuristicaService.listarTodasConEstacionYPreferencias());
             model.addAttribute("idsPreferencia", preferencias);
             cargarCatalogos(model);
-            return "admin/zona-form";
+            return "admin/zonas-lista";
         }
 
         zonaTuristicaService.registrarOActualizar(zona, preferencias, auditoriaService.usuarioActual());
@@ -100,9 +93,15 @@ public class ZonaTuristicaController {
     }
 
     /** RF-10: baja de la zona turistica (ZonEstado = Inactiva), auditada. */
-    @PostMapping("/{id}/eliminar")
-    public String eliminar(@PathVariable Integer id) {
-        zonaTuristicaService.eliminar(id, auditoriaService.usuarioActual());
+    @PostMapping("/{id}/inhabilitar")
+    public String inhabilitar(@PathVariable Integer id) {
+        zonaTuristicaService.inhabilitar(id, auditoriaService.usuarioActual());
+        return "redirect:/zonas";
+    }
+
+    @PostMapping("/{id}/habilitar")
+    public String habilitar(@PathVariable Integer id) {
+        zonaTuristicaService.habilitar(id, auditoriaService.usuarioActual());
         return "redirect:/zonas";
     }
 

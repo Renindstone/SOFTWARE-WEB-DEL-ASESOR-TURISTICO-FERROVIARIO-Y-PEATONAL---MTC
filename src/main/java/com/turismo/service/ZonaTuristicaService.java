@@ -108,7 +108,7 @@ public class ZonaTuristicaService {
      * (seccion 6.3).
      */
     @Transactional
-    public void eliminar(Integer idZona, String usuario) {
+    public void inhabilitar(Integer idZona, String usuario) {
         ZonaTuristica zona = zonaTuristicaRepository.findById(idZona)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
 
@@ -116,10 +116,21 @@ public class ZonaTuristicaService {
         zona.setEstado("Inactiva");
         zonaTuristicaRepository.save(zona);
 
-        auditoriaService.registrarAuditoria(usuario, "DELETE", TABLA_AUDITADA,
+        auditoriaService.registrarAuditoria(usuario, "UPDATE", TABLA_AUDITADA,
                 valorAnterior, describir(zona));
     }
+@Transactional
+    public void habilitar(Integer idZona, String usuario) {
+        ZonaTuristica zona = zonaTuristicaRepository.findById(idZona)
+                .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
 
+        String valorAnterior = describir(zona);
+        zona.setEstado("Activa");
+        zonaTuristicaRepository.save(zona);
+
+        auditoriaService.registrarAuditoria(usuario, "UPDATE", TABLA_AUDITADA,
+                valorAnterior, describir(zona));
+    }
     @Transactional
     public void asignarPreferencias(ZonaTuristica zona, List<Integer> idsPreferencia) {
         zonaPreferenciaRepository.deleteAll(

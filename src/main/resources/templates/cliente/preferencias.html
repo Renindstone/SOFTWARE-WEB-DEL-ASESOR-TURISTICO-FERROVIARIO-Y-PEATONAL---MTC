@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 
 <head th:replace="~{layout/base :: head('Zonas turísticas')}"></head>
-
+<style th:src="@{/css/estilos.css}"></style>
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
@@ -216,6 +216,7 @@
 <div th:replace="~{layout/footer :: footer}"></div>
 <div th:replace="~{layout/base :: scripts-buscador}"></div>
 <script th:src="@{/js/preferencias.js}"></script>
+
 </body>
 
 </html>

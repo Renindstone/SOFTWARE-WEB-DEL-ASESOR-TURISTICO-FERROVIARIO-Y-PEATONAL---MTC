@@ -110,11 +110,11 @@ INSERT INTO categoria_visitante ("CatAmbito", "CatNombre", "CatEdadMinima",
 -- ----------------------------------------------------------------------------
 INSERT INTO estacion ("EstCodigo", "EstNombre", "EstLatitud", "EstLongitud",
                       "EstAltitud", "EstCiudad", "EstEstado") VALUES
-    ('CUS-SPD', 'Estacion San Pedro (Cusco)',            -13.522500, -71.982200, 3399.00, 'Cusco',           'Activa'),
+    ('CUS-SPD', 'Estacion San Pedro',            -13.522500, -71.982200, 3399.00, 'Cusco',           'Activa'),
     ('CUS-POR', 'Estacion Poroy',                        -13.474400, -72.042800, 3500.00, 'Cusco',           'Inactiva'),
     ('CUS-URU', 'Estacion Urubamba',                     -13.304900, -72.116300, 2871.00, 'Urubamba',        'Activa'),
     ('CUS-OLL', 'Estacion Ollantaytambo',                -13.258600, -72.265000, 2792.00, 'Ollantaytambo',   'Activa'),
-    ('CUS-MAP', 'Estacion Machu Picchu (Aguas Calientes)', -13.154700, -72.525000, 2040.00, 'Aguas Calientes', 'Activa'),
+    ('CUS-MAP', 'Estacion Machu Picchu', -13.154700, -72.525000, 2040.00, 'Aguas Calientes', 'Activa'),
     ('CUS-HID', 'Estacion Hidroelectrica',               -13.174700, -72.547800, 1850.00, 'Santa Teresa',    'Activa'),
     ('PUN-PUN', 'Estacion Puno',                         -15.840200, -70.021900, 3827.00, 'Puno',            'Activa'),
     ('AQP-AQP', 'Estacion Arequipa',                     -16.398900, -71.535000, 2335.00, 'Arequipa',        'Activa');

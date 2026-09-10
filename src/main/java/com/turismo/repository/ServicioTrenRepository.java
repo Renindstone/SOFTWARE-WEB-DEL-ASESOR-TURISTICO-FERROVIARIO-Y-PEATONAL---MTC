@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Las vistas muestran el nombre de las estaciones de origen y destino, y la
@@ -49,6 +50,7 @@ public interface ServicioTrenRepository extends JpaRepository<ServicioTren, Inte
      * sincronizacion para reconocer un servicio ya cargado en vez de volver a
      * insertarlo, y se corresponde con uq_servicio_tramo_hora.
      */
-    java.util.Optional<ServicioTren> findByEstacionOrigen_IdAndEstacionDestino_IdAndHorarioSalida(
+    Optional<ServicioTren> findByEstacionOrigen_IdAndEstacionDestino_IdAndHorarioSalida(
             Integer idEstacionOrigen, Integer idEstacionDestino, java.time.LocalTime horarioSalida);
+
 }

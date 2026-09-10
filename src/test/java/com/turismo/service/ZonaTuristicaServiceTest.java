@@ -145,11 +145,11 @@ class ZonaTuristicaServiceTest {
         zona.setEstado("Activa");
         when(zonaTuristicaRepository.findById(20)).thenReturn(Optional.of(zona));
 
-        zonaTuristicaService.eliminar(20, "travel_ana");
+        zonaTuristicaService.inhabilitar(20, "travel_ana");
 
         assertThat(zona.getEstado()).isEqualTo("Inactiva");
         verify(zonaTuristicaRepository, never()).delete(any());
-        verify(auditoriaService).registrarAuditoria(eq("travel_ana"), eq("DELETE"),
+        verify(auditoriaService).registrarAuditoria(eq("travel_ana"), eq("UPDATE"),
                 eq("zona_turistica"), anyString(), anyString());
     }
 }
