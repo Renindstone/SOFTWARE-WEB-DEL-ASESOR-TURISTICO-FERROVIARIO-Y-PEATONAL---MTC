@@ -167,7 +167,8 @@
             <i class="bi bi-calendar-event"></i> Fecha de la visita
           </label>
           <input type="date" class="form-control" id="fechaVisita" name="fechaVisita"
-                 th:value="${#temporals.format(fechaVisita, 'yyyy-MM-dd')}" required>
+                 th:value="${#temporals.format(fechaVisita, 'yyyy-MM-dd')}"
+                 th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
         </div>
 
         <!-- RF-18: la edad de cada acompanante decide su tarifa. -->
@@ -223,6 +224,15 @@
 <div th:replace="~{layout/footer :: footer}"></div>
 <div th:replace="~{layout/base :: scripts-mapa}"></div>
 <script th:src="@{/js/grupo-visitantes.js}"></script>
+  <script>
+    document.getElementById('fechaVisita')?.addEventListener('change', function () {
+      if (this.value) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('fechaVisita', this.value);
+        window.location.href = url.toString();
+      }
+    });
+  </script>
 </body>
 
 </html>
