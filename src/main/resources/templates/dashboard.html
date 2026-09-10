@@ -18,8 +18,13 @@
     </a>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
+  <!-- Las dos metricas reservadas al MTC solo se pintan para ADMIN_MTC. Para
+       que las restantes no queden apretadas contra el margen izquierdo, el
+       ancho de cada tarjeta se decide aqui: cuatro en fila para el
+       administrador, dos a media fila para los operadores. -->
+  <div class="row g-3 mb-4"
+       th:with="anchoMetrica=${#authorization.expression('hasRole(''ADMIN_MTC'')')} ? 'col-md-3' : 'col-md-6'">
+    <div th:class="'col-6 ' + ${anchoMetrica}">
       <div class="card section-card h-100 text-center">
         <div class="card-body">
           <i class="bi bi-map fs-3" style="color:#14453D;"></i>
@@ -28,7 +33,7 @@
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div th:class="'col-6 ' + ${anchoMetrica}">
       <div class="card section-card h-100 text-center">
         <div class="card-body">
           <i class="bi bi-train-front fs-3" style="color:#14453D;"></i>
@@ -37,7 +42,10 @@
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <!-- RNF-05: cuantos informes emite el sistema es una metrica de gestion del
+         MTC. PeruRail y Travel Group Peru operan su parte del catalogo, no
+         fiscalizan la actividad del ministerio. -->
+    <div th:class="'col-6 ' + ${anchoMetrica}" sec:authorize="hasRole('ADMIN_MTC')">
       <div class="card section-card h-100 text-center">
         <div class="card-body">
           <i class="bi bi-file-earmark-text fs-3" style="color:#C89B3C;"></i>
@@ -47,7 +55,7 @@
       </div>
     </div>
     <!-- RNF-05: la trazabilidad es competencia del MTC, no del resto del personal. -->
-    <div class="col-6 col-md-3" sec:authorize="hasRole('ADMIN_MTC')">
+    <div th:class="'col-6 ' + ${anchoMetrica}" sec:authorize="hasRole('ADMIN_MTC')">
       <div class="card section-card h-100 text-center">
         <div class="card-body">
           <i class="bi bi-journal-check fs-3" style="color:#C89B3C;"></i>
