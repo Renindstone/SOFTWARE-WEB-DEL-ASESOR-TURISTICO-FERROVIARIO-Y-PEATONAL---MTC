@@ -6,6 +6,12 @@
 // no responde o no hay conexion, utiliza el trazo directo en linea recta
 // (Haversine) como respaldo, para que el mapa nunca quede vacio.
 //
+// Cuando OSRM si responde, armonizarDistancias() pone de acuerdo la tarjeta
+// superior con el mapa: de otro modo la pantalla muestra a la vez la distancia
+// en linea recta y la del camino por calles, que nunca coinciden. Si OSRM
+// falla, no se toca nada y las cifras de Haversine se quedan tal cual: es
+// preferible una estimacion coherente a una mezcla de las dos.
+//
 // Las coordenadas llegan como data-attributes del contenedor del mapa, que la
 // vista cliente/ruta-detalle.html rellena desde Estacion y ZonaTuristica.
 document.addEventListener("DOMContentLoaded", function () {
@@ -55,6 +61,49 @@ document.addEventListener("DOMContentLoaded", function () {
     ]).pad(0.35));
   }
 
+  /**
+   * Pone de acuerdo las tres cifras de distancia de la pantalla.
+   *
+   * La tarjeta superior muestra el circuito de ida y vuelta calculado con
+   * Haversine, en linea recta, mientras que el mapa dibuja el camino real por
+   * calles, que siempre es mas largo. Sin esto, el turista lee dos numeros
+   * distintos para el mismo recorrido y ninguno le dice de donde sale cada uno.
+   *
+   * OSRM devuelve solo la ida, asi que el circuito es el doble: el modelo del
+   * proyecto es de ida y vuelta a la misma estacion (RNF-04), sin combinaciones.
+   *
+   * El tiempo se reescala en la misma proporcion que la distancia, con lo que
+   * se conserva el ritmo de caminata (min/km) que la tabla parametrica
+   * dificultad fija para este nivel (RNF-06).
+   */
+  function armonizarDistancias(metrosIda) {
+    var kmIda = (metrosIda / 1000).toFixed(2);
+    var kmIdaVuelta = (parseFloat(kmIda) * 2).toFixed(2);
+
+    var textoRuta = document.getElementById("texto-descripcion-ruta");
+    if (textoRuta) {
+      textoRuta.innerHTML = '<i class="bi bi-signpost-2-fill text-success me-1"></i>'
+        + ' Trazado peatonal por calles: <strong>' + kmIda + ' km</strong> de ida '
+        + '(<strong>' + kmIdaVuelta + ' km</strong> el circuito de ida y vuelta, '
+        + 'vía OpenStreetMap).';
+    }
+
+    var elDistancia = document.getElementById("ficha-distancia-valor");
+    if (elDistancia) {
+      elDistancia.innerHTML = kmIdaVuelta
+        + ' km <span class="badge bg-light text-dark border ms-1 fw-normal"'
+        + ' style="font-size: 0.72rem;">por calles</span>';
+    }
+
+    var distHaversine = parseFloat(contenedor.dataset.distanciaHaversine);
+    var tiempoHaversine = parseInt(contenedor.dataset.tiempoHaversine, 10);
+    var elTiempo = document.getElementById("ficha-tiempo-valor");
+    if (elTiempo && distHaversine > 0 && !isNaN(tiempoHaversine)) {
+      var nuevoTiempo = Math.round((parseFloat(kmIdaVuelta) / distHaversine) * tiempoHaversine);
+      elTiempo.textContent = nuevoTiempo + ' min';
+    }
+  }
+
   // ---- OSRM: ruta peatonal por calles (solo ida, un unico camino) ----
   // Formato OSRM: lon,lat (invertido respecto a Leaflet)
   var urlOsrm = "https://router.project-osrm.org/route/v1/foot/"
@@ -98,13 +147,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       mapa.fitBounds(polyCalles.getBounds().pad(0.25));
 
-      // Actualizar el texto debajo del mapa con la distancia real por calles
-      var textoRuta = document.getElementById("texto-descripcion-ruta");
-      if (textoRuta && data.routes[0].distance) {
-        var kmCalles = (data.routes[0].distance / 1000).toFixed(2);
-        textoRuta.innerHTML = '<i class="bi bi-signpost-2-fill text-success me-1"></i>'
-          + ' Trazado peatonal por calles (ida: <strong>'
-          + kmCalles + ' km</strong> v\u00eda OpenStreetMap).';
+      if (data.routes[0].distance) {
+        armonizarDistancias(data.routes[0].distance);
       }
     })
     .catch(function (err) {

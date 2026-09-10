@@ -27,13 +27,18 @@
         <div class="card-body p-4">
           <h2 class="h6 section-title"><i class="bi bi-signpost-split"></i> Ruta peatonal</h2>
           <ul class="ficha">
+            <!-- Estos dos valores salen de Haversine, en linea recta. Si OSRM
+                 responde, mapa-leaflet.js los sustituye por el recorrido real
+                 por calles; si no responde, se quedan como estan. -->
             <li class="ficha-fila">
               <span class="ficha-etiqueta">Distancia (ida y vuelta)</span>
-              <span class="ficha-valor" th:text="${ruta.distanciaKm} + ' km'">0 km</span>
+              <span class="ficha-valor" id="ficha-distancia-valor"
+                    th:text="${ruta.distanciaKm} + ' km'">0 km</span>
             </li>
             <li class="ficha-fila">
               <span class="ficha-etiqueta">Tiempo estimado</span>
-              <span class="ficha-valor" th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</span>
+              <span class="ficha-valor" id="ficha-tiempo-valor"
+                    th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</span>
             </li>
             <li class="ficha-fila">
               <span class="ficha-etiqueta">Dificultad</span>
@@ -128,13 +133,18 @@
   <div class="card section-card mt-4">
     <div class="card-body p-4">
       <h2 class="h6 section-title"><i class="bi bi-map"></i> Mapa del recorrido</h2>
+      <!-- Las dos ultimas son las cifras de Haversine: el script las necesita
+           para deducir el ritmo de caminata (min/km) del nivel de dificultad y
+           reescalar el tiempo cuando la distancia por calles resulte otra. -->
       <div id="mapa-ruta" style="height: 380px;"
            th:attr="data-lat-origen=${origen.latitud},
                     data-lon-origen=${origen.longitud},
                     data-nombre-origen=${origen.nombre},
                     data-lat-destino=${destino.latitud},
                     data-lon-destino=${destino.longitud},
-                    data-nombre-destino=${destino.nombre}"></div>
+                    data-nombre-destino=${destino.nombre},
+                    data-distancia-haversine=${ruta.distanciaKm},
+                    data-tiempo-haversine=${ruta.tiempoEstimadoMin}"></div>
       <p id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0">
         El trazo representa el circuito de ida y vuelta estimado en línea recta (fórmula de Haversine).
       </p>
