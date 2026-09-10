@@ -53,11 +53,18 @@ public class GlobalExceptionHandler {
         return "error";
     }
 
-    /** CN-05: validaciones del CRUD de zonas turisticas (preferencia, estacion). */
-    @ExceptionHandler(IllegalArgumentException.class)
+    /**
+     * CN-05: validaciones del CRUD de zonas turisticas (preferencia, estacion)
+     * y RF-12: reglas entre campos del servicio de tren.
+     *
+     * Es una red de seguridad: ServicioTrenController ya captura
+     * ServicioTrenInvalidoException para devolver al formulario con lo que el
+     * administrador habia tecleado, en vez de llevarlo a esta pantalla.
+     */
+    @ExceptionHandler({IllegalArgumentException.class, ServicioTrenInvalidoException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String manejarValidacionDeNegocio(IllegalArgumentException ex, Model model) {
-        model.addAttribute("tituloError", "Datos incompletos");
+    public String manejarValidacionDeNegocio(RuntimeException ex, Model model) {
+        model.addAttribute("tituloError", "Datos no válidos");
         model.addAttribute("mensajeError", ex.getMessage());
         return "error";
     }

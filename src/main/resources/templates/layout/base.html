@@ -31,6 +31,22 @@
 </head>
 
 <body>
+  <!-- Aviso del resultado de una operacion (alta, baja, habilitacion). El
+       controlador lo envia como flash attribute, de modo que sobrevive al
+       redirect del patron POST-Redirect-Get sin quedar pegado en la URL como
+       parametro de consulta. El exito se anuncia con role="status" (cortes) y
+       el fallo con role="alert" (interrumpe al lector de pantalla). -->
+  <div th:fragment="alertas">
+    <div th:if="${exito}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2" role="status">
+      <i class="bi bi-check-circle-fill"></i>
+      <span th:text="${exito}">Operación realizada.</span>
+    </div>
+    <div th:if="${error}" class="alert alert-danger py-2 mb-3 d-flex align-items-center gap-2" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span th:text="${error}">Ocurrió un problema.</span>
+    </div>
+  </div>
+
   <div th:fragment="scripts">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </div>

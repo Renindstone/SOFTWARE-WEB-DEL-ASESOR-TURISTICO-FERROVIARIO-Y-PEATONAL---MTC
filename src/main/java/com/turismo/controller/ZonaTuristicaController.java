@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -74,7 +75,7 @@ public class ZonaTuristicaController {
     public String guardar(@Valid @ModelAttribute("zona") ZonaTuristica zona,
             BindingResult errores,
             @RequestParam(name = "idsPreferencia", required = false) List<Integer> idsPreferencia,
-            Model model) {
+            Model model, RedirectAttributes redirect) {
         List<Integer> preferencias = idsPreferencia == null ? List.of() : idsPreferencia;
 
         if (preferencias.isEmpty()) {
@@ -89,19 +90,22 @@ public class ZonaTuristicaController {
         }
 
         zonaTuristicaService.registrarOActualizar(zona, preferencias, auditoriaService.usuarioActual());
+        redirect.addFlashAttribute("exito", "Zona turística guardada y registrada en auditoría.");
         return "redirect:/zonas";
     }
 
     /** RF-10: baja de la zona turistica (ZonEstado = Inactiva), auditada. */
     @PostMapping("/{id}/inhabilitar")
-    public String inhabilitar(@PathVariable Integer id) {
+    public String inhabilitar(@PathVariable Integer id, RedirectAttributes redirect) {
         zonaTuristicaService.inhabilitar(id, auditoriaService.usuarioActual());
+        redirect.addFlashAttribute("exito", "Zona turística inhabilitada: ya no se ofrece al turista.");
         return "redirect:/zonas";
     }
 
     @PostMapping("/{id}/habilitar")
-    public String habilitar(@PathVariable Integer id) {
+    public String habilitar(@PathVariable Integer id, RedirectAttributes redirect) {
         zonaTuristicaService.habilitar(id, auditoriaService.usuarioActual());
+        redirect.addFlashAttribute("exito", "Zona turística habilitada: vuelve a ofrecerse al turista.");
         return "redirect:/zonas";
     }
 

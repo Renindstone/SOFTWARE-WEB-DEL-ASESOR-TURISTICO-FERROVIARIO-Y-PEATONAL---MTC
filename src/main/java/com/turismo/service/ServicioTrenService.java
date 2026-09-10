@@ -1,12 +1,16 @@
 package com.turismo.service;
 
+import com.turismo.exception.ServicioTrenInvalidoException;
 import com.turismo.integration.perurail.PeruRailClient;
+import com.turismo.model.Estacion;
 import com.turismo.model.ServicioTren;
 import com.turismo.repository.ServicioTrenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -52,6 +56,8 @@ public class ServicioTrenService {
     @Transactional
     public ServicioTren guardar(ServicioTren servicioTren, String usuario) {
         peruRailClient.validarTarifaPeruRail(servicioTren.getTarifa());
+        validarTramo(servicioTren);
+        validarHorarios(servicioTren);
 
         boolean esAlta = servicioTren.getId() == null;
         String valorAnterior = esAlta ? null
@@ -65,13 +71,58 @@ public class ServicioTrenService {
         return guardado;
     }
 
+    /**
+     * Un tramo debe unir dos estaciones distintas. La base no lo impide y sin
+     * esta comprobacion se podria dar de alta un servicio que sale y llega a
+     * la misma estacion, que ademas apareceria despues en listarHaciaEstacion.
+     */
+    private void validarTramo(ServicioTren servicioTren) {
+        Estacion origen = servicioTren.getEstacionOrigen();
+        Estacion destino = servicioTren.getEstacionDestino();
+        if (origen != null && destino != null && Objects.equals(origen.getId(), destino.getId())) {
+            throw new ServicioTrenInvalidoException(
+                    "La estación de destino debe ser distinta de la de origen");
+        }
+    }
+
+    /**
+     * El horario de llegada debe ser exactamente la salida mas el tiempo de
+     * transito. Se compara sobre LocalTime.plusMinutes, que da la vuelta al
+     * reloj por si solo, de modo que los servicios nocturnos siguen siendo
+     * validos: el tramo Puno - Arequipa sale 21:00, viaja 660 minutos y llega
+     * a las 08:00 del dia siguiente. Comparar "llegada posterior a salida"
+     * habria rechazado ese servicio.
+     */
+    private void validarHorarios(ServicioTren servicioTren) {
+        LocalTime salida = servicioTren.getHorarioSalida();
+        LocalTime llegada = servicioTren.getHorarioLlegada();
+        Integer transito = servicioTren.getTiempoTransitoMin();
+        if (salida == null || llegada == null || transito == null) {
+            return;
+        }
+        LocalTime esperada = salida.plusMinutes(transito);
+        if (!esperada.equals(llegada)) {
+            throw new ServicioTrenInvalidoException(
+                    "El horario de llegada no concuerda con la salida más el tiempo de tránsito: "
+                            + "con salida " + salida + " y " + transito + " minutos se llegaría a las "
+                            + esperada + ", no a las " + llegada);
+        }
+    }
+
+    /**
+     * Elimina el servicio y deja constancia en auditoria. Devuelve false si el
+     * identificador ya no existe, para que el controlador no anuncie una baja
+     * que no ha ocurrido (por ejemplo al reenviar el formulario desde una
+     * pestana con datos caducados).
+     */
     @Transactional
-    public void eliminar(Integer id, String usuario) {
-        servicioTrenRepository.buscarConEstaciones(id).ifPresent(servicio -> {
+    public boolean eliminar(Integer id, String usuario) {
+        return servicioTrenRepository.buscarConEstaciones(id).map(servicio -> {
             String valorAnterior = describir(servicio);
             servicioTrenRepository.delete(servicio);
             auditoriaService.registrarAuditoria(usuario, "DELETE", TABLA_AUDITADA, valorAnterior, null);
-        });
+            return true;
+        }).orElse(false);
     }
 
     private String describir(ServicioTren servicio) {

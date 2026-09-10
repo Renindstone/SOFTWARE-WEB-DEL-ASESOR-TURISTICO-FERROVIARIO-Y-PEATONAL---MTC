@@ -1,5 +1,6 @@
 package com.turismo.service;
 
+import com.turismo.exception.ServicioTrenInvalidoException;
 import com.turismo.integration.perurail.PeruRailClient;
 import com.turismo.model.Estacion;
 import com.turismo.model.ServicioTren;
@@ -18,6 +19,7 @@ import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
@@ -74,8 +76,9 @@ class ServicioTrenServiceTest {
     void cb12_eliminarServicioExistente_borraYRegistraAuditoria() {
         when(servicioTrenRepository.buscarConEstaciones(10)).thenReturn(Optional.of(servicioExistente));
 
-        servicioTrenService.eliminar(10, "rail_luis");
+        boolean eliminado = servicioTrenService.eliminar(10, "rail_luis");
 
+        assertThat(eliminado).isTrue();
         verify(servicioTrenRepository).delete(servicioExistente);
 
         ArgumentCaptor<String> captorValorAnterior = ArgumentCaptor.forClass(String.class);
@@ -94,12 +97,15 @@ class ServicioTrenServiceTest {
     }
 
     @Test
-    @DisplayName("Eliminar servicio inexistente: no ejecuta delete ni registra auditoria")
+    @DisplayName("Eliminar servicio inexistente: devuelve false, sin delete ni auditoria")
     void eliminar_servicioNoExiste_noHaceNada() {
         when(servicioTrenRepository.buscarConEstaciones(999)).thenReturn(Optional.empty());
 
-        servicioTrenService.eliminar(999, "rail_luis");
+        boolean eliminado = servicioTrenService.eliminar(999, "rail_luis");
 
+        // El controlador se apoya en este false para no anunciar una baja que
+        // no ha ocurrido (reenvio del formulario desde una pestana caducada).
+        assertThat(eliminado).isFalse();
         verify(servicioTrenRepository, never()).delete(any());
         verify(auditoriaService, never()).registrarAuditoria(any(), any(), any(), any(), any());
     }
@@ -126,6 +132,70 @@ class ServicioTrenServiceTest {
                 anyString()
         );
         assertThat(resultado).isNotNull();
+    }
+
+    // ------------------------------------------------------------------
+    // RF-12: reglas que relacionan varios campos entre si y que Bean
+    // Validation no puede expresar campo a campo.
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Guardar con origen igual al destino: rechaza y no persiste")
+    void guardar_origenIgualADestino_rechaza() {
+        ServicioTren circular = new ServicioTren();
+        circular.setEstacionOrigen(estacionOrigen);
+        circular.setEstacionDestino(estacionOrigen);
+        circular.setHorarioSalida(LocalTime.of(8, 30));
+        circular.setHorarioLlegada(LocalTime.of(10, 45));
+        circular.setTiempoTransitoMin(135);
+        circular.setTarifa(new BigDecimal("95.00"));
+
+        assertThatThrownBy(() -> servicioTrenService.guardar(circular, "admin_mtc"))
+                .isInstanceOf(ServicioTrenInvalidoException.class)
+                .hasMessageContaining("distinta de la de origen");
+
+        verify(servicioTrenRepository, never()).save(any());
+        verify(auditoriaService, never()).registrarAuditoria(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Guardar con llegada que no concuerda con salida mas transito: rechaza")
+    void guardar_horariosIncoherentes_rechaza() {
+        ServicioTren incoherente = new ServicioTren();
+        incoherente.setEstacionOrigen(estacionOrigen);
+        incoherente.setEstacionDestino(estacionDestino);
+        incoherente.setHorarioSalida(LocalTime.of(8, 30));
+        incoherente.setHorarioLlegada(LocalTime.of(9, 0));   // 30 min, no 135
+        incoherente.setTiempoTransitoMin(135);
+        incoherente.setTarifa(new BigDecimal("95.00"));
+
+        assertThatThrownBy(() -> servicioTrenService.guardar(incoherente, "admin_mtc"))
+                .isInstanceOf(ServicioTrenInvalidoException.class)
+                .hasMessageContaining("10:45");
+
+        verify(servicioTrenRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Guardar con llegada anterior a la salida: valido si es un servicio nocturno")
+    void guardar_servicioNocturno_seAcepta() {
+        // Tramo Puno - Arequipa de 02_datos.sql: sale 21:00, viaja 660 minutos
+        // y llega a las 08:00 del dia siguiente. Comprobar solo que la llegada
+        // fuese posterior a la salida habria rechazado este servicio real.
+        ServicioTren nocturno = new ServicioTren();
+        nocturno.setEstacionOrigen(estacionOrigen);
+        nocturno.setEstacionDestino(estacionDestino);
+        nocturno.setHorarioSalida(LocalTime.of(21, 0));
+        nocturno.setHorarioLlegada(LocalTime.of(8, 0));
+        nocturno.setTiempoTransitoMin(660);
+        nocturno.setTarifa(new BigDecimal("1200.00"));
+
+        when(servicioTrenRepository.save(nocturno)).thenReturn(nocturno);
+
+        ServicioTren resultado = servicioTrenService.guardar(nocturno, "admin_mtc");
+
+        assertThat(resultado).isNotNull();
+        verify(servicioTrenRepository).save(nocturno);
     }
 }
 
