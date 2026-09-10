@@ -23,9 +23,15 @@
                     codigo=${informe.codigo}, edades=${edades})}">
         <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
       </a>
-      <button type="button" class="btn btn-mtc-outline btn-sm" onclick="window.print();">
-        <i class="bi bi-printer me-1"></i>Imprimir
-      </button>
+      <!-- Vista previa del voucher en pestana nueva, la misma que abre el
+           boton "Ver" del historial en cliente/mis-informes.html. Reconstruye
+           el informe ya emitido a partir de su codigo, sin descontar aforo. -->
+      <a class="btn btn-mtc-outline btn-sm" target="_blank"
+         th:href="@{/informes/consolidado/html(idEstacion=${idEstacion}, idZona=${idZona},
+                    idServicioTren=${idServicioTren}, fechaVisita=${fechaVisita},
+                    codigo=${informe.codigo}, edades=${edades})}">
+        <i class="bi bi-eye me-1"></i>Vista previa
+      </a>
     </div>
   </div>
 
