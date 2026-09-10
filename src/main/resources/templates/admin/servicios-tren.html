@@ -172,14 +172,21 @@
                     required>
                 </div>
                 <div class="col-12 col-md-4">
-                  <label class="form-label fw-semibold" for="modalTiempoTransito">Tránsito (min)</label>
-                  <input type="number" min="1" class="form-control" id="modalTiempoTransito"
-                    th:field="*{tiempoTransitoMin}" required>
+                  <label class="form-label fw-semibold" for="modalTiempoTransito">
+                    Tránsito <span class="fw-normal page-sub">(min &middot; autocalculado)</span>
+                  </label>
+                  <!-- Lo rellena recalcularTransito() a partir de los dos
+                       horarios. Un readonly si viaja en el envio, a diferencia
+                       de un disabled, que el navegador no manda. -->
+                  <input type="number" min="1" class="form-control campo-calculado" id="modalTiempoTransito"
+                    th:field="*{tiempoTransitoMin}" readonly required
+                    aria-describedby="ayudaTransito">
                 </div>
               </div>
-              <div class="form-text mt-2">
-                La llegada debe ser la salida más el tiempo de tránsito. Los servicios nocturnos son válidos:
-                el tramo Puno &ndash; Arequipa sale 21:00, viaja 660 minutos y llega a las 08:00 del día siguiente.
+              <div class="form-text mt-2" id="ayudaTransito">
+                El tránsito se calcula solo a partir de los dos horarios, así que no puede discordar de ellos.
+                Los servicios nocturnos son válidos: el tramo Puno &ndash; Arequipa sale 21:00, llega a las
+                08:00 del día siguiente y el sistema resuelve 660 minutos.
               </div>
 
               <div class="divider-soft my-3"></div>
@@ -242,6 +249,44 @@
         });
       }
 
+      /**
+       * El transito sale de los dos horarios y no se teclea: asi no puede
+       * discordar de ellos, que era el motivo por el que el servidor rechazaba
+       * el alta.
+       *
+       * Una diferencia nula o negativa significa que el servicio cruza la
+       * medianoche, no que los horarios esten mal: el tramo Puno - Arequipa
+       * sale 21:00 y llega 08:00, que son 660 minutos y no -780.
+       */
+      function recalcularTransito() {
+        var salida = campos.salida.value;
+        var llegada = campos.llegada.value;
+        if (!salida || !llegada) {
+          campos.transito.value = '';
+          return;
+        }
+
+        var s = salida.split(':');
+        var l = llegada.split(':');
+        var minSalida = parseInt(s[0], 10) * 60 + parseInt(s[1], 10);
+        var minLlegada = parseInt(l[0], 10) * 60 + parseInt(l[1], 10);
+        if (isNaN(minSalida) || isNaN(minLlegada)) {
+          campos.transito.value = '';
+          return;
+        }
+
+        var diff = minLlegada - minSalida;
+        if (diff <= 0) {
+          diff += 24 * 60;
+        }
+        campos.transito.value = diff;
+      }
+
+      ['input', 'change'].forEach(function (evento) {
+        campos.salida.addEventListener(evento, recalcularTransito);
+        campos.llegada.addEventListener(evento, recalcularTransito);
+      });
+
       var botonNuevo = document.getElementById('btnNuevoServicio');
       if (botonNuevo) {
         botonNuevo.addEventListener('click', function () {
@@ -254,6 +299,10 @@
         boton.addEventListener('click', function () {
           titulo.textContent = 'Actualizar servicio de tren';
           volcar(boton.dataset);
+          // Se recalcula tambien al editar: si la fila guardada tuviera un
+          // transito que no cuadra con sus horarios, el formulario lo corrige
+          // en vez de arrastrarlo.
+          recalcularTransito();
         });
       });
 

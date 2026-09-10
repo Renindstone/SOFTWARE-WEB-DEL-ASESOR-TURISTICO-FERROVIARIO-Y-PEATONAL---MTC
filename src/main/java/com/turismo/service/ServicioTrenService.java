@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +57,7 @@ public class ServicioTrenService {
     @Transactional
     public ServicioTren guardar(ServicioTren servicioTren, String usuario) {
         peruRailClient.validarTarifaPeruRail(servicioTren.getTarifa());
+        completarTiempoTransito(servicioTren);
         validarTramo(servicioTren);
         validarHorarios(servicioTren);
 
@@ -69,6 +71,38 @@ public class ServicioTrenService {
                 valorAnterior, describir(guardado));
 
         return guardado;
+    }
+
+    /**
+     * Deriva el tiempo de transito de los dos horarios cuando no viene dado.
+     *
+     * El formulario de admin ya lo calcula en el navegador y lo envia en un
+     * campo de solo lectura, pero esta es la unica garantia para quien llame
+     * al servicio sin pasar por esa pantalla: la sincronizacion con PeruRail o
+     * una prueba. Deriva en vez de rechazar porque el dato es redundante, no
+     * falta informacion.
+     *
+     * Una diferencia nula o negativa significa que el servicio cruza la
+     * medianoche: el tramo Puno - Arequipa sale 21:00 y llega 08:00, que son
+     * 660 minutos y no -780.
+     */
+    private void completarTiempoTransito(ServicioTren servicioTren) {
+        Integer transito = servicioTren.getTiempoTransitoMin();
+        if (transito != null && transito > 0) {
+            return;
+        }
+
+        LocalTime salida = servicioTren.getHorarioSalida();
+        LocalTime llegada = servicioTren.getHorarioLlegada();
+        if (salida == null || llegada == null) {
+            return;
+        }
+
+        long minutos = ChronoUnit.MINUTES.between(salida, llegada);
+        if (minutos <= 0) {
+            minutos += 24 * 60;
+        }
+        servicioTren.setTiempoTransitoMin((int) minutos);
     }
 
     /**

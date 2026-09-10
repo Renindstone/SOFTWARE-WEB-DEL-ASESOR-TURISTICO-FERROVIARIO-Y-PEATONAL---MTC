@@ -176,6 +176,86 @@ class ServicioTrenServiceTest {
         verify(servicioTrenRepository, never()).save(any());
     }
 
+    // ------------------------------------------------------------------
+    // El tiempo de transito es redundante: se deriva de los dos horarios.
+    // El formulario lo calcula en el navegador y lo envia en un campo de
+    // solo lectura, pero el servicio tiene que resolverlo igual para quien
+    // no pase por esa pantalla.
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Guardar sin tiempo de tránsito: lo deriva de los horarios")
+    void guardar_sinTransito_loDeriva() {
+        ServicioTren sinTransito = new ServicioTren();
+        sinTransito.setEstacionOrigen(estacionOrigen);
+        sinTransito.setEstacionDestino(estacionDestino);
+        sinTransito.setHorarioSalida(LocalTime.of(8, 30));
+        sinTransito.setHorarioLlegada(LocalTime.of(10, 45));
+        sinTransito.setTiempoTransitoMin(null);
+        sinTransito.setTarifa(new BigDecimal("95.00"));
+
+        when(servicioTrenRepository.save(sinTransito)).thenReturn(sinTransito);
+
+        servicioTrenService.guardar(sinTransito, "admin_mtc");
+
+        assertThat(sinTransito.getTiempoTransitoMin()).isEqualTo(135);
+    }
+
+    @Test
+    @DisplayName("Guardar sin tránsito un servicio nocturno: da la vuelta al reloj")
+    void guardar_sinTransitoNocturno_daLaVueltaAlReloj() {
+        ServicioTren nocturno = new ServicioTren();
+        nocturno.setEstacionOrigen(estacionOrigen);
+        nocturno.setEstacionDestino(estacionDestino);
+        nocturno.setHorarioSalida(LocalTime.of(21, 0));
+        nocturno.setHorarioLlegada(LocalTime.of(8, 0));
+        nocturno.setTiempoTransitoMin(null);
+        nocturno.setTarifa(new BigDecimal("1200.00"));
+
+        when(servicioTrenRepository.save(nocturno)).thenReturn(nocturno);
+
+        servicioTrenService.guardar(nocturno, "admin_mtc");
+
+        // 21:00 -> 08:00 son 660 minutos, no -780.
+        assertThat(nocturno.getTiempoTransitoMin()).isEqualTo(660);
+    }
+
+    @Test
+    @DisplayName("Guardar con tránsito en cero: lo recalcula en vez de rechazarlo")
+    void guardar_transitoEnCero_loRecalcula() {
+        ServicioTren enCero = new ServicioTren();
+        enCero.setEstacionOrigen(estacionOrigen);
+        enCero.setEstacionDestino(estacionDestino);
+        enCero.setHorarioSalida(LocalTime.of(6, 10));
+        enCero.setHorarioLlegada(LocalTime.of(9, 54));
+        enCero.setTiempoTransitoMin(0);
+        enCero.setTarifa(new BigDecimal("210.00"));
+
+        when(servicioTrenRepository.save(enCero)).thenReturn(enCero);
+
+        servicioTrenService.guardar(enCero, "admin_mtc");
+
+        assertThat(enCero.getTiempoTransitoMin()).isEqualTo(224);
+    }
+
+    @Test
+    @DisplayName("Guardar con un tránsito coherente ya puesto: no lo pisa")
+    void guardar_conTransitoCoherente_loRespeta() {
+        ServicioTren conTransito = new ServicioTren();
+        conTransito.setEstacionOrigen(estacionOrigen);
+        conTransito.setEstacionDestino(estacionDestino);
+        conTransito.setHorarioSalida(LocalTime.of(8, 30));
+        conTransito.setHorarioLlegada(LocalTime.of(10, 45));
+        conTransito.setTiempoTransitoMin(135);
+        conTransito.setTarifa(new BigDecimal("95.00"));
+
+        when(servicioTrenRepository.save(conTransito)).thenReturn(conTransito);
+
+        servicioTrenService.guardar(conTransito, "admin_mtc");
+
+        assertThat(conTransito.getTiempoTransitoMin()).isEqualTo(135);
+    }
+
     @Test
     @DisplayName("Guardar con llegada anterior a la salida: valido si es un servicio nocturno")
     void guardar_servicioNocturno_seAcepta() {

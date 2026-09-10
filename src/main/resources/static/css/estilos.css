@@ -807,3 +807,22 @@ a.tablero-enlace:focus-visible .tablero-nombre {
     border-bottom: 1px solid #000;
   }
 }
+
+/* ============================================================
+   Campo autocalculado
+   ------------------------------------------------------------
+   Un input que el formulario rellena solo (readonly). Se hunde
+   respecto a los editables para que se vea de un vistazo que no
+   se escribe ahi, sin recurrir a disabled: un campo disabled no
+   viaja en el envio del formulario.
+   ============================================================ */
+.form-control.campo-calculado {
+  background-color: var(--bg-sunken);
+  color: var(--texto-fuerte, inherit);
+  cursor: not-allowed;
+}
+
+.form-control.campo-calculado:focus {
+  background-color: var(--bg-sunken);
+  box-shadow: none;
+}
