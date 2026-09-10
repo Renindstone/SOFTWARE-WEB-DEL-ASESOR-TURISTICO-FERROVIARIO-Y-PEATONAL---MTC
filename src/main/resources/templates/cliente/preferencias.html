@@ -136,8 +136,7 @@
                           data-lon=${zona.longitud},
                           data-nombre=${zona.nombre},
                           data-estacion=${zona.nombreEstacionCercana},
-                          data-dificultad=${zona.ruta.dificultad},
-                          data-url=@{/rutas/detalle(idEstacion=${zona.idEstacionCercana}, idZona=${zona.idZona})}">
+                          data-dificultad=${zona.ruta.dificultad}">
 
           <div>
             <h3 class="tablero-nombre" th:text="${zona.nombre}">Zona</h3>

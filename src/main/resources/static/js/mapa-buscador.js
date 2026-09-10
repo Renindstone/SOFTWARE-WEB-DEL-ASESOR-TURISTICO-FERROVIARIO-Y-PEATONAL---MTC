@@ -51,6 +51,15 @@ document.addEventListener("DOMContentLoaded", function () {
   var marcadores = [];
   var marcadorActivo = null;
 
+  function deseleccionarTodo() {
+    filas.forEach(function (otra) { otra.classList.remove("is-activa"); });
+    if (marcadorActivo) {
+      marcadorActivo.setRadius(7);
+      marcadorActivo.setStyle({ color: "#FFFFFF", weight: 2 });
+      marcadorActivo = null;
+    }
+  }
+
   function seleccionarZona(fila, marcador, moverMapa) {
     // 1. Quitar estado activo anterior
     filas.forEach(function (otra) { otra.classList.remove("is-activa"); });
@@ -87,20 +96,19 @@ document.addEventListener("DOMContentLoaded", function () {
       .setLatLng([lat, lon])
       .addTo(mapa);
 
-    var urlDetalle = fila.dataset.url;
     var popupHtml =
       "<div class='mapa-popup-contenido'>" +
         "<strong class='d-block mb-1'>" + (fila.dataset.nombre || "Zona turística") + "</strong>" +
-        "<div class='text-muted small mb-2'><i class='bi bi-train-front me-1'></i>Desde " + (fila.dataset.estacion || "estación") + "</div>" +
-        (urlDetalle ?
-          "<a href='" + urlDetalle + "' class='btn btn-mtc btn-sm w-100 text-center py-1'><i class='bi bi-geo-alt-fill me-1'></i>Ver ruta y clima</a>"
-          : "") +
+        "<span class='text-muted small'><i class='bi bi-train-front me-1'></i>Desde " + (fila.dataset.estacion || "su estación de acceso") + "</span>" +
       "</div>";
 
     marcador.bindPopup(popupHtml);
 
     // Del mapa al tablero: pulsar un marcador resalta su tarjeta y muestra donde interactuar
-    marcador.on("click", function () {
+    marcador.on("click", function (evento) {
+      if (evento && evento.originalEvent) {
+        L.DomEvent.stopPropagation(evento.originalEvent);
+      }
       seleccionarZona(fila, marcador, false);
     });
 
@@ -133,6 +141,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
     puntos.push([lat, lon]);
     marcadores[indice] = marcador;
+  });
+
+  // Al cerrar el popup (clic en la "X" o en el mapa), deseleccionar la tarjeta y el marcador
+  mapa.on("popupclose", function () {
+    setTimeout(function () {
+      if (!mapa._popup || !mapa.hasLayer(mapa._popup)) {
+        deseleccionarTodo();
+      }
+    }, 60);
+  });
+
+  // Clic en la "X" del popup
+  contenedor.addEventListener("click", function (evento) {
+    if (evento.target.closest(".leaflet-popup-close-button")) {
+      deseleccionarTodo();
+    }
+  });
+
+  // Clic en el fondo del mapa (zona vacia sin marcador)
+  mapa.on("click", function () {
+    deseleccionarTodo();
+  });
+
+  // Clic en cualquier otro lado de la pagina (fuera de tarjetas y fuera del mapa)
+  document.addEventListener("click", function (evento) {
+    if (evento.target.closest(".tablero-fila") || evento.target.closest("#buscador-mapa")) {
+      return;
+    }
+    deseleccionarTodo();
+    if (mapa && typeof mapa.closePopup === "function") {
+      mapa.closePopup();
+    }
   });
 
   if (puntos.length === 0) {

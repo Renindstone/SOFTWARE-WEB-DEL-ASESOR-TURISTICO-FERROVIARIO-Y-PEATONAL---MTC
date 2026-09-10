@@ -730,12 +730,6 @@ a.tablero-enlace:focus-visible .tablero-nombre {
   font-size: 0.95rem;
 }
 
-.mapa-popup-contenido .btn {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  display: block;
-}
-
 /* ------------------------------------------------------------ Responsive */
 @media (max-width: 576px) {
   .container {

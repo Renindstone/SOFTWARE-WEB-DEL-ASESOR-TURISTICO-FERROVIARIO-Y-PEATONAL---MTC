@@ -1,3 +1,0 @@
-docker compose down -v //Tumba los contenedores
-
-docker compose up --build -d //Construye el contenedor
