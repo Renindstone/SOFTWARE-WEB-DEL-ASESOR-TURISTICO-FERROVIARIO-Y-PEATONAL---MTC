@@ -241,6 +241,90 @@
   <div th:replace="~{layout/footer :: footer}"></div>
   <div th:replace="~{layout/base :: scripts}"></div>
 
+  <script>
+    // Un unico modal sirve para el alta y para la edicion, asi que al abrirlo
+    // hay que dejarlo en el estado que corresponda: el navegador conserva lo
+    // que tuviera de la vez anterior. Sin esto, editar una zona abria el
+    // formulario en blanco y, al guardar, el campo oculto zonaId iba vacio,
+    // con lo que se creaba una zona nueva en vez de actualizar la existente.
+    (function () {
+      var modal = document.getElementById('modalZona');
+      if (!modal) { return; }
+
+      var titulo = document.getElementById('modalZonaLabel');
+
+      // Clave del data-* -> id del control del formulario.
+      var CAMPOS = {
+        id: 'zonaId',
+        nombre: 'modalNombre',
+        descripcion: 'modalDescripcion',
+        estacion: 'modalEstacionCercana',
+        latitud: 'modalLatitud',
+        longitud: 'modalLongitud',
+        costo: 'modalCostoAprox',
+        cupo: 'modalCupoMaximoDiario',
+        estado: 'modalEstado'
+      };
+
+      function control(clave) {
+        return document.getElementById(CAMPOS[clave]);
+      }
+
+      function desmarcarPreferencias() {
+        document.querySelectorAll('.check-preferencia').forEach(function (chk) {
+          chk.checked = false;
+        });
+      }
+
+      // Thymeleaf omite por completo un atributo th:data-* cuyo valor sea
+      // nulo, de modo que aqui llegan como undefined las zonas sin
+      // descripcion, sin costo o sin cupo.
+      function volcar(datos) {
+        Object.keys(CAMPOS).forEach(function (clave) {
+          var valor = datos[clave];
+          control(clave).value = (valor === undefined || valor === null) ? '' : valor;
+        });
+      }
+
+      var botonNueva = document.getElementById('btnNuevaZona');
+      if (botonNueva) {
+        botonNueva.addEventListener('click', function () {
+          titulo.textContent = 'Registrar zona turística';
+          volcar({});
+          desmarcarPreferencias();
+          // El alta arranca siempre como zona disponible para el turista.
+          control('estado').value = 'Activa';
+        });
+      }
+
+      document.querySelectorAll('.btn-editar-zona').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+          titulo.textContent = 'Actualizar zona turística';
+          volcar(boton.dataset);
+          if (!boton.dataset.estado) {
+            control('estado').value = 'Activa';
+          }
+
+          // Las preferencias de la zona viajan como spans .pref-id ocultos
+          // dentro del propio boton, uno por cada fila de zona_preferencia.
+          desmarcarPreferencias();
+          Array.prototype.forEach.call(boton.querySelectorAll('.pref-id'), function (span) {
+            var chk = document.getElementById('preferencia-' + span.textContent.trim());
+            if (chk) { chk.checked = true; }
+          });
+        });
+      });
+
+      // Si el servidor rechazo el envio, la pagina vuelve con el modal cerrado
+      // y el administrador no veria ni el motivo ni lo que habia tecleado. Los
+      // valores y las preferencias marcadas ya vienen puestos desde el
+      // servidor, de modo que aqui solo hay que mostrar el modal.
+      var conErrores = document.getElementById('hasValidationErrors');
+      if (conErrores !== null && conErrores.value === 'true') {
+        new bootstrap.Modal(modal).show();
+      }
+    })();
+  </script>
 </body>
 
 </html>
