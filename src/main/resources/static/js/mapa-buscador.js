@@ -49,6 +49,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var puntos = [];
   var marcadores = [];
+  var marcadorActivo = null;
+
+  function seleccionarZona(fila, marcador, moverMapa) {
+    // 1. Quitar estado activo anterior
+    filas.forEach(function (otra) { otra.classList.remove("is-activa"); });
+    if (marcadorActivo && marcadorActivo !== marcador) {
+      marcadorActivo.setRadius(7);
+      marcadorActivo.setStyle({ color: "#FFFFFF", weight: 2 });
+    }
+
+    // 2. Activar tarjeta actual y enfocarla
+    fila.classList.add("is-activa");
+    fila.scrollIntoView({ block: "center", behavior: "smooth" });
+
+    // 3. Resaltar marcador en el mapa con borde dorado institucional
+    marcadorActivo = marcador;
+    marcador.setRadius(12);
+    marcador.setStyle({ color: "#C89B3C", weight: 3.5 });
+    marcador.bringToFront();
+
+    // 4. Si la seleccion viene del tablero, centrar mapa y abrir popup
+    if (moverMapa) {
+      marcador.openPopup();
+      mapa.panTo(marcador.getLatLng());
+    }
+  }
 
   filas.forEach(function (fila, indice) {
     var lat = parseFloat(fila.dataset.lat);
@@ -61,31 +87,47 @@ document.addEventListener("DOMContentLoaded", function () {
       .setLatLng([lat, lon])
       .addTo(mapa);
 
-    marcador.bindPopup(
-      "<strong>" + (fila.dataset.nombre || "Zona turística") + "</strong><br>" +
-      "Desde " + (fila.dataset.estacion || "su estación de acceso")
-    );
+    var urlDetalle = fila.dataset.url;
+    var popupHtml =
+      "<div class='mapa-popup-contenido'>" +
+        "<strong class='d-block mb-1'>" + (fila.dataset.nombre || "Zona turística") + "</strong>" +
+        "<div class='text-muted small mb-2'><i class='bi bi-train-front me-1'></i>Desde " + (fila.dataset.estacion || "estación") + "</div>" +
+        (urlDetalle ?
+          "<a href='" + urlDetalle + "' class='btn btn-mtc btn-sm w-100 text-center py-1'><i class='bi bi-geo-alt-fill me-1'></i>Ver ruta y clima</a>"
+          : "") +
+      "</div>";
 
-    // Del mapa al tablero: pulsar un marcador lleva a su ficha.
+    marcador.bindPopup(popupHtml);
+
+    // Del mapa al tablero: pulsar un marcador resalta su tarjeta y muestra donde interactuar
     marcador.on("click", function () {
-      filas.forEach(function (otra) { otra.classList.remove("is-activa"); });
-      fila.classList.add("is-activa");
-      fila.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      seleccionarZona(fila, marcador, false);
     });
 
-    // Del tablero al mapa. "focusin" ademas de "mouseenter" para que el
-    // recorrido con teclado resalte lo mismo que el puntero.
+    // Del tablero al mapa: pulsar la tarjeta enfoca el marcador correspondiente
+    fila.addEventListener("click", function (evento) {
+      if (evento.target.closest("a, button")) {
+        return; // No interceptar clics sobre enlaces o botones directos
+      }
+      seleccionarZona(fila, marcador, true);
+    });
+
+    // Del tablero al mapa en hover/foco (sin alterar el marcador activo)
     ["mouseenter", "focusin"].forEach(function (evento) {
       fila.addEventListener(evento, function () {
-        marcador.setRadius(11);
-        marcador.setStyle({ weight: 3 });
+        if (marcador !== marcadorActivo) {
+          marcador.setRadius(10);
+          marcador.setStyle({ weight: 3 });
+        }
       });
     });
 
     ["mouseleave", "focusout"].forEach(function (evento) {
       fila.addEventListener(evento, function () {
-        marcador.setRadius(7);
-        marcador.setStyle({ weight: 2 });
+        if (marcador !== marcadorActivo) {
+          marcador.setRadius(7);
+          marcador.setStyle({ weight: 2 });
+        }
       });
     });
 
