@@ -177,9 +177,15 @@
                   </label>
                   <!-- Lo rellena recalcularTransito() a partir de los dos
                        horarios. Un readonly si viaja en el envio, a diferencia
-                       de un disabled, que el navegador no manda. -->
+                       de un disabled, que el navegador no manda.
+
+                       Sin required: un campo de solo lectura queda excluido de
+                       la validacion del navegador, de modo que la marca seria
+                       inerte, y si el JavaScript fallara solo serviria para
+                       sugerir que hay que escribir algo donde no se puede. El
+                       servidor lo deriva en ese caso. -->
                   <input type="number" min="1" class="form-control campo-calculado" id="modalTiempoTransito"
-                    th:field="*{tiempoTransitoMin}" readonly required
+                    th:field="*{tiempoTransitoMin}" readonly
                     aria-describedby="ayudaTransito">
                 </div>
               </div>

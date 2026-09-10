@@ -184,6 +184,24 @@ class ServicioTrenServiceTest {
     // ------------------------------------------------------------------
 
     @Test
+    @DisplayName("La entidad no exige el tránsito: es derivable y el enlazado no debe rechazarlo")
+    void entidad_noExigeTiempoTransito() throws Exception {
+        // Si volviera a llevar @NotNull o @Positive, el enlazado del formulario
+        // rechazaria el envio antes de llegar al servicio y la derivacion del
+        // servidor no llegaria a ejecutarse: el administrador se quedaria ante
+        // un campo obligatorio que ademas es de solo lectura.
+        var campo = ServicioTren.class.getDeclaredField("tiempoTransitoMin");
+        assertThat(campo.getAnnotation(jakarta.validation.constraints.NotNull.class)).isNull();
+        assertThat(campo.getAnnotation(jakarta.validation.constraints.Positive.class)).isNull();
+
+        // Los horarios si siguen siendo obligatorios: son de donde se deriva.
+        assertThat(ServicioTren.class.getDeclaredField("horarioSalida")
+                .getAnnotation(jakarta.validation.constraints.NotNull.class)).isNotNull();
+        assertThat(ServicioTren.class.getDeclaredField("horarioLlegada")
+                .getAnnotation(jakarta.validation.constraints.NotNull.class)).isNotNull();
+    }
+
+    @Test
     @DisplayName("Guardar sin tiempo de tránsito: lo deriva de los horarios")
     void guardar_sinTransito_loDeriva() {
         ServicioTren sinTransito = new ServicioTren();

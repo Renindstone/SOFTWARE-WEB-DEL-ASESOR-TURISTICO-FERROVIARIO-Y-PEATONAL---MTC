@@ -3,7 +3,6 @@ package com.turismo.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,9 +29,22 @@ public class ServicioTren {
     @Column(name = "SerHorarioLlegada", nullable = false)
     private LocalTime horarioLlegada;
 
-    /** @Positive replica en la aplicacion el CHECK ck_servicio_tiempo de la base. */
-    @NotNull(message = "El tiempo de tránsito es obligatorio")
-    @Positive(message = "El tiempo de tránsito debe ser mayor a cero minutos")
+    /**
+     * Deliberadamente sin @NotNull ni @Positive, a diferencia del resto de los
+     * campos obligatorios.
+     *
+     * No es un dato que el usuario aporte: sale de restar los dos horarios, y
+     * ServicioTrenService.completarTiempoTransito lo deriva cuando llega
+     * ausente o en cero. Con las anotaciones puestas, el enlazado lo rechazaba
+     * antes de llegar al servicio, de modo que un fallo del JavaScript del
+     * formulario dejaba al administrador ante un campo obligatorio que ademas
+     * es de solo lectura: no podia rellenarlo ni seguir.
+     *
+     * El valor no queda sin comprobar. Los dos horarios si son @NotNull, asi
+     * que cuando la peticion llega al servicio siempre hay de donde derivarlo,
+     * y validarHorarios rechaza despues cualquier valor que no concuerde con
+     * ellos. El CHECK ck_servicio_tiempo de la base cierra el caso extremo.
+     */
     @Column(name = "SerTiempoTransitoMin", nullable = false)
     private Integer tiempoTransitoMin;
 
