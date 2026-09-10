@@ -94,6 +94,13 @@
           <span>Sesión cerrada correctamente.</span>
         </div>
 
+        <!-- Llega desde el redirect de AuthController tras el auto-registro. -->
+        <div th:if="${param.registrado}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2"
+          role="status">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>¡Cuenta creada con éxito! Ya puedes iniciar sesión.</span>
+        </div>
+
         <form method="post" th:action="@{/login}" class="needs-validation" novalidate>
           <div class="mb-3">
             <label for="username" class="form-label fw-medium">Usuario</label>
@@ -135,14 +142,22 @@
           <button type="submit" class="btn btn-mtc w-100">Ingresar</button>
 
           <!--
-            El alcance del proyecto (seccion 1.4) no incluye autorregistro ni
-            recuperacion de contrasena: las cuentas las crea el administrador
-            del MTC. El panel del turista no requiere iniciar sesion.
+            El turista puede darse de alta el mismo (solo TURISTA_PUBLICO), o
+            planificar sin cuenta: el panel del turista no exige iniciar
+            sesion, pero sin cuenta no queda historial en /mis-informes. Las
+            cuentas administrativas las sigue creando el MTC (RNF-05).
           -->
           <div class="text-center mt-3">
             <span class="text-muted small">¿Solo quieres planificar una visita?</span>
             <a th:href="@{/preferencias}" class="text-decoration-none fw-semibold ms-1 link-gold">
               Entra como Invitado
+            </a>
+          </div>
+
+          <div class="text-center mt-3">
+            <span class="text-muted small">¿No tienes cuenta?</span>
+            <a th:href="@{/registro}" class="text-decoration-none fw-semibold ms-1 link-gold">
+              Regístrate aquí
             </a>
           </div>
         </form>

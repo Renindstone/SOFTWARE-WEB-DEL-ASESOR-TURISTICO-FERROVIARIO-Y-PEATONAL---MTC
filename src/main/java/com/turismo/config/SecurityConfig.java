@@ -44,7 +44,10 @@ public class SecurityConfig {
                 .userDetailsService(customUserDetailsService)
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estaticos y pantallas de acceso.
-                        .requestMatchers("/", "/login", "/acceso-denegado", "/error",
+                        // /registro es publico por necesidad: quien se da de alta
+                        // todavia no tiene sesion. Solo concede TURISTA_PUBLICO,
+                        // porque el rol lo fija UsuarioService y no la peticion.
+                        .requestMatchers("/", "/login", "/registro", "/acceso-denegado", "/error",
                                 "/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
                         // Sonda de vida del contenedor (healthcheck de docker-compose).
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()

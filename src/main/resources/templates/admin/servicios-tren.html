@@ -85,8 +85,11 @@
                     <form th:action="@{'/servicios-tren/' + ${serv.id} + '/eliminar'}" method="post"
                       onsubmit="return confirm('¿Está seguro de eliminar este servicio de tren? Esta acción no se puede deshacer.');"
                       class="d-inline">
+                      <!-- Papelera, no slash-circle: aqui la fila se borra de la
+                           base. El slash-circle queda para las zonas, donde la
+                           baja es logica y se puede revertir. -->
                       <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar servicio">
-                        <i class="bi bi-slash-circle"></i>
+                        <i class="bi bi-trash"></i>
                       </button>
                     </form>
                   </div>
