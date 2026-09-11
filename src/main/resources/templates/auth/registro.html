@@ -66,7 +66,10 @@
               <span th:text="${errorNegocio}">No se pudo crear la cuenta.</span>
             </div>
 
-            <form method="post" th:action="@{/registro}" th:object="${registroDto}" novalidate>
+            <!-- Sin novalidate: el navegador aplica required, minlength y el
+                 pattern del correo antes de enviar; el servidor vuelve a
+                 validar el DTO por si el envio no viene del formulario. -->
+            <form method="post" th:action="@{/registro}" th:object="${registroDto}">
 
               <!-- #fields solo resuelve dentro del elemento que declara th:object. -->
               <div class="alert alert-warning py-2 mb-3" th:if="${#fields.hasAnyErrors()}" role="alert">
@@ -102,8 +105,13 @@
                 <label for="email" class="form-label fw-medium">Correo electrónico</label>
                 <div class="input-group auth-campo">
                   <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                  <!-- Mismo patron que RegistroUsuarioDTO. Los guiones van escapados
+                       porque el atributo pattern se compila con la bandera "v",
+                       en la que un guion suelto dentro de [] es un error. -->
                   <input id="email" type="email" class="form-control" th:field="*{email}"
-                    maxlength="50" placeholder="tucorreo@ejemplo.com" autocomplete="email" required />
+                    maxlength="50" placeholder="tucorreo@ejemplo.com" autocomplete="email"
+                    pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+                    title="Ingresa un correo con dominio válido (ejemplo: usuario@correo.com o usuario@correo.pe)" required />
                 </div>
               </div>
 

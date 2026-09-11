@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Restricciones del formulario de auto-registro.
  *
  * Los nombres y apellidos solo admiten caracteres propios de la identidad de
- * una persona, y el nombre de usuario solo alfanumericos seguros, de modo que
- * no puedan colarse cifras ni simbolos por esos campos.
+ * una persona, el nombre de usuario solo alfanumericos seguros, y el correo
+ * debe llevar un dominio con extension (.com, .pe, .gob.pe...), de modo que
+ * no puedan colarse cifras, simbolos ni direcciones a las que no se pueda
+ * escribir.
  */
 class RegistroUsuarioDTOTest {
 
@@ -117,6 +119,39 @@ class RegistroUsuarioDTOTest {
         RegistroUsuarioDTO dto = valido();
         dto.setNombreUsuario(usuario);
         assertThat(camposConError(dto)).contains("nombreUsuario");
+    }
+
+    @ParameterizedTest(name = "\"{0}\" es un correo valido")
+    @ValueSource(strings = {
+            "ana.perez@correo.pe",
+            "turista@gmail.com",
+            "carlos.torres@mtc.gob.pe",
+            "usuario.123@sub.dominio.org"
+    })
+    @DisplayName("Correos con formato y dominio completo: se aceptan")
+    void correosValidos(String email) {
+        RegistroUsuarioDTO dto = valido();
+        dto.setEmail(email);
+        assertThat(camposConError(dto)).isEmpty();
+    }
+
+    // @Email por si solo acepta "usuario@gb" o "admin@localhost": es el
+    // patron quien exige la extension del dominio.
+    @ParameterizedTest(name = "\"{0}\" es un correo invalido")
+    @ValueSource(strings = {
+            "usuario@gb",          // sin TLD con punto
+            "usuario@ytyt",
+            "admin@localhost",
+            "usuario@dominio",
+            "sin_arroba.com",
+            "@sinusuario.com",
+            "usuario@dominio.c"    // extension de una sola letra
+    })
+    @DisplayName("Correos sin dominio completo o mal formados: se rechazan")
+    void correosInvalidos(String email) {
+        RegistroUsuarioDTO dto = valido();
+        dto.setEmail(email);
+        assertThat(camposConError(dto)).contains("email");
     }
 
     @org.junit.jupiter.api.Test

@@ -45,8 +45,19 @@ public class RegistroUsuarioDTO {
     )
     private String apellidos;
 
+    /**
+     * @Email admite dominios sin extension ("usuario@gb", "admin@localhost"),
+     * validos en una intranet pero inutiles para escribir a un turista. El
+     * patron exige ademas un dominio con extension de al menos dos letras
+     * (.com, .pe, .gob.pe, .org). El mismo patron vive en la entidad Usuario
+     * y en el atributo pattern del formulario.
+     */
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "El correo electrónico no tiene un formato válido")
+    @Pattern(
+        regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+        message = "El correo electrónico debe incluir un dominio válido (ejemplo: usuario@correo.com o usuario@correo.pe)"
+    )
     @Size(max = 50, message = "El correo electrónico no puede superar los 50 caracteres")
     private String email;
 

@@ -1,6 +1,9 @@
 package com.turismo.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,7 +32,24 @@ public class Usuario {
     @Column(name = "UsuApellidos", length = 50, nullable = false)
     private String apellidos;
 
-    @Column(name = "UsuEmail", length = 50, nullable = false, unique = true)
+    /**
+     * Mismo patron que RegistroUsuarioDTO: un correo sin extension de dominio
+     * no puede llegar a la tabla por ningun camino, tampoco por el alta
+     * administrativa. Hibernate valida la entidad antes de insertar o
+     * actualizar (jakarta.persistence.validation.mode=auto).
+     *
+     * El nombre de columna va sin comillas escapadas porque
+     * hibernate.globally_quoted_identifiers=true ya las anade a todos los
+     * identificadores; escribirlas aqui las duplicaria y ddl-auto=validate
+     * no encontraria la columna.
+     */
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "El formato del email no es válido")
+    @Pattern(
+        regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+        message = "El email debe incluir un dominio válido (ejemplo: usuario@correo.com o usuario@correo.pe)"
+    )
+    @Column(name = "UsuEmail", nullable = false, length = 50, unique = true)
     private String email;
 
     @ManyToOne(fetch = FetchType.LAZY)
