@@ -1,3 +1,5 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
 graphify-out/graph.json merge=graphify
+.agents/** linguist-vendored
+.claude/** linguist-vendored
