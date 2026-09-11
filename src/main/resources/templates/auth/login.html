@@ -1,185 +1,167 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Iniciar sesión - MTC</title>
+<!--
+  Acceso a pantalla partida (Propuesta B, "Expedicion Andina"). A la
+  izquierda, el pais que se va a recorrer; a la derecha, el formulario. La
+  pantalla no lleva layout/nav (no hay sesion que mostrar), pero si comparte
+  la cabecera de layout/base para heredar tokens.css y estilos.css: las
+  clases auth-* y .login-card viven en estilos.css, no aqui.
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" th:href="@{/css/estilos.css}" />
+  Los campos, sus nombres y la accion del formulario son los que espera
+  Spring Security (username, password, POST /login con _csrf que Thymeleaf
+  anade solo); los avisos param.error, param.logout y param.registrado se
+  conservan tal cual.
+-->
 
-  <style>
-    body{
-      font-family:'Manrope', system-ui, sans-serif;
-      background:#F6F4EF;
-    }
+<head th:replace="~{layout/base :: head('Iniciar sesión')}"></head>
 
-    .login-card{
-      border:none;
-      border-radius:16px;
-      border-top:4px solid #C89B3C;
-      box-shadow:0 14px 32px -14px rgba(20,69,61,.28);
-      overflow:hidden;
-    }
+<body>
+  <div class="auth-split min-vh-100 d-flex flex-column flex-lg-row overflow-hidden">
 
-    .brand-icon{
-      width:58px; height:58px;
-      background:#14453D;
-      color:#C89B3C;
-    }
-
-    h1.form-title{ color:#14453D; letter-spacing:-0.01em; }
-
-    .input-group{
-      border:1.5px solid #DEDCD2;
-      border-radius:9px;
-      overflow:hidden;
-      transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    .input-group:focus-within{
-      border-color:#14453D;
-      box-shadow:0 0 0 3px rgba(20,69,61,.10);
-    }
-    .input-group-text{ background:#fff; border:none; color:#6B7568; }
-    .form-control{ border:none; box-shadow:none !important; }
-
-    .btn-mtc{
-      background:#14453D;
-      color:#fff;
-      border:none;
-      border-radius:9px;
-      font-weight:700;
-      padding-block:.65rem;
-      transition:background .15s ease;
-    }
-    .btn-mtc:hover{ background:#0D302A; color:#fff; }
-
-    .link-gold{ color:#A67C2E; font-weight:600; }
-    .link-gold:hover{ color:#14453D; }
-
-    .form-check-input:checked{
-      background-color:#14453D;
-      border-color:#14453D;
-    }
-
-    #togglePassword{ background:#fff; border:none; color:#6B7568; }
-    #togglePassword:hover{ color:#14453D; }
-  </style>
-</head>
-
-<body class="bg-body-tertiary">
-  <!--<div th:replace="~{layout/nav :: nav}"></div>-->
-
-  <main class="container py-5" style="max-width: 440px;">
-    <div class="card login-card">
-      <div class="card-body p-4 p-md-5">
-
-        <div class="text-center mb-4">
-          <div class="mx-auto d-flex align-items-center justify-content-center rounded-3 brand-icon">
-            <i class="bi bi-signpost-split fs-4"></i>
-          </div>
-          <h1 class="h4 mt-3 mb-1 fw-bold form-title">Iniciar sesión</h1>
-          <p class="text-muted mb-0">Ingresa tus credenciales para acceder.</p>
-        </div>
-
-        <div th:if="${param.error}" class="alert alert-danger py-2 mb-3 d-flex align-items-center gap-2" role="alert">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span>Usuario o contraseña incorrectos.</span>
-        </div>
-
-        <div th:if="${param.logout}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2" role="alert">
-          <i class="bi bi-check-circle-fill"></i>
-          <span>Sesión cerrada correctamente.</span>
-        </div>
-
-        <!-- Llega desde el redirect de AuthController tras el auto-registro. -->
-        <div th:if="${param.registrado}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2"
-          role="status">
-          <i class="bi bi-check-circle-fill"></i>
-          <span>¡Cuenta creada con éxito! Ya puedes iniciar sesión.</span>
-        </div>
-
-        <form method="post" th:action="@{/login}" class="needs-validation" novalidate>
-          <div class="mb-3">
-            <label for="username" class="form-label fw-medium">Usuario</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person"></i></span>
-              <input
-                id="username"
-                type="text"
-                name="username"
-                class="form-control"
-                required
-                autocomplete="username"
-                placeholder="Tu usuario"
-                aria-describedby="usernameHelp"
-              />
-            </div>
-            <div id="usernameHelp" class="form-text">Usamos tu usuario para identificar tu acceso.</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="password" class="form-label fw-medium">Contraseña</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                class="form-control"
-                required
-                autocomplete="current-password"
-                placeholder="Tu contraseña"
-              />
-              <button class="btn" type="button" id="togglePassword" tabindex="-1" aria-label="Mostrar contraseña">
-                <i class="bi bi-eye" id="toggleIcon"></i>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-mtc w-100">Ingresar</button>
-
-          <!--
-            El turista puede darse de alta el mismo (solo TURISTA_PUBLICO), o
-            planificar sin cuenta: el panel del turista no exige iniciar
-            sesion, pero sin cuenta no queda historial en /mis-informes. Las
-            cuentas administrativas las sigue creando el MTC (RNF-05).
-          -->
-          <div class="text-center mt-3">
-            <span class="text-muted small">¿Solo quieres planificar una visita?</span>
-            <a th:href="@{/preferencias}" class="text-decoration-none fw-semibold ms-1 link-gold">
-              Entra como Invitado
-            </a>
-          </div>
-
-          <div class="text-center mt-3">
-            <span class="text-muted small">¿No tienes cuenta?</span>
-            <a th:href="@{/registro}" class="text-decoration-none fw-semibold ms-1 link-gold">
-              Regístrate aquí
-            </a>
-          </div>
-        </form>
+    <!-- Columna izquierda: solo en pantallas grandes. En movil se oculta
+         entera para que el formulario aparezca sin desplazamiento. -->
+    <aside class="col-lg-6 d-none d-lg-flex auth-hero min-vh-100 justify-content-between p-5 text-white"
+           aria-label="Presentación del Asesor Turístico Ferroviario y Peatonal">
+      <div class="auth-marca">
+        <img th:src="@{/img/logo-mtc.png}" alt="Escudo del MTC" width="64" height="64">
+        <p class="auth-marca-texto mb-0">
+          <strong>Ministerio de Transportes y Comunicaciones</strong>
+          Asesor Turístico Ferroviario y Peatonal
+        </p>
       </div>
-    </div>
 
-    <div class="text-center small text-muted mt-3">
-      © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span> MTC
-    </div>
-  </main>
+      <div>
+        <h1 class="auth-titular">Descubre el Perú sobre rieles y a pie</h1>
+        <p class="auth-lema">
+          Planifica tus circuitos turísticos con horarios oficiales de PeruRail,
+          pronóstico meteorológico del SENAMHI en tiempo real y aforos controlados
+          para una visita segura y memorable.
+        </p>
+      </div>
 
-  <div th:replace="~{layout/footer :: footer}"></div>
+      <ul class="auth-sellos list-unstyled mb-0" aria-label="Entidades articuladas">
+        <li class="auth-sello"><strong>PeruRail</strong><small>operador ferroviario</small></li>
+        <li class="auth-sello"><strong>SENAMHI</strong><small>monitoreo climático</small></li>
+        <li class="auth-sello"><strong>Travel Group Perú</strong><small>circuitos turísticos</small></li>
+      </ul>
+    </aside>
+
+    <!-- Columna derecha: el papel andino y su marca de agua vienen de body. -->
+    <main class="col-12 col-lg-6 d-flex align-items-center justify-content-center auth-form-panel p-4 p-md-5">
+      <div class="auth-columna">
+
+        <!-- Marca compacta: sustituye a la columna de la foto donde esta se oculta. -->
+        <div class="auth-marca auth-marca--movil d-lg-none mb-4">
+          <img th:src="@{/img/logo-mtc.png}" alt="Escudo del MTC" width="56" height="56">
+          <p class="auth-marca-texto mb-0">
+            <strong>MTC</strong>
+            Asesor Turístico Ferroviario y Peatonal
+          </p>
+        </div>
+
+        <div class="login-card">
+          <div class="p-4 p-md-5">
+            <h2 class="auth-titulo">Iniciar sesión</h2>
+            <p class="page-sub mb-4">Ingresa tus credenciales para acceder.</p>
+
+            <div th:if="${param.error}" class="alert alert-danger py-2 mb-3 d-flex align-items-center gap-2" role="alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>Usuario o contraseña incorrectos.</span>
+            </div>
+
+            <div th:if="${param.logout}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2" role="alert">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>Sesión cerrada correctamente.</span>
+            </div>
+
+            <!-- Llega desde el redirect de AuthController tras el auto-registro. -->
+            <div th:if="${param.registrado}" class="alert alert-success py-2 mb-3 d-flex align-items-center gap-2"
+              role="status">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>¡Cuenta creada con éxito! Ya puedes iniciar sesión.</span>
+            </div>
+
+            <form method="post" th:action="@{/login}" class="needs-validation" novalidate>
+              <div class="mb-3">
+                <label for="username" class="form-label fw-medium">Usuario</label>
+                <div class="input-group auth-campo">
+                  <span class="input-group-text"><i class="bi bi-person"></i></span>
+                  <input
+                    id="username"
+                    type="text"
+                    name="username"
+                    class="form-control"
+                    required
+                    autocomplete="username"
+                    placeholder="Tu usuario"
+                    aria-describedby="usernameHelp"
+                  />
+                </div>
+                <div id="usernameHelp" class="form-text">Usamos tu usuario para identificar tu acceso.</div>
+              </div>
+
+              <div class="mb-4">
+                <label for="password" class="form-label fw-medium">Contraseña</label>
+                <div class="input-group auth-campo">
+                  <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                  <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    class="form-control"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Tu contraseña"
+                  />
+                  <button class="btn btn-ojo" type="button" id="togglePassword" tabindex="-1"
+                    data-objetivo="password" aria-label="Mostrar contraseña">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-mtc w-100">Ingresar</button>
+
+              <!--
+                El turista puede darse de alta el mismo (solo TURISTA_PUBLICO), o
+                planificar sin cuenta: el panel del turista no exige iniciar
+                sesion, pero sin cuenta no queda historial en /mis-informes. Las
+                cuentas administrativas las sigue creando el MTC (RNF-05).
+              -->
+              <div class="divider-soft"></div>
+
+              <p class="page-sub small text-center mb-2">
+                ¿Eres nuevo aquí? Regístrate o planifica una visita como invitado.
+              </p>
+              <div class="auth-enlaces">
+                <a th:href="@{/preferencias}" class="auth-enlace">Acceso como Invitado</a>
+                <a th:href="@{/registro}" class="auth-enlace">Regístrate aquí</a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <p class="auth-pie text-center mt-3 mb-0">
+          © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2026</span>
+          Ministerio de Transportes y Comunicaciones · Universidad Nacional de Ucayali
+        </p>
+      </div>
+    </main>
+  </div>
 
   <script>
-    const toggleBtn = document.getElementById('togglePassword');
-    const pwd = document.getElementById('password');
-    const icon = document.getElementById('toggleIcon');
-    toggleBtn?.addEventListener('click', () => {
-      const isPwd = pwd.type === 'password';
-      pwd.type = isPwd ? 'text' : 'password';
-      icon.classList.toggle('bi-eye');
-      icon.classList.toggle('bi-eye-slash');
+    // El boton del ojo dice en data-objetivo que campo destapa; el mismo
+    // manejador sirve para auth/registro.html, que tiene dos.
+    document.querySelectorAll('.btn-ojo').forEach(function (boton) {
+      boton.addEventListener('click', function () {
+        var campo = document.getElementById(boton.dataset.objetivo);
+        var icono = boton.querySelector('i');
+        var oculta = campo.type === 'password';
+        campo.type = oculta ? 'text' : 'password';
+        icono.classList.toggle('bi-eye');
+        icono.classList.toggle('bi-eye-slash');
+        boton.setAttribute('aria-label', oculta ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      });
     });
   </script>
 </body>
