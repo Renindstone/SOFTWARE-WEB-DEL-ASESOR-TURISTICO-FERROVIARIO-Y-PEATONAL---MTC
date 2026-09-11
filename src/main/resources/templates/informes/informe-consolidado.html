@@ -15,7 +15,7 @@
         Código <span class="code-pill" th:text="${informe.codigo}">INF-0001</span>
       </p>
     </div>
-    <div class="d-flex gap-2 d-print-none">
+    <div class="d-flex align-items-center gap-2 d-print-none">
       <!-- RF-08: exportacion PDF del mismo informe ya emitido. -->
       <a class="btn btn-mtc btn-sm"
          th:href="@{/informes/consolidado/pdf(idEstacion=${idEstacion}, idZona=${idZona},

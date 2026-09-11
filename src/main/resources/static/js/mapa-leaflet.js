@@ -102,6 +102,13 @@ document.addEventListener("DOMContentLoaded", function () {
       var nuevoTiempo = Math.round((parseFloat(kmIdaVuelta) / distHaversine) * tiempoHaversine);
       elTiempo.textContent = nuevoTiempo + ' min';
     }
+
+    // El eje de kilometros del perfil altimetrico sigue a la misma cifra:
+    // la cima (la zona) queda a la distancia de ida y el extremo, al total.
+    var elKmMedio = document.getElementById("altimetria-km-medio");
+    var elKmTotal = document.getElementById("altimetria-km-total");
+    if (elKmMedio) elKmMedio.textContent = kmIda;
+    if (elKmTotal) elKmTotal.textContent = kmIdaVuelta;
   }
 
   // ---- OSRM: ruta peatonal por calles (solo ida, un unico camino) ----

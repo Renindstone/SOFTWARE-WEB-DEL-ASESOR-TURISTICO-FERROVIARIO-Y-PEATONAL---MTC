@@ -6,133 +6,184 @@
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
-<main class="container py-4" style="max-width: 1000px;">
+<!-- Propuesta B "Expedicion Andina": la pantalla se compone como una rejilla
+     bento (ver .bento en estilos.css). hayAforo se calcula una sola vez porque
+     decide dos cosas: si se pinta la tarjeta de aforo y si la tarjeta de la
+     ruta debe ocupar dos filas para acompanarla. -->
+<main class="container py-4" style="max-width: 1000px;"
+      th:with="hayAforo=${cupoDisponible != null and destino.cupoMaximoDiario != null
+                          and destino.cupoMaximoDiario > 0}">
 
-  <!-- Placa de anden: es una de las dos pantallas donde el turista decide,
-       asi que aqui el sistema sube la voz. El destino se compone en
-       condensada de senaletica, no como un titulo mas. -->
-  <div class="placa mb-4">
-    <h1 class="placa-trayecto">
-      <span class="placa-origen" th:text="'Desde ' + ${origen.nombre}">Desde la estación</span>
-      <span th:text="${destino.nombre}">Zona turística</span>
-    </h1>
-    <p class="placa-meta">Circuito peatonal de ida y vuelta. Se regresa a la misma estación.</p>
-  </div>
+  <div class="bento" th:classappend="${hayAforo} ? 'bento--con-aforo'">
 
-  <div class="row g-4">
+    <!-- Placa de anden: es una de las dos pantallas donde el turista decide,
+         asi que aqui el sistema sube la voz. El destino se compone en la
+         serifa editorial como bienvenida a la expedicion; la cota de la
+         estacion es el unico dato de altitud real que tiene el modelo. -->
+    <section class="placa" aria-labelledby="placa-titulo">
+      <h1 class="placa-trayecto" id="placa-titulo">
+        <span class="placa-origen" th:text="'Desde ' + ${origen.nombre}">Desde la estación</span>
+        <span th:text="${destino.nombre}">Zona turística</span>
+      </h1>
+      <p class="placa-meta">
+        Circuito peatonal de ida y vuelta: se parte y se regresa a la misma
+        estación<th:block th:if="${origen.altitud != null}">, a
+        <strong th:text="${#numbers.formatDecimal(origen.altitud, 1, 0)} + ' msnm'">0 msnm</strong></th:block>.
+      </p>
+    </section>
 
     <!-- RF-04/RF-05: distancia, tiempo y dificultad del circuito cerrado. -->
-    <div class="col-12 col-lg-6">
-      <div class="card section-card h-100">
-        <div class="card-body p-4">
-          <h2 class="h6 section-title"><i class="bi bi-signpost-split"></i> Ruta peatonal</h2>
-          <ul class="ficha">
-            <!-- Estos dos valores salen de Haversine, en linea recta. Si OSRM
-                 responde, mapa-leaflet.js los sustituye por el recorrido real
-                 por calles; si no responde, se quedan como estan. -->
-            <li class="ficha-fila">
-              <span class="ficha-etiqueta">Distancia (ida y vuelta)</span>
-              <span class="ficha-valor" id="ficha-distancia-valor"
-                    th:text="${ruta.distanciaKm} + ' km'">0 km</span>
-            </li>
-            <li class="ficha-fila">
-              <span class="ficha-etiqueta">Tiempo estimado</span>
-              <span class="ficha-valor" id="ficha-tiempo-valor"
-                    th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</span>
-            </li>
-            <li class="ficha-fila">
-              <span class="ficha-etiqueta">Dificultad</span>
-              <span class="badge"
-                    th:classappend="${ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
-                                     : (${ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
-                    th:text="${ruta.dificultad}">Baja</span>
-            </li>
-            <li class="ficha-fila">
-              <span class="ficha-etiqueta">Trayecto</span>
-              <span class="ficha-valor"
-                    th:text="${ruta.esIdaVuelta} ? 'Circuito cerrado' : '-'">Circuito cerrado</span>
-            </li>
-          </ul>
+    <section class="section-card bento-card bento-ruta" aria-labelledby="ruta-titulo">
+      <h2 class="h6 section-title" id="ruta-titulo"><i class="bi bi-signpost-split"></i> Ruta peatonal</h2>
+      <ul class="ficha">
+        <!-- Estos dos valores salen de Haversine, en linea recta. Si OSRM
+             responde, mapa-leaflet.js los sustituye por el recorrido real
+             por calles; si no responde, se quedan como estan. -->
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Distancia (ida y vuelta)</span>
+          <span class="ficha-valor" id="ficha-distancia-valor"
+                th:text="${ruta.distanciaKm} + ' km'">0 km</span>
+        </li>
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Tiempo estimado</span>
+          <span class="ficha-valor" id="ficha-tiempo-valor"
+                th:text="${ruta.tiempoEstimadoMin} + ' min'">0 min</span>
+        </li>
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Dificultad</span>
+          <span class="badge"
+                th:classappend="${ruta.dificultad == 'Baja'} ? 'badge-dif-baja'
+                                 : (${ruta.dificultad == 'Alta'} ? 'badge-dif-alta' : 'badge-dif-media')"
+                th:text="${ruta.dificultad}">Baja</span>
+        </li>
+        <li class="ficha-fila">
+          <span class="ficha-etiqueta">Trayecto</span>
+          <span class="ficha-valor"
+                th:text="${ruta.esIdaVuelta} ? 'Circuito cerrado' : '-'">Circuito cerrado</span>
+        </li>
+      </ul>
+
+      <!-- Perfil altimetrico del circuito. El modelo no guarda la cota de la
+           zona, asi que la forma es orientativa y la fija el nivel de
+           dificultad (llano, con pendiente, ascenso pronunciado); el eje de
+           kilometros si es real y mapa-leaflet.js lo actualiza cuando llega
+           la distancia por calles. La cima queda en el punto medio porque el
+           circuito vuelve a la misma estacion. -->
+      <figure class="altimetria mb-0"
+              th:with="perfil=${ruta.dificultad == 'Alta'}
+                         ? 'M8,104 C40,103 100,90 130,62 C145,48 155,30 160,24 C165,30 175,48 190,62 C220,90 280,103 312,104'
+                         : (${ruta.dificultad == 'Media'}
+                            ? 'M8,104 C50,100 110,58 160,56 C210,58 270,100 312,104'
+                            : 'M8,104 C60,102 120,80 160,80 C200,80 260,102 312,104'),
+                       cima=${ruta.dificultad == 'Alta'} ? 24 : (${ruta.dificultad == 'Media'} ? 56 : 80)">
+        <svg class="altimetria-svg" role="img"
+             th:attr="viewBox='0 ' + (${cima} - 14) + ' 320 ' + (126 - ${cima}),
+                      aria-label='Perfil orientativo del circuito: sale de ' + ${origen.nombre}
+                                 + ', sube hasta ' + ${destino.nombre} + ' y regresa.'">
+          <defs>
+            <linearGradient id="altimetria-relleno" x1="0" y1="0" x2="0" y2="1">
+              <stop class="altimetria-relleno-inicio" offset="0"></stop>
+              <stop class="altimetria-relleno-fin" offset="1"></stop>
+            </linearGradient>
+          </defs>
+          <line class="altimetria-base" x1="8" y1="104" x2="312" y2="104"></line>
+          <path fill="url(#altimetria-relleno)" th:attr="d=${perfil} + ' L312,104 L8,104 Z'"></path>
+          <path class="altimetria-linea" th:attr="d=${perfil}"></path>
+          <circle class="altimetria-cima" cx="160" r="4" th:attr="cy=${cima}"></circle>
+        </svg>
+        <div class="altimetria-eje" aria-hidden="true">
+          <span>0 km</span>
+          <span class="altimetria-hito">
+            <span id="altimetria-km-medio" th:text="${#numbers.formatDecimal(ruta.distanciaKm / 2, 1, 2, 'POINT')}">0</span> km
+          </span>
+          <span><span id="altimetria-km-total" th:text="${ruta.distanciaKm}">0</span> km</span>
         </div>
-      </div>
-    </div>
+        <figcaption class="altimetria-nota">
+          Perfil orientativo para dificultad <span th:text="${#strings.toLowerCase(ruta.dificultad)}">baja</span>:
+          la cima es la zona y los extremos, la estación<span th:if="${origen.altitud != null}">
+          (<span th:text="${#numbers.formatDecimal(origen.altitud, 1, 0)}">0</span> msnm)</span>.
+        </figcaption>
+      </figure>
+    </section>
 
     <!-- RF-06: pronostico del SENAMHI para la estacion y la fecha de visita.
-         El estado se colorea a partir de la probabilidad numerica y no de la
-         cadena, porque el SENAMHI devuelve cinco descripciones distintas. -->
-    <div class="col-12 col-lg-6">
-      <div class="card section-card h-100">
-        <div class="card-body p-4">
-          <h2 class="h6 section-title"><i class="bi bi-cloud-sun"></i> Pronóstico del SENAMHI</h2>
+         El estado colorea la pildora y tine la tarjeta a partir de la
+         probabilidad numerica y no de la cadena, porque el SENAMHI devuelve
+         cinco descripciones distintas. -->
+    <section class="section-card bento-card bento-clima" aria-labelledby="clima-titulo"
+             th:classappend="${clima != null and clima.probabilidadLluvia &lt; 30} ? 'clima-widget-andino--soleado'
+                              : (${clima != null and clima.probabilidadLluvia &lt; 60} ? 'clima-widget-andino--nublado'
+                              : (${clima != null} ? 'clima-widget-andino--lluvia' : ''))">
+      <h2 class="h6 section-title" id="clima-titulo"><i class="bi bi-cloud-sun"></i> Pronóstico del SENAMHI</h2>
 
-          <div th:if="${clima != null}">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="page-sub small"
-                    th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
-              <span class="clima-estado"
-                    th:classappend="${clima.probabilidadLluvia &lt; 30} ? 'clima-estado--seco'
-                                     : (${clima.probabilidadLluvia &lt; 60} ? 'clima-estado--nublado'
-                                     : 'clima-estado--lluvia')"
-                    th:text="${clima.estadoClima}">Soleado</span>
-            </div>
+      <div th:if="${clima != null}">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="page-sub small"
+                th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
+          <span class="clima-estado"
+                th:classappend="${clima.probabilidadLluvia &lt; 30} ? 'clima-estado--seco'
+                                 : (${clima.probabilidadLluvia &lt; 60} ? 'clima-estado--nublado'
+                                 : 'clima-estado--lluvia')"
+                th:text="${clima.estadoClima}">Soleado</span>
+        </div>
 
-            <div class="clima-temperaturas">
-              <span th:text="${clima.temperaturaMinC} + '°'">0°</span>
-              <span th:text="${clima.temperaturaMaxC} + '°'">0°</span>
-            </div>
-            <div class="clima-rango">
-              <span class="clima-barra" style="left:0; right:0;"></span>
-            </div>
-            <p class="page-sub small mb-3">Mínima y máxima previstas</p>
+        <div class="clima-grande">
+          <span class="clima-max" th:text="${clima.temperaturaMaxC} + '°'">0°</span>
+          <span class="clima-min">mín. <span th:text="${clima.temperaturaMinC} + '°'">0°</span></span>
+        </div>
+        <div class="clima-rango">
+          <span class="clima-barra" style="left:0; right:0;"></span>
+        </div>
+        <p class="page-sub small mb-3">Máxima y mínima previstas para la estación</p>
 
-            <div class="d-flex justify-content-between align-items-baseline">
-              <span class="ficha-etiqueta">Probabilidad de lluvia</span>
-              <span class="ficha-valor" th:text="${clima.probabilidadLluvia} + ' %'">0 %</span>
-            </div>
-            <div class="clima-lluvia">
-              <span class="clima-lluvia-relleno"
-                    th:style="'width:' + ${clima.probabilidadLluvia} + '%'"></span>
-            </div>
-          </div>
-
-          <p class="page-sub small mb-0" th:if="${clima == null}">
-            El SENAMHI aún no publicó el pronóstico de
-            <span th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
-            para esta estación.
-          </p>
+        <div class="d-flex justify-content-between align-items-baseline">
+          <span class="ficha-etiqueta">Probabilidad de lluvia</span>
+          <span class="ficha-valor" th:text="${clima.probabilidadLluvia} + ' %'">0 %</span>
+        </div>
+        <div class="clima-lluvia">
+          <span class="clima-lluvia-relleno"
+                th:style="'width:' + ${clima.probabilidadLluvia} + '%'"></span>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- RF-16/RF-17: el cupo deja de ser un numero suelto. La barra dice de un
-       vistazo si todavia queda sitio para la fecha elegida. -->
-  <div class="card section-card mt-4"
-       th:if="${cupoDisponible != null and destino.cupoMaximoDiario != null
-               and destino.cupoMaximoDiario > 0}">
-    <div class="card-body p-4">
-      <h2 class="h6 section-title"><i class="bi bi-people"></i> Aforo de la fecha</h2>
+      <p class="page-sub small mb-0" th:if="${clima == null}">
+        El SENAMHI aún no publicó el pronóstico de
+        <span th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span>
+        para esta estación.
+      </p>
+    </section>
+
+    <!-- RF-16/RF-17: el cupo deja de ser un numero suelto. La barra dice de un
+         vistazo si todavia queda sitio para la fecha elegida, y late cuando
+         queda menos de un cuarto. -->
+    <section class="section-card bento-card bento-aforo" aria-labelledby="aforo-titulo" th:if="${hayAforo}">
+      <h2 class="h6 section-title" id="aforo-titulo"><i class="bi bi-people"></i> Aforo de la fecha</h2>
       <div th:with="porcentaje=${cupoDisponible * 100 / destino.cupoMaximoDiario}"
            th:classappend="${porcentaje &lt; 25} ? 'aforo--critico'
                             : (${porcentaje &lt; 50} ? 'aforo--justo' : '')">
-        <div class="d-flex justify-content-between align-items-baseline">
-          <span class="aforo-cifra">
-            <span th:text="${cupoDisponible}">0</span><span class="page-sub"
-              th:text="' / ' + ${destino.cupoMaximoDiario}"> / 0</span>
-          </span>
-          <span class="page-sub small">lugares libres</span>
+        <div class="aforo-contador">
+          <span class="aforo-cifra" th:text="${cupoDisponible}">0</span>
+          <span class="aforo-total" th:text="'/ ' + ${destino.cupoMaximoDiario}">/ 0</span>
         </div>
-        <div class="aforo-barra">
+        <span class="page-sub small">lugares libres el
+          <span th:text="${#temporals.format(fechaVisita, 'dd/MM/yyyy')}">fecha</span></span>
+        <div class="aforo-barra" role="meter" aria-valuemin="0" aria-valuemax="100"
+             th:attr="aria-valuenow=${porcentaje},
+                      aria-label='Cupo disponible: ' + ${cupoDisponible} + ' de ' + ${destino.cupoMaximoDiario}">
           <span class="aforo-relleno" th:style="'width:' + ${porcentaje} + '%'"></span>
         </div>
+        <p class="aforo-aviso mb-0" th:if="${porcentaje &lt; 25}">
+          Quedan pocos lugares para esta fecha: genera el informe pronto o elige otro día.
+        </p>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- 5.1: mapa Leaflet con estacion de origen, zona de destino y el trazo. -->
-  <div class="card section-card mt-4">
-    <div class="card-body p-4">
-      <h2 class="h6 section-title"><i class="bi bi-map"></i> Mapa del recorrido</h2>
+    <!-- 5.1: mapa Leaflet con estacion de origen, zona de destino y el trazo. -->
+    <!-- El id del titulo no puede empezar por "mapa-": mapa-leaflet.js y la
+         regla [id^="mapa-"] de estilos.css toman el primer elemento con ese
+         prefijo por el contenedor del mapa. -->
+    <section class="section-card bento-card bento-mapa" aria-labelledby="titulo-mapa">
+      <h2 class="h6 section-title" id="titulo-mapa"><i class="bi bi-map"></i> Mapa del recorrido</h2>
       <!-- Las dos ultimas son las cifras de Haversine: el script las necesita
            para deducir el ritmo de caminata (min/km) del nivel de dificultad y
            reescalar el tiempo cuando la distancia por calles resulte otra. -->
@@ -148,13 +199,11 @@
       <p id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0">
         El trazo representa el circuito de ida y vuelta estimado en línea recta (fórmula de Haversine).
       </p>
-    </div>
-  </div>
+    </section>
 
-  <!-- RF-07/RF-08: eleccion de servicio de tren y fecha antes del informe. -->
-  <div class="card section-card section-card--foco mt-4">
-    <div class="card-body p-4">
-      <h2 class="h6 section-title"><i class="bi bi-file-earmark-text"></i> Generar informe consolidado</h2>
+    <!-- RF-07/RF-08: eleccion de servicio de tren y fecha antes del informe. -->
+    <section class="section-card section-card--foco bento-card bento-informe" aria-labelledby="informe-titulo">
+      <h2 class="h6 section-title" id="informe-titulo"><i class="bi bi-file-earmark-text"></i> Generar informe consolidado</h2>
 
       <form method="get" th:action="@{/informes/consolidado}" class="row g-3 align-items-end">
         <input type="hidden" name="idEstacion" th:value="${origen.id}">
@@ -222,7 +271,8 @@
         Esta zona controla aforo diario: al generar el informe se reserva un cupo
         <strong>por cada persona del grupo</strong> para la fecha elegida.
       </p>
-    </div>
+    </section>
+
   </div>
 
   <a class="btn btn-mtc-outline btn-sm mt-4" th:href="@{/preferencias}">

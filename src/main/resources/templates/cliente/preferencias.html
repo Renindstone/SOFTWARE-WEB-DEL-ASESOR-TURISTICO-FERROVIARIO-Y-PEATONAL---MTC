@@ -2,14 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 
 <head th:replace="~{layout/base :: head('Zonas turísticas')}"></head>
-<style th:src="@{/css/estilos.css}"></style>
+
 <body>
 <div th:replace="~{layout/nav :: nav}"></div>
 
 <main class="container py-4" style="max-width: 1320px;">
 
+  <!-- Propuesta B: el titular va en la serifa editorial; el resto de la
+       pantalla sigue en Plex, que es la voz de trabajo. -->
   <div class="mb-4">
-    <h1 class="h4 fw-bold page-title mb-1">¿Qué quieres visitar?</h1>
+    <h1 class="page-title page-title--editorial mb-2">¿Qué quieres visitar?</h1>
     <p class="page-sub mb-0">
       Abajo están todas las zonas turísticas con acceso en tren. Marca los filtros
       que te interesen y el listado se va ajustando.
@@ -25,7 +27,10 @@
          de vista los resultados. -->
     <div class="col-12 col-lg-3">
       <div class="rail-filtros">
-        <form method="get" th:action="@{/preferencias}" th:object="${busqueda}" id="filtros-zonas">
+        <!-- Tarjeta de vidrio con los iconos en terracota (.filtros-andino);
+             el verde sigue marcando lo seleccionado. -->
+        <form method="get" th:action="@{/preferencias}" th:object="${busqueda}" id="filtros-zonas"
+              class="section-card bento-card filtros-andino">
 
           <!-- CN-05: un tiempo fuera de rango se avisa aqui. #fields solo
                resuelve dentro del elemento que declara th:object. -->
@@ -89,7 +94,7 @@
             <div class="form-text">Sin marcar ninguna, se muestran todas las categorías.</div>
           </div>
 
-          <div class="d-flex flex-wrap gap-2 mt-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-4">
             <button type="submit" class="btn btn-mtc btn-sm">
               <i class="bi bi-search me-2"></i>Aplicar filtros
             </button>
@@ -117,11 +122,13 @@
         <span class="page-sub small" th:if="${busqueda.sinFiltros}">
           Catálogo completo. Marca un filtro para acotarlo.
         </span>
-        <span class="page-sub small" th:unless="${busqueda.sinFiltros}"
-              th:text="'Filtros activos: ' + ${busqueda.contarFiltrosActivos()}">Filtros activos: 0</span>
+        <span class="page-sub small" th:unless="${busqueda.sinFiltros}">
+          Filtros activos: <span class="filtros-contador cifra"
+                                 th:text="${busqueda.contarFiltrosActivos()}">0</span>
+        </span>
       </div>
 
-      <div class="tablero" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
+      <div class="tablero bento-orden-1" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
         <!-- Las coordenadas ya viajaban en ZonaResultadoDTO y no se estaban
              usando: alimentan los marcadores de mapa-buscador.js sin que el
              backend cambie nada.
@@ -160,7 +167,7 @@
               </span>
             </p>
 
-            <a class="btn btn-mtc btn-sm"
+            <a class="btn btn-mtc btn-sm btn-relieve"
                th:href="@{/rutas/detalle(idEstacion=${zona.idEstacionCercana}, idZona=${zona.idZona})}">
               Ver ruta y clima
             </a>
@@ -186,12 +193,11 @@
         </article>
       </div>
 
-      <div class="card section-card" th:if="${zonas != null and #lists.isEmpty(zonas)}">
-        <div class="card-body text-center py-5">
-          <p class="page-sub mt-3 mb-1 mx-auto">Ninguna zona turística cumple todos los filtros.</p>
-          <p class="small page-sub mx-auto">Prueba con más tiempo disponible, otra dificultad u otras categorías.</p>
-          <a class="btn btn-mtc-outline btn-sm" th:href="@{/preferencias}">Limpiar filtros</a>
-        </div>
+      <div class="section-card bento-card bento-orden-1 text-center py-5"
+           th:if="${zonas != null and #lists.isEmpty(zonas)}">
+        <p class="page-sub mb-1 mx-auto">Ninguna zona turística cumple todos los filtros.</p>
+        <p class="small page-sub mx-auto">Prueba con más tiempo disponible, otra dificultad u otras categorías.</p>
+        <a class="btn btn-mtc-outline btn-sm" th:href="@{/preferencias}">Limpiar filtros</a>
       </div>
     </div>
 
@@ -200,12 +206,14 @@
          resalta su marcador, y al pulsar un marcador se enfoca la fila. -->
     <div class="col-12 col-lg-4" th:if="${zonas != null and not #lists.isEmpty(zonas)}">
       <div class="rail-filtros">
-        <div class="section-title"><i class="bi bi-map"></i> Dónde quedan</div>
-        <div id="buscador-mapa"></div>
-        <p class="page-sub small mt-2 mb-0">
-          Cada marcador es una zona del listado. Las distancias se miden en línea
-          recta desde su estación de acceso.
-        </p>
+        <div class="section-card bento-card bento-orden-2 p-3">
+          <div class="section-title"><i class="bi bi-map"></i> Dónde quedan</div>
+          <div id="buscador-mapa"></div>
+          <p class="page-sub small mt-2 mb-0">
+            Cada marcador es una zona del listado. Las distancias se miden en línea
+            recta desde su estación de acceso.
+          </p>
+        </div>
       </div>
     </div>
 

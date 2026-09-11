@@ -53,9 +53,13 @@
   --verde-300: #7FA096;
   --verde-100: #E3EBE7;
 
-  /* Neutros. El papel es gris-verdoso frio, no crema calido: la crema
-     tibia es el fondo por defecto de cualquier plantilla generica. */
+  /* Neutros. El papel original era gris-verdoso frio. La Propuesta B
+     ("Expedicion Andina") lo templa un punto hacia el papel de un cuaderno
+     de campo (#FAF8F5) y le imprime encima una marca de agua topografica
+     (ver body en estilos.css): la calidez no viene de la plantilla, viene
+     del mapa de curvas de nivel que la identifica. */
   --papel:     #FAFAF7;
+  --papel-andino: #FAF8F5;
   --blanco:    #FFFFFF;
   --gris-050:  #F2F2EE;
   --gris-200:  #D9DBD4;
@@ -96,6 +100,21 @@
   --senal-amarilla: #F0B323;
   --senal-roja:     #C1362B;
 
+  /* Terracota de expedicion (Propuesta B). Es el color de la tierra andina
+     y se reserva a tres cosas: la linea del perfil altimetrico, el relieve
+     del boton "Ver ruta y clima" y los iconos del rail de filtros. Contra el
+     papel da 4.9:1, asi que si puede llevar texto pequeno. */
+  --terracota:        #B85D36;
+  --terracota-hover:  #9E4A26;
+  --terracota-soft:   #FBF0EB;
+  --terracota-border: rgba(184, 93, 54, 0.25);
+
+  /* Vidrio institucional: las tarjetas dejan pasar la marca de agua del
+     papel a traves de un blanco al 88 % con desenfoque de fondo. El borde
+     es el verde profundo casi transparente, no un gris. */
+  --bg-glass-card: rgba(255, 255, 255, 0.88);
+  --border-glass:  rgba(20, 69, 61, 0.10);
+
   /* Escala tipografica. Tercera mayor (1.25) sobre 16px. */
   --paso--2: 0.75rem;
   --paso--1: 0.8125rem;
@@ -119,6 +138,7 @@
      lectura no puede tener el mismo radio que un control pulsable. */
   --radio-control:   6px;
   --radio-superficie: 10px;
+  --radio-vidrio:    14px;
   --radio-pildora:   999px;
   --radio-placa:     0;
 
@@ -127,6 +147,10 @@
   --sombra-superficie: 0 1px 2px rgba(10, 42, 37, 0.04);
   --sombra-elevada:    0 8px 24px -12px rgba(10, 42, 37, 0.22);
   --sombra-placa:      4px 4px 0 var(--tinta);
+  /* Propuesta B: dos sombras verdosas y difusas. La andina es la de reposo
+     de toda tarjeta de vidrio; la flotante, la de la placa de bienvenida. */
+  --sombra-andina:   0 10px 30px -8px rgba(10, 42, 37, 0.08), 0 2px 6px -1px rgba(10, 42, 37, 0.04);
+  --sombra-flotante: 0 16px 40px -12px rgba(10, 42, 37, 0.14);
 
 
   /* ======================================================================
@@ -134,7 +158,7 @@
      Alias de proposito. Es la capa que consumen los componentes.
      ====================================================================== */
 
-  --bg-page:      var(--papel);
+  --bg-page:      var(--papel-andino);
   --bg-surface:   var(--blanco);
   --bg-sunken:    var(--gris-050);
   --bg-inverse:   var(--verde-700);
@@ -165,6 +189,10 @@
   --fuente-texto:  'IBM Plex Sans', system-ui, -apple-system, "Segoe UI", sans-serif;
   --fuente-cifra:  'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --fuente-senal:  'Big Shoulders', 'IBM Plex Sans Condensed', Impact, sans-serif;
+  /* Voz editorial de la Propuesta B: una serifa con eje optico que rotula
+     la placa de anden, el nombre de cada zona y los titulares del turista.
+     Llega por Google Fonts desde layout/base.html; sin red, Georgia. */
+  --fuente-editorial: 'Newsreader', Georgia, 'Times New Roman', serif;
 }
 
 /* Modo de contraste alto del sistema operativo: el turista consulta esto a
@@ -172,14 +200,19 @@
 @media (prefers-contrast: more) {
   :root {
     --border-default: var(--gris-400);
+    --border-glass: var(--gris-400);
+    --bg-glass-card: var(--blanco);
     --fg-muted: var(--tinta);
     --sombra-superficie: none;
     --sombra-elevada: none;
+    --sombra-andina: none;
+    --sombra-flotante: none;
   }
 }
 
-/* La unica animacion del sistema es la del mapa al enfocar una zona.
-   Aun asi, se respeta la preferencia de movimiento reducido. */
+/* Las animaciones del sistema son pocas (enfoque de zona, entrada
+   escalonada de las tarjetas de vidrio y el pulso del aforo critico) y
+   todas respetan la preferencia de movimiento reducido. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
