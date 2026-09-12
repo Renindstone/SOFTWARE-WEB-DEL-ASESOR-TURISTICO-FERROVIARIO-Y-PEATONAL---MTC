@@ -194,7 +194,7 @@ class ServicioTrenServiceTest {
         relampago.setEstacionDestino(estacionDestino);
         relampago.setHorarioSalida(LocalTime.of(6, 10));
         relampago.setHorarioLlegada(LocalTime.of(6, 30));
-        relampago.setTarifa(new BigDecimal("210.00"));
+        relampago.setTarifa(new BigDecimal("360.00"));
 
         // Llegada = salida + transito, asi que validarHorarios lo daria por
         // bueno; son los 89 km de via en 20 minutos (268 km/h) lo que no cuadra.
@@ -215,7 +215,7 @@ class ServicioTrenServiceTest {
         expedition.setEstacionDestino(estacionDestino);
         expedition.setHorarioSalida(LocalTime.of(6, 10));
         expedition.setHorarioLlegada(LocalTime.of(9, 54));
-        expedition.setTarifa(new BigDecimal("210.00"));
+        expedition.setTarifa(new BigDecimal("360.00"));
         when(servicioTrenRepository.save(expedition)).thenReturn(expedition);
 
         // 89 km en 224 minutos son 24 km/h: dentro de lo que la red alcanza.
@@ -294,7 +294,7 @@ class ServicioTrenServiceTest {
         nocturno.setHorarioSalida(LocalTime.of(21, 0));
         nocturno.setHorarioLlegada(LocalTime.of(8, 0));
         nocturno.setTiempoTransitoMin(null);
-        nocturno.setTarifa(new BigDecimal("1200.00"));
+        nocturno.setTarifa(new BigDecimal("1850.00"));
 
         when(servicioTrenRepository.save(nocturno)).thenReturn(nocturno);
 
@@ -313,7 +313,7 @@ class ServicioTrenServiceTest {
         enCero.setHorarioSalida(LocalTime.of(6, 10));
         enCero.setHorarioLlegada(LocalTime.of(9, 54));
         enCero.setTiempoTransitoMin(0);
-        enCero.setTarifa(new BigDecimal("210.00"));
+        enCero.setTarifa(new BigDecimal("360.00"));
 
         when(servicioTrenRepository.save(enCero)).thenReturn(enCero);
 
@@ -352,7 +352,7 @@ class ServicioTrenServiceTest {
         nocturno.setHorarioSalida(LocalTime.of(21, 0));
         nocturno.setHorarioLlegada(LocalTime.of(8, 0));
         nocturno.setTiempoTransitoMin(660);
-        nocturno.setTarifa(new BigDecimal("1200.00"));
+        nocturno.setTarifa(new BigDecimal("1850.00"));
 
         when(servicioTrenRepository.save(nocturno)).thenReturn(nocturno);
 

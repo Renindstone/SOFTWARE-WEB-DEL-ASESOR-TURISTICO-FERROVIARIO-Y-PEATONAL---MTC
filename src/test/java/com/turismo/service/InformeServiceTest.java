@@ -131,7 +131,7 @@ class InformeServiceTest {
 
         servicio = new ServicioTren();
         servicio.setId(3);
-        servicio.setTarifa(new BigDecimal("145.00"));
+        servicio.setTarifa(new BigDecimal("210.00"));
 
         // El calculo real de la ruta vive en RutaPeatonalServiceTest (CB-01/CB-02).
         when(rutaPeatonalService.calcularRutaPeatonalIdaVuelta(any(), any()))
@@ -171,9 +171,9 @@ class InformeServiceTest {
         assertThat(informe.getTemperaturaMinimaC()).isEqualByComparingTo("5.0");
         assertThat(informe.getTemperaturaMaximaC()).isEqualByComparingTo("19.4");
         assertThat(informe.getEstadoClima()).isEqualTo("Parcialmente nublado");
-        assertThat(informe.getTarifaTren()).isEqualByComparingTo("145.00");
+        assertThat(informe.getTarifaTren()).isEqualByComparingTo("210.00");
         // Un adulto: tarifa completa de tren + costo completo de la zona.
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("215.00");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("280.00");
     }
 
     /** Sin declarar edades, el informe asume un adulto: el turista que consulta solo. */
@@ -185,13 +185,13 @@ class InformeServiceTest {
                 origen, destino, servicio, FECHA_VISITA, null, null);
 
         assertThat(informe.getTotalPersonas()).isEqualTo(1);
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("215.00");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("280.00");
         verify(aforoService).validarAforoDisponible(destino, FECHA_VISITA, 1);
     }
 
     /**
      * RF-18: la familia sembrada como INF-0001 (dos adultos y un nino de 8).
-     * Tren: 145.00 x2 + 145.00 x 0.50. Zona: 70.00 x2 + 70.00 x 0.68.
+     * Tren: 210.00 x2 + 210.00 x 0.50. Zona: 70.00 x2 + 70.00 x 0.68.
      */
     @Test
     void aplicaLaTarifaQueCorrespondeACadaEdadDelGrupo() {
@@ -201,7 +201,7 @@ class InformeServiceTest {
                 origen, destino, servicio, FECHA_VISITA, grupo(38, 36, 8), null);
 
         assertThat(informe.getTotalPersonas()).isEqualTo(3);
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("550.10");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("712.60");
         assertThat(informe.getVisitantes())
                 .extracting(VisitanteDTO::getEdad, VisitanteDTO::getCategoriaTren, VisitanteDTO::getCategoriaZona)
                 .containsExactly(
@@ -225,9 +225,9 @@ class InformeServiceTest {
         VisitanteDTO adolescente = informe.getVisitantes().get(0);
         assertThat(adolescente.getCategoriaTren()).isEqualTo("Adulto");
         assertThat(adolescente.getCategoriaZona()).isEqualTo("Nino");
-        assertThat(adolescente.getSubtotalTren()).isEqualByComparingTo("145.00");
+        assertThat(adolescente.getSubtotalTren()).isEqualByComparingTo("210.00");
         assertThat(adolescente.getSubtotalZona()).isEqualByComparingTo("47.60");
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("192.60");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("257.60");
     }
 
     /** Un infante no paga tren ni entrada, pero sigue ocupando cupo de aforo. */
@@ -238,7 +238,7 @@ class InformeServiceTest {
         InformeConsolidadoDTO informe = informeService.generarInformeConsolidado(
                 origen, destino, servicio, FECHA_VISITA, grupo(30, 1), null);
 
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("215.00");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("280.00");
         verify(aforoService).validarAforoDisponible(destino, FECHA_VISITA, 2);
     }
 
@@ -340,7 +340,7 @@ class InformeServiceTest {
 
         assertThat(informe.getCodigo()).isEqualTo("INF-0008");
         // El PDF debe repetir el mismo total que vio el turista en el HTML.
-        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("550.10");
+        assertThat(informe.getTotalEstimado()).isEqualByComparingTo("712.60");
         verify(aforoService, never()).validarAforoDisponible(any(), any(), anyInt());
         verify(aforoService, never()).validarAforoDisponible(any(), any());
         verify(informePlanificacionRepository, never()).save(any());

@@ -126,54 +126,59 @@ INSERT INTO estacion ("EstCodigo", "EstNombre", "EstLatitud", "EstLongitud",
 
 -- ----------------------------------------------------------------------------
 -- 7. SERVICIO_TREN  (horarios y tarifas - simulacion del feed de PeruRail)
+--
+-- Tarifas estandar de referencia en soles por tramo y categoria de servicio:
+-- Expedition 210, Vistadome 280, Cusco - Machu Picchu 360, Urubamba 260,
+-- Hidroelectrica 110, Titicaca Train 1450 y Andean Explorer 1850. Los informes
+-- sembrados mas abajo (seccion 13 y 14) se calculan con estos valores.
 -- ----------------------------------------------------------------------------
 INSERT INTO servicio_tren ("SerHorarioSalida", "SerHorarioLlegada",
                            "SerTiempoTransitoMin", "SerTarifa",
                            "SerIdEstacionOrigen", "SerIdEstacionDestino") VALUES
     -- Corredor Cusco (San Pedro) <-> Machu Picchu
-    ('06:10', '09:54', 224, 210.00,
+    ('06:10', '09:54', 224, 360.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-SPD'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP')),
-    ('14:55', '18:45', 230, 210.00,
+    ('14:55', '18:45', 230, 360.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-SPD')),
     -- Corredor Ollantaytambo <-> Machu Picchu (servicio Expedition)
-    ('05:07', '06:35',  88, 145.00,
+    ('05:07', '06:35',  88, 210.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP')),
-    ('08:53', '10:22',  89, 145.00,
+    ('08:53', '10:22',  89, 210.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL')),
     -- Corredor Ollantaytambo <-> Machu Picchu (servicio Vistadome)
-    ('07:45', '09:05',  80, 195.00,
+    ('07:45', '09:05',  80, 280.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP')),
-    ('15:35', '17:00',  85, 195.00,
+    ('15:35', '17:00',  85, 280.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-OLL')),
     -- Corredor Urubamba <-> Machu Picchu
-    ('06:00', '08:23', 143, 165.00,
+    ('06:00', '08:23', 143, 260.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-URU'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP')),
-    ('16:12', '18:40', 148, 165.00,
+    ('16:12', '18:40', 148, 260.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-URU')),
     -- Tramo Hidroelectrica <-> Machu Picchu
-    ('08:30', '09:10',  40,  90.00,
+    ('08:30', '09:10',  40, 110.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-HID'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP')),
-    ('14:30', '15:10',  40,  90.00,
+    ('14:30', '15:10',  40, 110.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-MAP'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-HID')),
     -- Corredor Cusco <-> Puno (Titicaca Train)
-    ('08:00', '18:00', 600, 950.00,
+    ('08:00', '18:00', 600, 1450.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-SPD'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'PUN-PUN')),
-    ('08:00', '18:00', 600, 950.00,
+    ('08:00', '18:00', 600, 1450.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'PUN-PUN'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'CUS-SPD')),
     -- Corredor Puno <-> Arequipa
-    ('21:00', '08:00', 660, 1200.00,
+    ('21:00', '08:00', 660, 1850.00,
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'PUN-PUN'),
      (SELECT "EstIdEstacion" FROM estacion WHERE "EstCodigo" = 'AQP-AQP'));
 
@@ -412,11 +417,11 @@ INSERT INTO informe_planificacion ("InfCodigo", "InfFechaVisita", "InfIdUsuario"
     ('INF-0001', '2026-09-02',
      (SELECT "UsuIdUsuario" FROM usuario WHERE "UsuNombreUsuario" = 'turista_jose'),
      (SELECT "RutIdRuta" FROM ruta_peatonal WHERE "RutNombre" = 'Circuito Ollantaytambo - Fortaleza'),
-     550.10),
+     712.60),
     ('INF-0002', '2026-09-03',
      (SELECT "UsuIdUsuario" FROM usuario WHERE "UsuNombreUsuario" = 'turista_jose'),
      (SELECT "RutIdRuta" FROM ruta_peatonal WHERE "RutNombre" = 'Circuito Aguas Calientes - Banos Termales'),
-     165.00),
+     230.00),
     ('INF-0003', '2026-09-02', NULL,
      (SELECT "RutIdRuta" FROM ruta_peatonal WHERE "RutNombre" = 'Circuito San Pedro - Sacsayhuaman'),
      70.00);
@@ -429,10 +434,11 @@ INSERT INTO informe_planificacion ("InfCodigo", "InfFechaVisita", "InfIdUsuario"
 -- con cortes distintos -- un chico de 8 es "Nino" tanto en el tren como en la
 -- zona, pero uno de 15 seria "Adulto" en el tren y "Nino" en la zona.
 --
--- Subtotales de INF-0001 (tarifa de tren 145.00, ingreso a la zona 70.00):
---   2 adultos -> tren 145.00 x 1.0000 x 2 = 290.00 ; zona 70.00 x 1.0000 x 2 = 140.00
---   1 nino    -> tren 145.00 x 0.5000     =  72.50 ; zona 70.00 x 0.6800     =  47.60
---   Total del informe = 550.10
+-- Subtotales de INF-0001 (tarifa de tren 210.00, ingreso a la zona 70.00):
+--   2 adultos -> tren 210.00 x 1.0000 x 2 = 420.00 ; zona 70.00 x 1.0000 x 2 = 140.00
+--   1 nino    -> tren 210.00 x 0.5000     = 105.00 ; zona 70.00 x 0.6800     =  47.60
+--   Total del informe = 712.60
+-- INF-0002 (un adulto, entrada 20.00): tren 210.00 + zona 20.00 = 230.00
 --
 -- INF-0003 se emitio sin tren, por eso su categoria de tren queda en NULL.
 -- ----------------------------------------------------------------------------
@@ -444,9 +450,9 @@ SELECT i."InfIdInforme", v.edad, v.cantidad,
        v.subtotal_tren, v.subtotal_zona
 FROM (VALUES
     -- informe,     edad, cantidad, cat_tren,  cat_zona, sub_tren, sub_zona
-    ('INF-0001', 35,  2, 'Adulto', 'Adulto', 290.00, 140.00),
-    ('INF-0001',  8,  1, 'Nino',   'Nino',    72.50,  47.60),
-    ('INF-0002', 35,  1, 'Adulto', 'Adulto', 145.00,  20.00),
+    ('INF-0001', 35,  2, 'Adulto', 'Adulto', 420.00, 140.00),
+    ('INF-0001',  8,  1, 'Nino',   'Nino',   105.00,  47.60),
+    ('INF-0002', 35,  1, 'Adulto', 'Adulto', 210.00,  20.00),
     ('INF-0003', 28,  1,  NULL,    'Adulto',   0.00,  70.00)
 ) AS v(codigo, edad, cantidad, cat_tren, cat_zona, subtotal_tren, subtotal_zona)
 JOIN informe_planificacion i ON i."InfCodigo" = v.codigo
@@ -469,7 +475,7 @@ INSERT INTO auditoria_log ("AudUsuario", "AudOperacion", "AudTablaAfectada",
     ('travel_ana', 'UPDATE', 'zona_turistica',
      'ZonCostoAprox=8.00', 'ZonCostoAprox=10.00'),
     ('rail_luis',  'UPDATE', 'servicio_tren',
-     'SerTarifa=140.00', 'SerTarifa=145.00'),
+     'SerTarifa=145.00', 'SerTarifa=210.00'),
     ('admin_mtc',  'UPDATE', 'estacion',
      'EstEstado=Activa', 'EstEstado=Inactiva (Estacion Poroy)');
 
