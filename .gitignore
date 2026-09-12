@@ -39,3 +39,10 @@ bin/
 # Salida derivada del propio codigo (grafo, informe, cache de extraccion):
 # se regenera con /graphify y no aporta nada al historial del repositorio.
 graphify-out/
+
+### Skills de asistentes de IA (herramientas de desarrollo, no del proyecto)
+# Se conservan en disco pero fuera del historial: son paquetes genericos de
+# terceros y distorsionaban las estadisticas de lenguajes del repositorio.
+# Respaldo completo en la rama backup-con-skills.
+.agents/skills/
+.claude/skills/
