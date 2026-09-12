@@ -154,6 +154,10 @@
                   th:data-lat="${est.latitud}" th:data-lon="${est.longitud}"
                   th:text="${est.nombre} + ' (' + ${est.ciudad} + ')'"></option>
               </select>
+              <div class="form-text">
+                Al fijar la ubicación en el mapa se propone la estación activa más cercana; puedes cambiarla si el
+                acceso habitual es otro.
+              </div>
             </div>
 
             <div class="divider-soft my-3"></div>
@@ -484,6 +488,39 @@
         inputLon.value = latlng.lng.toFixed(6);
       }
 
+      function nombreEstacion(opt) {
+        // El texto de la opcion lleva la ciudad entre parentesis.
+        return opt.text.replace(/\s*\(.*\)\s*$/, '');
+      }
+
+      // Estacion activa mas proxima al punto (las inactivas no estan en el select).
+      function estacionMasCercana(latlng) {
+        var mejor = null;
+        Array.prototype.forEach.call(selectEstacion.options, function (opt) {
+          if (!opt.value) { return; }
+          var lat = parseFloat(opt.dataset.lat);
+          var lon = parseFloat(opt.dataset.lon);
+          if (isNaN(lat) || isNaN(lon)) { return; }
+          var km = haversineKm(latlng, L.latLng(lat, lon));
+          if (!mejor || km < mejor.km) {
+            mejor = { valor: opt.value, nombre: nombreEstacion(opt), km: km };
+          }
+        });
+        return mejor;
+      }
+
+      // Cada vez que el operador mueve el pin se propone la estacion mas
+      // cercana: una zona de Cusco con estacion en Puno no describe ningun
+      // acceso real. El select sigue siendo editable por si el acceso habitual
+      // no es el mas proximo en linea recta.
+      function elegirEstacionMasCercana(latlng) {
+        var cercana = estacionMasCercana(latlng);
+        if (cercana && selectEstacion.value !== cercana.valor) {
+          selectEstacion.value = cercana.valor;
+          colocarEstacion();
+        }
+      }
+
       // ---- Distancia a la estacion y dificultad que le tocaria ----
       function actualizarDistancia() {
         var estacion = coordsEstacion();
@@ -492,16 +529,25 @@
           info.classList.remove('d-flex');
           return;
         }
-        var ida = haversineKm(marcadorZona.getLatLng(), estacion);
+        var zona = marcadorZona.getLatLng();
+        var ida = haversineKm(zona, estacion);
         var idaVuelta = ida * 2;
         var nivel = clasificar(idaVuelta);
-        var texto = 'A ~' + ida.toFixed(1) + ' km de la estación (ida y vuelta: ~' + idaVuelta.toFixed(1) + ' km';
+        var elegida = nombreEstacion(selectEstacion.options[selectEstacion.selectedIndex]);
+        var cercana = estacionMasCercana(zona);
+        var esLaMasCercana = !cercana || cercana.valor === selectEstacion.value;
+        var texto = 'A ~' + ida.toFixed(1) + ' km de ' + elegida
+          + (esLaMasCercana ? ', la estación activa más cercana' : '')
+          + ' (ida y vuelta: ~' + idaVuelta.toFixed(1) + ' km';
         if (nivel) {
           texto += ' — dificultad ' + nivel + ').';
         } else {
           var tope = topeCaminable();
           texto += '). Supera el límite caminable de ' + (tope / 2) + ' km (' + tope
             + ' km ida y vuelta): el sistema no podrá calcular la ruta a pie.';
+        }
+        if (!esLaMasCercana) {
+          texto += ' La más cercana es ' + cercana.nombre + ', a ~' + cercana.km.toFixed(1) + ' km.';
         }
         textoInfo.textContent = texto;
         info.classList.toggle('text-muted', !!nivel);
@@ -512,7 +558,11 @@
       }
 
       // ---- Marcadores ----
-      function colocarZona(latlng, escribir) {
+      // opciones.escribir: vuelca las coordenadas en los campos (clic/arrastre).
+      // opciones.elegirEstacion: propone la estacion mas cercana; solo cuando el
+      // pin lo mueve el operador, nunca al cargar una zona ya guardada.
+      function colocarZona(latlng, opciones) {
+        opciones = opciones || {};
         if (!marcadorZona) {
           marcadorZona = L.marker(latlng, {
             icon: iconoZona,
@@ -522,13 +572,16 @@
           }).addTo(mapa);
           marcadorZona.bindPopup('<strong>Zona turística</strong><br>Arrastra el pin para ajustar la ubicación.');
           marcadorZona.on('dragend', function () {
-            escribirCoordenadas(marcadorZona.getLatLng());
+            var destino = marcadorZona.getLatLng();
+            escribirCoordenadas(destino);
+            elegirEstacionMasCercana(destino);
             actualizarDistancia();
           });
         } else {
           marcadorZona.setLatLng(latlng);
         }
-        if (escribir) { escribirCoordenadas(latlng); }
+        if (opciones.escribir) { escribirCoordenadas(latlng); }
+        if (opciones.elegirEstacion) { elegirEstacionMasCercana(latlng); }
         actualizarDistancia();
       }
 
@@ -580,7 +633,7 @@
         colocarEstacion();
         var latlng = coordsDelFormulario();
         if (latlng) {
-          colocarZona(latlng, false);
+          colocarZona(latlng, {});
         } else {
           quitarZona();
         }
@@ -588,7 +641,7 @@
 
       // ---- Eventos ----
       mapa.on('click', function (evento) {
-        colocarZona(evento.latlng, true);
+        colocarZona(evento.latlng, { escribir: true, elegirEstacion: true });
       });
 
       selectEstacion.addEventListener('change', function () {
@@ -607,7 +660,7 @@
           input.addEventListener(ev, function () {
             var latlng = coordsDelFormulario();
             if (!latlng) { return; }
-            colocarZona(latlng, false);
+            colocarZona(latlng, { elegirEstacion: true });
             if (!mapa.getBounds().contains(latlng)) { mapa.panTo(latlng); }
           });
         });
