@@ -12,8 +12,15 @@
 // falla, no se toca nada y las cifras de Haversine se quedan tal cual: es
 // preferible una estimacion coherente a una mezcla de las dos.
 //
+// El mapa es multimodal (RF-07): al elegir un servicio en el selector de
+// trenes del formulario, actualizarTramoFerroviario() dibuja la via desde la
+// estacion de abordaje hasta la estacion de partida de la caminata, con su
+// marcador, y amplia la vista al itinerario completo. Al volver a "Sin
+// servicio de tren" la via se retira y el mapa vuelve a la caminata.
+//
 // Las coordenadas llegan como data-attributes del contenedor del mapa, que la
-// vista cliente/ruta-detalle.html rellena desde Estacion y ZonaTuristica.
+// vista cliente/ruta-detalle.html rellena desde Estacion y ZonaTuristica; las
+// del tren, como data-attributes de cada <option> del selector.
 document.addEventListener("DOMContentLoaded", function () {
   var contenedor = document.querySelector("[id^='mapa-']");
   if (!contenedor || typeof L === "undefined") {
@@ -48,6 +55,22 @@ document.addEventListener("DOMContentLoaded", function () {
   L.marker([latDestino, lonDestino]).addTo(mapa)
     .bindPopup("<strong>Destino</strong><br>" + nombreDestino);
 
+  // ---- Estado del tramo en tren ----
+  // La capa ferroviaria vive aparte para poder vaciarla sin tocar la caminata.
+  // boundsPeatonal guarda el encuadre de la caminata (directo o por calles)
+  // para volver a el al quitar el tren, y textoPeatonalGuardado la leyenda de
+  // la caminata para restaurarla: arranca con la frase de Haversine que ya
+  // trae la vista, y armonizarDistancias() la sustituye si OSRM responde.
+  var capaFerroviaria = L.layerGroup().addTo(mapa);
+  var boundsPeatonal = null;
+  var textoRutaEl = document.getElementById("texto-descripcion-ruta");
+  var textoPeatonalGuardado = textoRutaEl ? textoRutaEl.innerHTML : "";
+  var selectTren = document.getElementById("idServicioTren");
+
+  function hayTrenSeleccionado() {
+    return !!(selectTren && selectTren.value);
+  }
+
   // ---- Respaldo: trazo directo (Haversine) ----
   function dibujarTrazoDirecto() {
     L.polyline([
@@ -55,10 +78,17 @@ document.addEventListener("DOMContentLoaded", function () {
       [latDestino, lonDestino]
     ], { color: "#14453D", weight: 4, opacity: 0.85, dashArray: "8, 6" }).addTo(mapa);
 
-    mapa.fitBounds(L.latLngBounds([
+    boundsPeatonal = L.latLngBounds([
       [latOrigen, lonOrigen],
       [latDestino, lonDestino]
-    ]).pad(0.35));
+    ]);
+    mapa.fitBounds(boundsPeatonal.pad(0.35));
+
+    // Si el turista eligio un tren mientras OSRM no contestaba, el encuadre
+    // que manda es el del itinerario completo, no el de la caminata.
+    if (hayTrenSeleccionado()) {
+      actualizarTramoFerroviario();
+    }
   }
 
   /**
@@ -87,6 +117,9 @@ document.addEventListener("DOMContentLoaded", function () {
         + '(<strong>' + kmIdaVuelta + ' km</strong> el circuito de ida y vuelta, '
         + 'vía OpenStreetMap).';
     }
+    // La leyenda peatonal definitiva es esta: es la que se restaura al quitar
+    // el tren y la que va como segundo tramo de la leyenda multimodal.
+    textoPeatonalGuardado = textoRuta ? textoRuta.innerHTML : "";
 
     var elDistancia = document.getElementById("ficha-distancia-valor");
     if (elDistancia) {
@@ -109,6 +142,134 @@ document.addEventListener("DOMContentLoaded", function () {
     var elKmTotal = document.getElementById("altimetria-km-total");
     if (elKmMedio) elKmMedio.textContent = kmIda;
     if (elKmTotal) elKmTotal.textContent = kmIdaVuelta;
+  }
+
+  // ---- Tramo en tren ----
+
+  /**
+   * Retira la via y el marcador con un fundido de 350 ms (la transicion
+   * la ponen .via-tren y .marcador-tren-custom en estilos.css). Solo se
+   * eliminan las capas que habia en ese momento: si el turista elige otro
+   * tren antes de que termine el fundido, la via nueva no se ve afectada.
+   */
+  function retirarTramoFerroviario() {
+    var capas = [];
+    capaFerroviaria.eachLayer(function (capa) { capas.push(capa); });
+    capas.forEach(function (capa) {
+      if (typeof capa.setStyle === "function") {
+        capa.setStyle({ opacity: 0 });
+      } else if (typeof capa.setOpacity === "function") {
+        capa.setOpacity(0);
+      }
+    });
+    setTimeout(function () {
+      capas.forEach(function (capa) { capaFerroviaria.removeLayer(capa); });
+    }, 350);
+  }
+
+  /**
+   * Dibuja el tramo en tren del servicio elegido en el selector: marcador en
+   * la estacion de abordaje, via ferrea hasta la estacion de partida de la
+   * caminata (que es donde llega el tren) y encuadre del itinerario completo.
+   * Con "Sin servicio de tren" deshace todo y devuelve el mapa a la caminata.
+   */
+  function actualizarTramoFerroviario() {
+    if (!selectTren) return;
+
+    var opcion = selectTren.options[selectTren.selectedIndex];
+    if (!opcion) return;
+    var latTrenOrigen = parseFloat(opcion.dataset.latOrigen);
+    var lonTrenOrigen = parseFloat(opcion.dataset.lonOrigen);
+    var textoRuta = document.getElementById("texto-descripcion-ruta");
+
+    // Sin tren elegido, o sin coordenadas para dibujarlo.
+    if (!selectTren.value || isNaN(latTrenOrigen) || isNaN(lonTrenOrigen)) {
+      retirarTramoFerroviario();
+      if (boundsPeatonal) {
+        mapa.fitBounds(boundsPeatonal.pad(0.25));
+      }
+      if (textoRuta && textoPeatonalGuardado) {
+        textoRuta.innerHTML = textoPeatonalGuardado;
+      }
+      return;
+    }
+
+    // Cambio de un tren a otro: la via anterior se sustituye en el acto.
+    capaFerroviaria.clearLayers();
+
+    var nombreTrenOrigen = opcion.dataset.nombreOrigen || "Estación de tren";
+    var salida = opcion.dataset.salida || "";
+    var llegada = opcion.dataset.llegada || "";
+    var tiempo = opcion.dataset.tiempo || "";
+    var tarifa = opcion.dataset.tarifa || "";
+    var duracion = tiempo ? " (" + tiempo + " min)" : "";
+
+    // 1. Icono de tren para la estacion de abordaje (.marcador-tren en
+    //    estilos.css; className sustituye al recuadro blanco por defecto).
+    var iconoTren = L.divIcon({
+      className: "marcador-tren-custom",
+      html: '<div class="marcador-tren"><i class="bi bi-train-front-fill"></i></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18]
+    });
+
+    // 2. Marcador de inicio del tren
+    var markerTren = L.marker([latTrenOrigen, lonTrenOrigen], { icon: iconoTren })
+      .bindPopup(
+        '<div class="p-1">' +
+          '<span class="badge insignia-tren mb-1"><i class="bi bi-train-front me-1"></i>Abordaje de tren</span><br>' +
+          '<strong>' + nombreTrenOrigen + '</strong><br>' +
+          '<small class="text-muted">Horario: ' + salida + ' &rarr; ' + llegada + duracion + '</small><br>' +
+          '<small class="text-success fw-bold">Tarifa referencial: S/ ' + tarifa + '</small>' +
+        '</div>'
+      );
+    capaFerroviaria.addLayer(markerTren);
+
+    // 3. Trazo ferroviario con estilo cartografico de via de tren: riel base
+    //    oscuro y, encima, una linea blanca discontinua a modo de durmientes.
+    var tramoTrenCoords = [
+      [latTrenOrigen, lonTrenOrigen],
+      [latOrigen, lonOrigen]
+    ];
+    var viaBase = L.polyline(tramoTrenCoords, {
+      className: "via-tren",
+      color: "#1B365D",
+      weight: 6,
+      opacity: 0.9
+    });
+    capaFerroviaria.addLayer(viaBase);
+
+    var viaDurmientes = L.polyline(tramoTrenCoords, {
+      className: "via-tren",
+      color: "#FFFFFF",
+      weight: 3,
+      opacity: 0.85,
+      dashArray: "7, 7"
+    });
+    capaFerroviaria.addLayer(viaDurmientes);
+
+    // 4. Encuadre multimodal: estacion de abordaje, estacion de transbordo y
+    //    destino peatonal.
+    var boundsMultimodal = L.latLngBounds([
+      [latTrenOrigen, lonTrenOrigen],
+      [latOrigen, lonOrigen],
+      [latDestino, lonDestino]
+    ]);
+    mapa.fitBounds(boundsMultimodal.pad(0.18));
+
+    // 5. Leyenda multimodal al pie del mapa
+    if (textoRuta) {
+      textoRuta.innerHTML =
+        '<div class="leyenda-multimodal">' +
+          '<div><i class="bi bi-train-front texto-riel me-1"></i><strong>Tramo ferroviario:</strong> ' +
+            nombreTrenOrigen + ' &rarr; ' + nombreOrigen +
+            (tiempo ? ' (' + tiempo + ' min de viaje en tren, salida ' + salida + ').' : ' (salida ' + salida + ').') +
+          '</div>' +
+          '<div><i class="bi bi-person-walking text-success me-1"></i><strong>Tramo peatonal:</strong> ' +
+            (textoPeatonalGuardado || (nombreOrigen + ' &rarr; ' + nombreDestino)) + '</div>' +
+        '</div>';
+    }
   }
 
   // ---- OSRM: ruta peatonal por calles (solo ida, un unico camino) ----
@@ -152,10 +313,17 @@ document.addEventListener("DOMContentLoaded", function () {
         opacity: 0.9
       }).addTo(mapa);
 
-      mapa.fitBounds(polyCalles.getBounds().pad(0.25));
+      boundsPeatonal = polyCalles.getBounds();
+      mapa.fitBounds(boundsPeatonal.pad(0.25));
 
       if (data.routes[0].distance) {
         armonizarDistancias(data.routes[0].distance);
+      }
+
+      // Con un tren ya elegido, la leyenda y el encuadre se rehacen con la
+      // caminata definitiva (por calles) en vez de la estimada.
+      if (hayTrenSeleccionado()) {
+        actualizarTramoFerroviario();
       }
     })
     .catch(function (err) {
@@ -163,4 +331,14 @@ document.addEventListener("DOMContentLoaded", function () {
       console.info("Ruta peatonal OSRM no disponible, usando trazo directo:", err.message);
       dibujarTrazoDirecto();
     });
+
+  // ---- Selector de tren ----
+  if (selectTren) {
+    selectTren.addEventListener("change", actualizarTramoFerroviario);
+    // El navegador puede devolver la pagina con una opcion ya elegida (al
+    // volver atras, por ejemplo): se dibuja sin esperar a ningun cambio.
+    if (selectTren.value) {
+      actualizarTramoFerroviario();
+    }
+  }
 });

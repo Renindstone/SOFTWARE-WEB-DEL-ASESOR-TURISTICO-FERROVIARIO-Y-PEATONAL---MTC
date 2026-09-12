@@ -946,6 +946,50 @@ a.tablero-enlace:focus-visible .tablero-nombre {
   font-size: 0.95rem;
 }
 
+/* Tramo en tren del mapa multimodal (mapa-leaflet.js). El marcador de
+   abordaje es un divIcon: className sustituye al recuadro blanco que Leaflet
+   pone por defecto, y la transicion es la del fundido con que se retira la
+   via al volver a "Sin servicio de tren". */
+.marcador-tren-custom {
+  background: none;
+  border: none;
+  transition: opacity 0.35s ease;
+}
+
+.marcador-tren {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--riel);
+  color: var(--fg-on-dark);
+  border: 2px solid var(--blanco);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  font-size: 15px;
+}
+
+.via-tren {
+  transition: stroke-opacity 0.35s ease;
+}
+
+.insignia-tren {
+  background: var(--riel);
+  color: var(--fg-on-dark);
+}
+
+.texto-riel {
+  color: var(--riel);
+}
+
+.leyenda-multimodal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  margin-top: var(--esp-1);
+}
+
 /* ------------------------------------------------------------ Responsive */
 @media (max-width: 576px) {
   .container {

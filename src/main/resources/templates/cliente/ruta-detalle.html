@@ -196,9 +196,9 @@
                     data-nombre-destino=${destino.nombre},
                     data-distancia-haversine=${ruta.distanciaKm},
                     data-tiempo-haversine=${ruta.tiempoEstimadoMin}"></div>
-      <p id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0">
+      <div id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0" aria-live="polite">
         El trazo representa el circuito de ida y vuelta estimado en línea recta (fórmula de Haversine).
-      </p>
+      </div>
     </section>
 
     <!-- RF-07/RF-08: eleccion de servicio de tren y fecha antes del informe. -->
@@ -213,11 +213,26 @@
           <label class="form-label section-label mb-1" for="idServicioTren">
             <i class="bi bi-train-front"></i> Servicio de tren (tarifa referencial)
           </label>
+          <!-- Cada opcion lleva en data-* las coordenadas y datos del servicio:
+               mapa-leaflet.js los lee al cambiar la seleccion para dibujar el
+               tramo en tren hasta la estacion de partida (mapa multimodal).
+               Las dos estaciones vienen ya cargadas por listarHaciaEstacion. -->
           <select class="form-select" id="idServicioTren" name="idServicioTren">
             <option value="">Sin servicio de tren</option>
             <option th:each="serv : ${servicios}" th:value="${serv.id}"
+                    th:data-lat-origen="${serv.estacionOrigen.latitud}"
+                    th:data-lon-origen="${serv.estacionOrigen.longitud}"
+                    th:data-nombre-origen="${serv.estacionOrigen.nombre}"
+                    th:data-lat-destino="${serv.estacionDestino.latitud}"
+                    th:data-lon-destino="${serv.estacionDestino.longitud}"
+                    th:data-nombre-destino="${serv.estacionDestino.nombre}"
+                    th:data-salida="${serv.horarioSalida}"
+                    th:data-llegada="${serv.horarioLlegada}"
+                    th:data-tiempo="${serv.tiempoTransitoMin}"
+                    th:data-tarifa="${serv.tarifa}"
                     th:text="${serv.estacionOrigen.nombre} + ' → ' + ${serv.estacionDestino.nombre}
-                             + '  ·  ' + ${serv.horarioSalida} + '  ·  S/ ' + ${serv.tarifa}"></option>
+                             + '  ·  ' + ${serv.horarioSalida} + '  ·  S/ ' + ${serv.tarifa}">
+            </option>
           </select>
         </div>
 

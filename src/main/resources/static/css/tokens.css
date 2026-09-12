@@ -99,6 +99,10 @@
   --esmalte:        #0E4034;
   --senal-amarilla: #F0B323;
   --senal-roja:     #C1362B;
+  /* Azul de via ferrea: el tramo en tren del mapa multimodal (marcador de
+     abordaje, riel y leyenda). mapa-leaflet.js repite el mismo valor en el
+     trazo, porque Leaflet pinta el SVG desde JavaScript. */
+  --riel:           #1B365D;
 
   /* Terracota de expedicion (Propuesta B). Es el color de la tierra andina
      y se reserva a tres cosas: la linea del perfil altimetrico, el relieve
