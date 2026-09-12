@@ -1532,3 +1532,11 @@ a.tablero-enlace:focus-visible .tablero-nombre {
   background-color: var(--bg-sunken);
   box-shadow: none;
 }
+
+/* Valor propuesto por el formulario (la llegada del servicio de tren) que
+   el usuario puede corregir: el borde discontinuo lo distingue de un dato
+   tecleado o guardado sin impedir editarlo. */
+.form-control.campo-sugerido {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}

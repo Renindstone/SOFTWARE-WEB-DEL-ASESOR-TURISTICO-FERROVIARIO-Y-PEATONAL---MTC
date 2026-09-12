@@ -15,7 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * RF-04/RF-05/RNF-04: motor de calculo de la ruta peatonal de ida y
@@ -41,7 +44,8 @@ public class RutaPeatonalService {
     /**
      * CB-01/CB-02: calcula el circuito de ida y vuelta entre la estacion de
      * origen y la zona turistica de destino, a partir de las coordenadas de
-     * ambos puntos (seccion 5.1). Si la distancia de ida es cero, lanza
+     * ambos puntos (seccion 5.1). Si la distancia de ida es cero, o el
+     * circuito supera el tope del nivel de dificultad mas exigente, lanza
      * RutaInvalidaException (no existe circuito caminable).
      */
     public RutaCalculadaDTO calcularRutaPeatonalIdaVuelta(Estacion origen, ZonaTuristica destino) {
@@ -73,7 +77,14 @@ public class RutaPeatonalService {
         }
 
         BigDecimal distanciaIdaVuelta = distanciaIda.multiply(BigDecimal.valueOf(2));
-        Dificultad dificultad = clasificarDificultad(distanciaIdaVuelta, niveles);
+        Dificultad dificultad = clasificarDificultad(distanciaIdaVuelta, niveles)
+                .orElseThrow(() -> new RutaInvalidaException(
+                        "Desde " + origen.getNombre() + ", la zona turística " + destino.getNombre()
+                                + " queda a " + distanciaIda + " km: el circuito de ida y vuelta ("
+                                + distanciaIdaVuelta + " km) supera los "
+                                + topeCaminable(niveles).stripTrailingZeros().toPlainString()
+                                + " km que admite un recorrido a pie. Elige una zona cercana a esa estación "
+                                + "o la estación desde la que se accede a la zona."));
 
         RutaCalculadaDTO dto = new RutaCalculadaDTO();
         dto.setNombre("Circuito " + origen.getNombre() + " - " + destino.getNombre());
@@ -98,11 +109,18 @@ public class RutaPeatonalService {
     }
 
     /**
-     * Primer nivel cuyo tope de distancia cubre el circuito. El nivel mas
-     * exigente no tiene tope (DifDistanciaMaximaKm nulo) y actua de cajon de
-     * sastre para los recorridos largos.
+     * Primer nivel cuyo tope de distancia cubre el circuito. Si ningun nivel
+     * lo cubre, el recorrido no es caminable y no hay ruta: el tope del nivel
+     * mas exigente (40 km de ida y vuelta en la carga inicial) es el limite
+     * de lo que el sistema acepta a pie, y vive en la tabla dificultad para
+     * poder ajustarlo sin tocar el codigo (RNF-06). Un nivel con
+     * DifDistanciaMaximaKm nulo sigue actuando de cajon de sastre sin tope,
+     * por si una instalacion prefiere no limitar.
+     *
+     * Sin este corte, por URL se podia pedir el "circuito" Puno - Machu
+     * Picchu, unos 800 km, y el sistema lo clasificaba como Alta.
      */
-    private Dificultad clasificarDificultad(BigDecimal distanciaIdaVuelta, List<Dificultad> niveles) {
+    private Optional<Dificultad> clasificarDificultad(BigDecimal distanciaIdaVuelta, List<Dificultad> niveles) {
         if (niveles == null || niveles.isEmpty()) {
             throw new IllegalStateException(
                     "No hay niveles de dificultad configurados en la tabla dificultad");
@@ -110,8 +128,16 @@ public class RutaPeatonalService {
         return niveles.stream()
                 .filter(nivel -> nivel.getDistanciaMaximaKm() == null
                         || distanciaIdaVuelta.compareTo(nivel.getDistanciaMaximaKm()) <= 0)
-                .findFirst()
-                .orElse(niveles.get(niveles.size() - 1));
+                .findFirst();
+    }
+
+    /** Mayor tope configurado: el circuito mas largo que todavia se considera caminable. */
+    private BigDecimal topeCaminable(List<Dificultad> niveles) {
+        return niveles.stream()
+                .map(nivel -> nivel.getDistanciaMaximaKm())
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(BigDecimal.ZERO);
     }
 
     /** Tiempo minimo de 1 minuto: RutTiempoEstimadoMin tiene CHECK > 0. */

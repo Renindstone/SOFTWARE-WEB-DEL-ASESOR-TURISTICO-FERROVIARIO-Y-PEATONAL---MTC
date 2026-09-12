@@ -176,6 +176,54 @@ class ServicioTrenServiceTest {
         verify(auditoriaService, never()).registrarAuditoria(any(), any(), any(), any(), any());
     }
 
+    /** Cusco (San Pedro) y Machu Picchu, con sus coordenadas reales: 71.6 km en linea recta. */
+    private void darCoordenadasCuscoMachuPicchu() {
+        estacionOrigen.setLatitud(new BigDecimal("-13.522500"));
+        estacionOrigen.setLongitud(new BigDecimal("-71.982200"));
+        estacionDestino.setNombre("Machu Picchu");
+        estacionDestino.setLatitud(new BigDecimal("-13.154700"));
+        estacionDestino.setLongitud(new BigDecimal("-72.525000"));
+    }
+
+    @Test
+    @DisplayName("Guardar un horario físicamente imposible (Cusco - Machu Picchu en 20 min): rechaza")
+    void guardar_velocidadImposible_rechaza() {
+        darCoordenadasCuscoMachuPicchu();
+        ServicioTren relampago = new ServicioTren();
+        relampago.setEstacionOrigen(estacionOrigen);
+        relampago.setEstacionDestino(estacionDestino);
+        relampago.setHorarioSalida(LocalTime.of(6, 10));
+        relampago.setHorarioLlegada(LocalTime.of(6, 30));
+        relampago.setTarifa(new BigDecimal("210.00"));
+
+        // Llegada = salida + transito, asi que validarHorarios lo daria por
+        // bueno; son los 89 km de via en 20 minutos (268 km/h) lo que no cuadra.
+        assertThatThrownBy(() -> servicioTrenService.guardar(relampago, "admin_mtc"))
+                .isInstanceOf(ServicioTrenInvalidoException.class)
+                .hasMessageContaining("268 km/h")
+                .hasMessageContaining("80 km/h");
+
+        verify(servicioTrenRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Guardar el horario real del corredor (Cusco - Machu Picchu en 224 min): acepta")
+    void guardar_velocidadRealDelCorredor_acepta() {
+        darCoordenadasCuscoMachuPicchu();
+        ServicioTren expedition = new ServicioTren();
+        expedition.setEstacionOrigen(estacionOrigen);
+        expedition.setEstacionDestino(estacionDestino);
+        expedition.setHorarioSalida(LocalTime.of(6, 10));
+        expedition.setHorarioLlegada(LocalTime.of(9, 54));
+        expedition.setTarifa(new BigDecimal("210.00"));
+        when(servicioTrenRepository.save(expedition)).thenReturn(expedition);
+
+        // 89 km en 224 minutos son 24 km/h: dentro de lo que la red alcanza.
+        servicioTrenService.guardar(expedition, "admin_mtc");
+
+        verify(servicioTrenRepository).save(expedition);
+    }
+
     @Test
     @DisplayName("Guardar con llegada que no concuerda con salida mas transito: rechaza")
     void guardar_horariosIncoherentes_rechaza() {

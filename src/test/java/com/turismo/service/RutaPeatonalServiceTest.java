@@ -175,4 +175,35 @@ class RutaPeatonalServiceTest {
                 .isInstanceOf(EstacionInactivaException.class)
                 .hasMessageContaining("inactiva");
     }
+
+    /**
+     * El tope del nivel mas exigente es el limite de lo caminable: por
+     * encima no hay ruta, en vez de clasificar como "Alta" un circuito de
+     * cientos de kilometros pedido por URL (RNF-06: el tope vive en la tabla).
+     */
+    @Test
+    void rechazaElCircuitoQueSuperaElTopeDelNivelMasExigente() {
+        when(dificultadRepository.findAllByOrderByOrdenAsc()).thenReturn(List.of(
+                crearDificultad(1, "Baja", (short) 1, "3.00", (short) 12),
+                crearDificultad(2, "Media", (short) 2, "6.00", (short) 18),
+                crearDificultad(3, "Alta", (short) 3, "40.00", (short) 25)));
+        Estacion puno = crearEstacion("-15.840200", "-70.021900");
+        puno.setNombre("Estacion Puno");
+        ZonaTuristica llaqta = crearZona("-13.193641", "-72.548093");
+        llaqta.setNombre("Llaqta de Machu Picchu");
+
+        assertThatThrownBy(() -> rutaPeatonalService.calcularRutaPeatonalIdaVuelta(puno, llaqta))
+                .isInstanceOf(RutaInvalidaException.class)
+                .hasMessageContaining("Llaqta de Machu Picchu")
+                .hasMessageContaining("Estacion Puno")
+                .hasMessageContaining("queda a 400.67 km")
+                .hasMessageContaining("(801.34 km) supera los 40 km");
+
+        // Justo en el tope todavia se camina: 20.00 km de ida -> 40.00 km de circuito.
+        // (Un nivel con tope nulo, como el de NIVELES, sigue sin limitar.)
+        RutaCalculadaDTO enElLimite = rutaPeatonalService.calcularRutaPeatonalIdaVuelta(
+                crearEstacion("-13.258600", "-72.265000"), crearZona("-13.438464", "-72.265000"));
+        assertThat(enElLimite.getDistanciaKm()).isEqualByComparingTo("40.00");
+        assertThat(enElLimite.getDificultad()).isEqualTo("Alta");
+    }
 }

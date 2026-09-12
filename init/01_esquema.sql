@@ -71,7 +71,8 @@ CREATE TABLE preferencia (
 -- RutaPeatonalService.
 --
 -- DifDistanciaMaximaKm es el tope del tramo (ida y vuelta) que todavia se
--- clasifica en ese nivel; la dificultad mas alta lo deja en NULL por no tener
+-- clasifica en ese nivel; el del nivel mas alto es ademas el limite de lo que
+-- el sistema acepta caminar (mas alla no hay ruta). Un NULL deja el nivel sin
 -- tope. DifOrden permite comparar niveles ("dificultad maxima aceptada" del
 -- turista) sin depender del texto del nombre.
 -- ----------------------------------------------------------------------------

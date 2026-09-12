@@ -5,12 +5,15 @@ import com.turismo.integration.perurail.PeruRailClient;
 import com.turismo.model.Estacion;
 import com.turismo.model.ServicioTren;
 import com.turismo.repository.ServicioTrenRepository;
+import com.turismo.util.HaversineCalculator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,6 +26,10 @@ import java.util.Optional;
 public class ServicioTrenService {
 
     private static final String TABLA_AUDITADA = "servicio_tren";
+
+    /** Ver validarVelocidadFisica; el formulario admin/servicios-tren usa los mismos valores. */
+    static final double FACTOR_VIA_FERREA = 1.25;
+    static final double VELOCIDAD_MAXIMA_KMH = 80.0;
 
     private final ServicioTrenRepository servicioTrenRepository;
     private final PeruRailClient peruRailClient;
@@ -61,6 +68,7 @@ public class ServicioTrenService {
         completarTiempoTransito(servicioTren);
         validarTramo(servicioTren);
         validarHorarios(servicioTren);
+        validarVelocidadFisica(servicioTren);
 
         boolean esAlta = servicioTren.getId() == null;
         String valorAnterior = esAlta ? null
@@ -155,6 +163,49 @@ public class ServicioTrenService {
                     "El horario de llegada no concuerda con la salida más el tiempo de tránsito: "
                             + "con salida " + salida + " y " + transito + " minutos se llegaría a las "
                             + esperada + ", no a las " + llegada);
+        }
+    }
+
+    /**
+     * Una vez conocido el tiempo de transito, comprueba que la velocidad media
+     * que implica el horario sea alcanzable en la red: un horario coherente
+     * consigo mismo (llegada = salida + transito) puede seguir siendo
+     * imposible, como Cusco - Machu Picchu en 20 minutos.
+     *
+     * La distancia se estima con Haversine (la misma clase que usa la ruta
+     * peatonal) multiplicada por 1,25 para aproximar la longitud de la via,
+     * que sigue curvas de nivel y no va en linea recta. Es una cota, no un
+     * horario: los servicios de la carga inicial implican entre 20 y 42 km/h
+     * de media segun el corredor, asi que 80 km/h deja margen de sobra sin
+     * aceptar horarios que ningun tren de la red cumple. El formulario aplica
+     * las mismas constantes para avisar antes de enviar.
+     */
+    private void validarVelocidadFisica(ServicioTren servicioTren) {
+        Estacion origen = servicioTren.getEstacionOrigen();
+        Estacion destino = servicioTren.getEstacionDestino();
+        Integer transito = servicioTren.getTiempoTransitoMin();
+
+        if (origen == null || destino == null || transito == null || transito <= 0) {
+            return;
+        }
+        if (origen.getLatitud() == null || origen.getLongitud() == null
+                || destino.getLatitud() == null || destino.getLongitud() == null) {
+            return;
+        }
+
+        BigDecimal kmRecta = HaversineCalculator.calcularDistanciaKm(
+                origen.getLatitud(), origen.getLongitud(),
+                destino.getLatitud(), destino.getLongitud());
+
+        double kmVia = kmRecta.doubleValue() * FACTOR_VIA_FERREA;
+        double velocidad = kmVia / (transito / 60.0);
+
+        if (velocidad > VELOCIDAD_MAXIMA_KMH) {
+            throw new ServicioTrenInvalidoException(String.format(Locale.ROOT,
+                    "Con %d minutos de viaje el tren iría a %.0f km/h en un tramo de unos %.0f km de vía "
+                            + "(%.0f km en línea recta); ningún servicio de la red supera los %.0f km/h. "
+                            + "Revisa la hora de llegada.",
+                    transito, velocidad, kmVia, kmRecta.doubleValue(), VELOCIDAD_MAXIMA_KMH));
         }
     }
 

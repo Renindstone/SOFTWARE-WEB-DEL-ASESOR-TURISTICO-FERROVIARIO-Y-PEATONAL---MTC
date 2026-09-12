@@ -153,19 +153,33 @@
                   <label class="form-label fw-semibold" for="modalEstacionOrigen">Estación origen</label>
                   <select class="form-select" id="modalEstacionOrigen" th:field="*{estacionOrigen}" required>
                     <option value="">Selecciona una estación</option>
-                    <option th:each="est : ${estaciones}" th:value="${est.id}" th:text="${est.nombre}"></option>
+                    <option th:each="est : ${estaciones}" th:value="${est.id}"
+                            th:data-lat="${est.latitud}" th:data-lon="${est.longitud}"
+                            th:text="${est.nombre}"></option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label fw-semibold" for="modalEstacionDestino">Estación destino</label>
                   <select class="form-select" id="modalEstacionDestino" th:field="*{estacionDestino}" required>
                     <option value="">Selecciona una estación</option>
-                    <option th:each="est : ${estaciones}" th:value="${est.id}" th:text="${est.nombre}"></option>
+                    <option th:each="est : ${estaciones}" th:value="${est.id}"
+                            th:data-lat="${est.latitud}" th:data-lon="${est.longitud}"
+                            th:text="${est.nombre}"></option>
                   </select>
                 </div>
               </div>
 
               <div class="divider-soft my-3"></div>
+
+              <!-- Contexto del tramo elegido: distancia entre las estaciones y
+                   servicios ya registrados entre ellas. Se muestra y oculta con
+                   d-none (las utilidades display de Bootstrap llevan !important,
+                   asi que un style.display en linea no las vence). -->
+              <div id="bannerDistancia" class="alert alert-light border d-none align-items-center gap-2 py-2 mb-3"
+                   role="status">
+                <i class="bi bi-rulers text-secondary fs-5" aria-hidden="true"></i>
+                <span id="textoDistancia" class="small text-secondary"></span>
+              </div>
 
               <div class="section-label"><i class="bi bi-clock"></i> Horarios y duración</div>
 
@@ -176,8 +190,21 @@
                 </div>
                 <div class="col-6 col-md-4">
                   <label class="form-label fw-semibold" for="modalHorarioLlegada">Llegada</label>
+                  <!-- El formulario propone la llegada (salida + duracion
+                       estimada del tramo) y la marca como sugerida, pero el
+                       campo sigue siendo editable: el horario oficial lo fija
+                       PeruRail y la estimacion es solo un punto de partida. -->
                   <input type="time" class="form-control" id="modalHorarioLlegada" th:field="*{horarioLlegada}"
-                    required>
+                    required aria-describedby="ayudaLlegada avisoVelocidad">
+                  <div class="form-text" id="ayudaLlegada">
+                    <span id="estadoLlegada"></span>
+                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="btnUsarSugerida"
+                      hidden>usar la sugerida</button>
+                  </div>
+                  <div class="form-text" id="avisoVelocidad" hidden>
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1" aria-hidden="true"></i>
+                    <span id="textoAvisoVelocidad"></span>
+                  </div>
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label fw-semibold" for="modalTiempoTransito">
@@ -198,8 +225,9 @@
                 </div>
               </div>
               <div class="form-text mt-2" id="ayudaTransito">
-                El tránsito se calcula solo a partir de los dos horarios, así que no puede discordar de ellos.
-                Los servicios nocturnos son válidos.
+                El tránsito se deriva de los dos horarios, así que no puede discordar de ellos; los servicios
+                nocturnos son válidos. La llegada se propone a partir de los servicios ya registrados en el mismo
+                tramo o, si no hay ninguno, de la distancia entre estaciones: ajústala al horario oficial si difiere.
               </div>
 
               <div class="divider-soft my-3"></div>
@@ -281,7 +309,260 @@
         transito: document.getElementById('modalTiempoTransito'),
         tarifa: document.getElementById('modalTarifa')
       };
+      var bannerDistancia = document.getElementById('bannerDistancia');
+      var textoDistancia = document.getElementById('textoDistancia');
+      var estadoLlegada = document.getElementById('estadoLlegada');
+      var btnUsarSugerida = document.getElementById('btnUsarSugerida');
+      var avisoVelocidad = document.getElementById('avisoVelocidad');
+      var textoAvisoVelocidad = document.getElementById('textoAvisoVelocidad');
 
+      // Mismas constantes que ServicioTrenService.validarVelocidadFisica: el
+      // navegador avisa antes, pero es el servidor quien rechaza.
+      var RADIO_TIERRA_KM = 6371.0;
+      var FACTOR_VIA_FERREA = 1.25;   // la via sigue curvas de nivel: un 25 % mas que la recta
+      var VEL_MAX_KMH = 80;           // por encima el horario es fisicamente imposible
+      var VEL_RED_POR_DEFECTO_KMH = 30; // solo si no hay ningun servicio del que aprender
+
+      // ---- Coordenadas de cada estacion, leidas de los <option> ----
+      var coordsPorId = {};
+      Array.prototype.forEach.call(campos.origen.options, function (opt) {
+        var lat = parseFloat(opt.dataset.lat);
+        var lon = parseFloat(opt.dataset.lon);
+        if (opt.value && !isNaN(lat) && !isNaN(lon)) {
+          coordsPorId[opt.value] = { lat: lat, lon: lon };
+        }
+      });
+
+      // Misma formula que HaversineCalculator.java.
+      function haversineKm(a, b) {
+        var toRad = function (d) { return d * Math.PI / 180; };
+        var dLat = toRad(b.lat - a.lat);
+        var dLon = toRad(b.lon - a.lon);
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat))
+              * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return RADIO_TIERRA_KM * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+      }
+
+      function kmRectaEntre(idA, idB) {
+        var a = coordsPorId[idA];
+        var b = coordsPorId[idB];
+        return (a && b) ? haversineKm(a, b) : null;
+      }
+
+      // ---- Servicios ya registrados: salen de los data-* de la tabla ----
+      var registrados = Array.prototype.map.call(
+        document.querySelectorAll('.btn-editar-servicio'), function (boton) {
+          return {
+            id: boton.dataset.id,
+            origen: boton.dataset.origen,
+            destino: boton.dataset.destino,
+            transito: parseInt(boton.dataset.transito, 10)
+          };
+        }).filter(function (s) { return s.transito > 0; });
+
+      // Velocidad media de la red segun lo ya registrado (km de via entre
+      // horas de viaje). Con la carga inicial sale en torno a 30 km/h: el
+      // corredor a Machu Picchu va a 24-28 y el altiplano a 42.
+      function velocidadMediaRed() {
+        var km = 0;
+        var horas = 0;
+        registrados.forEach(function (s) {
+          var recta = kmRectaEntre(s.origen, s.destino);
+          if (recta) {
+            km += recta * FACTOR_VIA_FERREA;
+            horas += s.transito / 60;
+          }
+        });
+        return horas > 0 ? km / horas : VEL_RED_POR_DEFECTO_KMH;
+      }
+
+      // Duracion estimada del tramo elegido, o null si aun no hay tramo:
+      //   1. media de los servicios ya registrados entre las dos estaciones
+      //      (en cualquier sentido), sin contar el que se esta editando: al
+      //      anadir otro horario a un tramo conocido, lo que ya funciona es
+      //      la mejor referencia;
+      //   2. si el tramo es nuevo, la distancia de via a la velocidad media
+      //      de la red.
+      function estimarTramo() {
+        var o = campos.origen.value;
+        var d = campos.destino.value;
+        if (!o || !d || o === d) { return null; }
+
+        var recta = kmRectaEntre(o, d);
+        var mismos = registrados.filter(function (s) {
+          return s.id !== campos.id.value
+            && ((s.origen === o && s.destino === d) || (s.origen === d && s.destino === o));
+        });
+        if (mismos.length) {
+          var suma = mismos.reduce(function (acc, s) { return acc + s.transito; }, 0);
+          return { minutos: Math.round(suma / mismos.length), fuente: 'registrados',
+                   cuantos: mismos.length, kmRecta: recta };
+        }
+        if (!recta) { return null; }
+        var velocidad = velocidadMediaRed();
+        return { minutos: Math.max(1, Math.round(recta * FACTOR_VIA_FERREA / velocidad * 60)),
+                 fuente: 'distancia', velocidad: velocidad, kmRecta: recta };
+      }
+
+      var tramo = null;
+
+      // ---- Utilidades de hora ----
+      function horaAMin(hhmm) {
+        if (!hhmm) { return NaN; }
+        var p = hhmm.split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+      }
+
+      function minAHora(min) {
+        min = ((min % 1440) + 1440) % 1440;
+        var h = Math.floor(min / 60);
+        var m = min % 60;
+        return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+      }
+
+      // Minutos entre salida y llegada; una diferencia nula o negativa
+      // significa que el servicio cruza la medianoche, no que los horarios
+      // esten mal: Puno - Arequipa sale 21:00 y llega 08:00 (660 min).
+      function transitoActual() {
+        var diff = horaAMin(campos.llegada.value) - horaAMin(campos.salida.value);
+        if (isNaN(diff)) { return NaN; }
+        return diff <= 0 ? diff + 1440 : diff;
+      }
+
+      function llegadaSugerida() {
+        if (!tramo || !campos.salida.value) { return null; }
+        return minAHora(horaAMin(campos.salida.value) + tramo.minutos);
+      }
+
+      // La llegada esta "sugerida" mientras la haya escrito el formulario y
+      // no el usuario. Un valor cargado del servidor (edicion, reenvio con
+      // errores) nunca lo esta: es el horario real.
+      function esSugerida() {
+        return campos.llegada.dataset.sugerida === 'si';
+      }
+
+      function marcarSugerida(si) {
+        if (si) {
+          campos.llegada.dataset.sugerida = 'si';
+        } else {
+          delete campos.llegada.dataset.sugerida;
+        }
+        campos.llegada.classList.toggle('campo-sugerido', si);
+      }
+
+      // Rellena la llegada con la sugerencia solo si el campo esta vacio o
+      // ya contenia una sugerencia anterior: lo tecleado a mano y lo guardado
+      // en la base no se pisan.
+      function proponerLlegada() {
+        var sugerida = llegadaSugerida();
+        if (sugerida && (!campos.llegada.value || esSugerida())) {
+          campos.llegada.value = sugerida;
+          marcarSugerida(true);
+        } else if (!sugerida && esSugerida()) {
+          // Sin tramo o sin salida no hay nada que sugerir: se retira la
+          // sugerencia anterior en vez de dejarla como si fuera un dato.
+          campos.llegada.value = '';
+          marcarSugerida(false);
+        }
+      }
+
+      // ---- Pintado del estado ----
+      function recalcularTransito() {
+        var minutos = transitoActual();
+        campos.transito.value = isNaN(minutos) ? '' : minutos;
+      }
+
+      // Aviso en pantalla y bloqueo del envio (setCustomValidity) cuando el
+      // horario implica una velocidad que ningun tren de la red alcanza.
+      function validarVelocidad() {
+        var minutos = transitoActual();
+        var recta = tramo ? tramo.kmRecta : null;
+        var mensaje = '';
+        if (recta && !isNaN(minutos)) {
+          var velocidad = recta * FACTOR_VIA_FERREA / (minutos / 60);
+          if (velocidad > VEL_MAX_KMH) {
+            mensaje = minutos + ' min para unos ' + Math.round(recta * FACTOR_VIA_FERREA)
+              + ' km de vía son ' + Math.round(velocidad) + ' km/h; ningún tren de la red pasa de '
+              + VEL_MAX_KMH + ' km/h. Revisa la llegada.';
+          }
+        }
+        textoAvisoVelocidad.textContent = mensaje;
+        avisoVelocidad.hidden = mensaje === '';
+        campos.llegada.setCustomValidity(mensaje);
+      }
+
+      function pintarEstadoLlegada() {
+        var sugerida = llegadaSugerida();
+        btnUsarSugerida.hidden = !(sugerida && !esSugerida() && sugerida !== campos.llegada.value);
+        if (!sugerida) {
+          estadoLlegada.textContent = '';
+          return;
+        }
+        if (esSugerida()) {
+          estadoLlegada.textContent = tramo.fuente === 'registrados'
+            ? 'Sugerida: media de ' + (tramo.cuantos === 1 ? 'un servicio ya registrado' : tramo.cuantos + ' servicios ya registrados')
+              + ' en este tramo (' + tramo.minutos + ' min). Corrígela si el horario oficial difiere.'
+            : 'Sugerida por distancia (≈ ' + Math.round(tramo.kmRecta * FACTOR_VIA_FERREA) + ' km de vía a '
+              + Math.round(tramo.velocidad) + ' km/h, ' + tramo.minutos + ' min). Corrígela con el horario oficial.';
+        } else {
+          estadoLlegada.textContent = 'Hora fijada por el operador. ';
+          btnUsarSugerida.textContent = 'usar la sugerida (' + sugerida + ')';
+        }
+      }
+
+      function pintarBanner() {
+        bannerDistancia.classList.toggle('d-none', !tramo);
+        bannerDistancia.classList.toggle('d-flex', !!tramo);
+        if (!tramo) { return; }
+        var texto = tramo.kmRecta
+          ? '≈ ' + tramo.kmRecta.toFixed(1) + ' km en línea recta · ≈ '
+            + Math.round(tramo.kmRecta * FACTOR_VIA_FERREA) + ' km de vía férrea · '
+          : '';
+        texto += tramo.fuente === 'registrados'
+          ? (tramo.cuantos === 1 ? 'un servicio ya registrado' : tramo.cuantos + ' servicios ya registrados')
+            + ' en este tramo, con ' + tramo.minutos + ' min de viaje de media.'
+          : 'sin servicios previos en este tramo: unos ' + tramo.minutos + ' min a la velocidad media de la red ('
+            + Math.round(tramo.velocidad) + ' km/h).';
+        textoDistancia.textContent = texto;
+      }
+
+      function refrescar() {
+        recalcularTransito();
+        validarVelocidad();
+        pintarEstadoLlegada();
+        pintarBanner();
+      }
+
+      // ---- Eventos ----
+      [campos.origen, campos.destino].forEach(function (select) {
+        select.addEventListener('change', function () {
+          tramo = estimarTramo();
+          proponerLlegada();
+          refrescar();
+        });
+      });
+
+      ['input', 'change'].forEach(function (ev) {
+        campos.salida.addEventListener(ev, function () {
+          proponerLlegada();
+          refrescar();
+        });
+        // Lo que teclea el usuario deja de ser una sugerencia.
+        campos.llegada.addEventListener(ev, function () {
+          marcarSugerida(false);
+          refrescar();
+        });
+      });
+
+      btnUsarSugerida.addEventListener('click', function () {
+        campos.llegada.value = '';
+        proponerLlegada();
+        refrescar();
+        campos.llegada.focus();
+      });
+
+      // ---- Apertura del modal ----
       // Se comprueba contra undefined y null en vez de usar || '', para no
       // vaciar un valor legitimo que sea cero.
       function volcar(datos) {
@@ -289,45 +570,10 @@
           var valor = datos[clave];
           campos[clave].value = (valor === undefined || valor === null) ? '' : valor;
         });
+        marcarSugerida(false);
+        tramo = estimarTramo();
+        refrescar();
       }
-
-      /**
-       * El transito sale de los dos horarios y no se teclea: asi no puede
-       * discordar de ellos, que era el motivo por el que el servidor rechazaba
-       * el alta.
-       *
-       * Una diferencia nula o negativa significa que el servicio cruza la
-       * medianoche, no que los horarios esten mal: el tramo Puno - Arequipa
-       * sale 21:00 y llega 08:00, que son 660 minutos y no -780.
-       */
-      function recalcularTransito() {
-        var salida = campos.salida.value;
-        var llegada = campos.llegada.value;
-        if (!salida || !llegada) {
-          campos.transito.value = '';
-          return;
-        }
-
-        var s = salida.split(':');
-        var l = llegada.split(':');
-        var minSalida = parseInt(s[0], 10) * 60 + parseInt(s[1], 10);
-        var minLlegada = parseInt(l[0], 10) * 60 + parseInt(l[1], 10);
-        if (isNaN(minSalida) || isNaN(minLlegada)) {
-          campos.transito.value = '';
-          return;
-        }
-
-        var diff = minLlegada - minSalida;
-        if (diff <= 0) {
-          diff += 24 * 60;
-        }
-        campos.transito.value = diff;
-      }
-
-      ['input', 'change'].forEach(function (evento) {
-        campos.salida.addEventListener(evento, recalcularTransito);
-        campos.llegada.addEventListener(evento, recalcularTransito);
-      });
 
       var botonNuevo = document.getElementById('btnNuevoServicio');
       if (botonNuevo) {
@@ -340,11 +586,11 @@
       document.querySelectorAll('.btn-editar-servicio').forEach(function (boton) {
         boton.addEventListener('click', function () {
           titulo.textContent = 'Actualizar servicio de tren';
+          // La llegada guardada se respeta tal cual: volcar no la marca como
+          // sugerida, asi que ni el cambio de salida ni el de estacion la
+          // pisan. Solo se recalcula el transito, por si la fila arrastrara
+          // uno que no cuadra con sus horarios.
           volcar(boton.dataset);
-          // Se recalcula tambien al editar: si la fila guardada tuviera un
-          // transito que no cuadra con sus horarios, el formulario lo corrige
-          // en vez de arrastrarlo.
-          recalcularTransito();
         });
       });
 
@@ -363,6 +609,8 @@
         if (edicionPorUrl) {
           titulo.textContent = 'Actualizar servicio de tren';
         }
+        tramo = estimarTramo();
+        refrescar();
         new bootstrap.Modal(modal).show();
       }
     })();
@@ -391,6 +639,7 @@
         });
       }
     });
+
   </script>
 </body>
 

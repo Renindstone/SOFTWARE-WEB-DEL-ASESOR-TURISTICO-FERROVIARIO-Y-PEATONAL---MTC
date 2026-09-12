@@ -68,7 +68,12 @@ INSERT INTO preferencia ("PreNombre", "PreDescripcion") VALUES
 --
 -- "DifDistanciaMaximaKm" se mide sobre el circuito completo de ida y vuelta y
 -- reproduce los umbrales que hasta ahora estaban escritos en
--- RutaPeatonalService (hasta 3 km Baja, hasta 6 km Media, por encima Alta).
+-- RutaPeatonalService (hasta 3 km Baja, hasta 6 km Media, hasta 40 km Alta).
+-- El tope de Alta es a la vez el limite de lo caminable: por encima de 40 km
+-- de ida y vuelta RutaPeatonalService no calcula ruta (RutaInvalidaException),
+-- porque a 25 min/km son mas de 16 horas de marcha. Un NULL dejaria el nivel
+-- sin tope, como cajon de sastre. La zona mas lejana de esta carga (Llaqta de
+-- Machu Picchu) esta a 10 km de ida y vuelta de su estacion.
 -- "DifVelocidadMinPorKm" recoge que un ascenso exigente se camina mas lento
 -- que un paseo llano; antes se usaban 12 min/km para todos los casos.
 -- ----------------------------------------------------------------------------
@@ -76,7 +81,7 @@ INSERT INTO dificultad ("DifNombre", "DifDescripcion", "DifOrden",
                         "DifDistanciaMaximaKm", "DifVelocidadMinPorKm") VALUES
     ('Baja',  'Recorrido llano o de pendiente suave, apto para cualquier visitante.',   1,  3.00, 12),
     ('Media', 'Tramos con pendiente o escalinatas; requiere calzado adecuado.',         2,  6.00, 18),
-    ('Alta',  'Ascenso pronunciado o sendero largo; exige buena condicion fisica.',     3,  NULL, 25);
+    ('Alta',  'Ascenso pronunciado o sendero largo; exige buena condicion fisica.',     3, 40.00, 25);
 
 -- ----------------------------------------------------------------------------
 -- 5. CATEGORIA_VISITANTE  (parametrica - tarifas por edad)
