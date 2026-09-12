@@ -152,4 +152,52 @@ class ZonaTuristicaServiceTest {
         verify(auditoriaService).registrarAuditoria(eq("travel_ana"), eq("UPDATE"),
                 eq("zona_turistica"), anyString(), anyString());
     }
+
+    // ------------------------------------------------------------------
+    // RNF-06: la tabla preferencia se amplia desde el modal de zonas, sin
+    // tocar el codigo y con la misma traza que cualquier otra alta (RNF-07).
+    // ------------------------------------------------------------------
+
+    @Test
+    void registrarPreferencia_nueva_laGuardaRecortadaYRegistraLaAuditoria() {
+        when(preferenciaRepository.findByNombreIgnoreCase("Astronomía")).thenReturn(Optional.empty());
+        when(preferenciaRepository.save(any(Preferencia.class))).thenAnswer(inv -> {
+            Preferencia p = inv.getArgument(0);
+            p.setId(9);
+            return p;
+        });
+
+        Preferencia creada = zonaTuristicaService.registrarPreferencia("  Astronomía ", "Cielos del altiplano ", "travel_ana");
+
+        assertThat(creada.getId()).isEqualTo(9);
+        assertThat(creada.getNombre()).isEqualTo("Astronomía");
+        assertThat(creada.getDescripcion()).isEqualTo("Cielos del altiplano");
+        verify(auditoriaService).registrarAuditoria(eq("travel_ana"), eq("INSERT"), eq("preferencia"),
+                eq(null), eq("PreNombre=Astronomía; PreDescripcion=Cielos del altiplano"));
+    }
+
+    @Test
+    void registrarPreferencia_repetidaSinDistinguirMayusculas_rechaza() {
+        Preferencia existente = crearPreferencia(3, "Gastronomia");
+        when(preferenciaRepository.findByNombreIgnoreCase("GASTRONOMIA")).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> zonaTuristicaService.registrarPreferencia("GASTRONOMIA", null, "travel_ana"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Ya existe la preferencia «Gastronomia»");
+
+        verify(preferenciaRepository, never()).save(any());
+        verify(auditoriaService, never()).registrarAuditoria(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void registrarPreferencia_nombreVacioODemasiadoLargo_rechaza() {
+        assertThatThrownBy(() -> zonaTuristicaService.registrarPreferencia("   ", null, "travel_ana"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("obligatorio");
+        assertThatThrownBy(() -> zonaTuristicaService.registrarPreferencia("P".repeat(31), null, "travel_ana"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("30 caracteres");
+
+        verify(preferenciaRepository, never()).save(any());
+    }
 }

@@ -1,5 +1,6 @@
 package com.turismo.controller;
 
+import com.turismo.model.Preferencia;
 import com.turismo.model.ZonaTuristica;
 import com.turismo.repository.DificultadRepository;
 import com.turismo.repository.PreferenciaRepository;
@@ -8,6 +9,10 @@ import com.turismo.service.EstacionService;
 import com.turismo.service.ZonaTuristicaService;
 import jakarta.validation.Valid;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,9 +25,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * RF-11/RF-18 (CU-04): CRUD de zonas turisticas para Travel Group Perú, con
@@ -124,6 +132,34 @@ public class ZonaTuristicaController {
         zonaTuristicaService.habilitar(id, auditoriaService.usuarioActual());
         redirect.addFlashAttribute("exito", "Zona turística habilitada: vuelve a ofrecerse al turista.");
         return "redirect:/zonas";
+    }
+
+    /**
+     * RF-11 / RNF-06: alta de una preferencia sin salir del modal de zonas.
+     * Responde JSON porque lo consume el formulario por fetch y añade la
+     * casilla al vuelo; cuelga de /zonas para heredar su regla de acceso
+     * (/preferencias es el buscador público del turista). Los errores de
+     * negocio vuelven como 400/409 con el mensaje, no como la vista de error.
+     */
+    @PostMapping(value = "/preferencias", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> registrarPreferencia(@RequestParam String nombre,
+            @RequestParam(required = false) String descripcion) {
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        try {
+            Preferencia creada = zonaTuristicaService.registrarPreferencia(nombre, descripcion,
+                    auditoriaService.usuarioActual());
+            respuesta.put("id", creada.getId());
+            respuesta.put("nombre", creada.getNombre());
+            respuesta.put("descripcion", creada.getDescripcion() == null ? "" : creada.getDescripcion());
+            return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        } catch (IllegalArgumentException ex) {
+            respuesta.put("error", ex.getMessage());
+            return ResponseEntity.badRequest().body(respuesta);
+        } catch (DataIntegrityViolationException ex) {
+            respuesta.put("error", "Ya existe una preferencia con ese nombre");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(respuesta);
+        }
     }
 
     private void cargarCatalogos(Model model) {

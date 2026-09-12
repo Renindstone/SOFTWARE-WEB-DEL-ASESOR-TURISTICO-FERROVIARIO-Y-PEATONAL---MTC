@@ -107,6 +107,41 @@ public class ZonaTuristicaService {
     }
 
     /**
+     * RF-11 / RNF-06: alta de una preferencia turistica desde el modal de
+     * zonas, para que el operador no tenga que salir del formulario cuando
+     * la categoria que necesita no existe. La tabla preferencia es
+     * parametrica: lo que se crea aqui aparece de inmediato en el buscador
+     * del turista. Queda en AuditoriaLog como cualquier otra alta (RNF-07).
+     */
+    @Transactional
+    public Preferencia registrarPreferencia(String nombre, String descripcion, String usuario) {
+        String nombreLimpio = nombre == null ? "" : nombre.trim();
+        if (nombreLimpio.isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la preferencia es obligatorio");
+        }
+        if (nombreLimpio.length() > 30) {
+            throw new IllegalArgumentException("El nombre de la preferencia no puede superar los 30 caracteres");
+        }
+        String descripcionLimpia = descripcion == null || descripcion.isBlank() ? null : descripcion.trim();
+        if (descripcionLimpia != null && descripcionLimpia.length() > 150) {
+            throw new IllegalArgumentException("La descripción no puede superar los 150 caracteres");
+        }
+        preferenciaRepository.findByNombreIgnoreCase(nombreLimpio).ifPresent(existente -> {
+            throw new IllegalArgumentException("Ya existe la preferencia «" + existente.getNombre() + "»");
+        });
+
+        Preferencia preferencia = new Preferencia();
+        preferencia.setNombre(nombreLimpio);
+        preferencia.setDescripcion(descripcionLimpia);
+        Preferencia guardada = preferenciaRepository.save(preferencia);
+
+        auditoriaService.registrarAuditoria(usuario, "INSERT", "preferencia", null,
+                "PreNombre=" + guardada.getNombre()
+                        + (descripcionLimpia == null ? "" : "; PreDescripcion=" + descripcionLimpia));
+        return guardada;
+    }
+
+    /**
      * RF-11: baja logica de la zona (ZonEstado = Inactiva). No se borra la
      * fila porque ruta_peatonal, control_aforo e informe_planificacion la
      * referencian con ON DELETE RESTRICT y el historial debe conservarse

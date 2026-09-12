@@ -11,4 +11,7 @@ public interface PreferenciaRepository extends JpaRepository<Preferencia, Intege
     List<Preferencia> findAllByOrderByNombreAsc();
 
     Optional<Preferencia> findByNombre(String nombre);
+
+    /** Alta desde el modal de zonas: "Gastronomia" y "gastronomia" son la misma preferencia. */
+    Optional<Preferencia> findByNombreIgnoreCase(String nombre);
 }

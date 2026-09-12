@@ -999,6 +999,19 @@ a.tablero-enlace:focus-visible .tablero-nombre {
   transform: rotate(45deg);
 }
 
+/* Resto de estaciones activas en el geoselector: mismo icono de tren, mas
+   pequeno y apagado, para situar cual queda cerca sin competir con la
+   estacion elegida. */
+.marcador-tren--secundario {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  background: var(--gris-400);
+  border-width: 1.5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
 .leaflet-marker-draggable .marcador-zona:active {
   cursor: grabbing;
 }

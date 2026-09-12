@@ -164,7 +164,7 @@
 
             <!-- CN-10: Preferencias -->
             <div class="section-label"><i class="bi bi-compass"></i> Preferencias</div>
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-2" id="listaPreferencias">
               <div class="col-12 col-sm-6" th:each="pref : ${preferencias}">
                 <div class="preferencia-check form-check">
                   <input class="form-check-input check-preferencia" type="checkbox" name="idsPreferencia"
@@ -172,6 +172,32 @@
                     th:checked="${idsPreferencia != null and #lists.contains(idsPreferencia, pref.id)}">
                   <label class="form-check-label" th:for="${'preferencia-' + pref.id}" th:text="${pref.nombre}"
                     th:title="${pref.descripcion}"></label>
+                </div>
+              </div>
+            </div>
+            <!-- RNF-06: la tabla preferencia es parametrica; si falta una categoria
+                 se crea desde aqui por fetch (POST /zonas/preferencias) y la casilla
+                 aparece marcada, sin perder lo ya escrito en el modal. Los campos no
+                 llevan name: no viajan con el formulario de la zona. -->
+            <div class="row g-2 align-items-start mb-3" id="altaPreferencia">
+              <div class="col-12 col-sm-4">
+                <label class="visually-hidden" for="nuevaPreferenciaNombre">Nueva preferencia</label>
+                <input type="text" class="form-control form-control-sm" id="nuevaPreferenciaNombre" maxlength="30"
+                  placeholder="Nueva preferencia (p. ej. Astronomía)" autocomplete="off">
+              </div>
+              <div class="col-12 col-sm-5">
+                <label class="visually-hidden" for="nuevaPreferenciaDescripcion">Descripción de la nueva preferencia</label>
+                <input type="text" class="form-control form-control-sm" id="nuevaPreferenciaDescripcion" maxlength="150"
+                  placeholder="Descripción (opcional)" autocomplete="off">
+              </div>
+              <div class="col-12 col-sm-3 d-grid">
+                <button type="button" class="btn btn-sm btn-mtc-outline" id="btnAgregarPreferencia">
+                  <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+              </div>
+              <div class="col-12">
+                <div class="form-text mt-0" id="ayudaPreferencia" role="status">
+                  ¿Falta una categoría? Créala aquí: queda disponible para todas las zonas y en el buscador del turista.
                 </div>
               </div>
             </div>
@@ -186,7 +212,8 @@
               <div id="mapaSelectorZona" class="border shadow-sm mb-2" style="height: 240px; border-radius: 8px; z-index: 1;"
                 role="application" aria-label="Mapa para elegir la ubicación de la zona: haz clic o arrastra el marcador"></div>
               <div class="form-text mb-2">
-                Haz clic en el mapa o arrastra el marcador para fijar la ubicación; la estación elegida aparece como referencia.
+                Los iconos de tren son las estaciones activas (pulsa uno para elegirlo). Haz clic en el mapa para colocar la
+                zona y arrastra el pin para afinar: se propone la estación más cercana.
               </div>
               <!-- Distancia a pie hasta la estacion, clasificada con la tabla dificultad.
                    Se muestra y oculta con d-none: las utilidades display de Bootstrap
@@ -464,9 +491,37 @@
         iconAnchor: [16, 16],
         popupAnchor: [0, -18]
       });
+      var iconoEstacionSecundaria = L.divIcon({
+        className: 'marcador-tren-custom',
+        html: '<div class="marcador-tren marcador-tren--secundario"><i class="bi bi-train-front-fill"></i></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -14]
+      });
 
       var marcadorZona = null;
-      var marcadorEstacion = null;
+
+      // Todas las estaciones activas del select, siempre visibles: asi el
+      // operador ve de entrada cual queda mas cerca. Pulsar una la elige.
+      var marcadoresEstacion = {};
+      Array.prototype.forEach.call(selectEstacion.options, function (opt) {
+        if (!opt.value) { return; }
+        var lat = parseFloat(opt.dataset.lat);
+        var lon = parseFloat(opt.dataset.lon);
+        if (isNaN(lat) || isNaN(lon)) { return; }
+        var marcador = L.marker([lat, lon], { icon: iconoEstacionSecundaria, title: nombreEstacion(opt) }).addTo(mapa);
+        marcador.bindTooltip(nombreEstacion(opt), { direction: 'top', offset: [0, -12] });
+        marcador.on('click', function () {
+          selectEstacion.value = opt.value;
+          colocarEstacion();
+          if (marcadorZona) { encuadrar(); }
+        });
+        marcadoresEstacion[opt.value] = marcador;
+      });
+
+      function marcadorEstacionElegida() {
+        return marcadoresEstacion[selectEstacion.value] || null;
+      }
 
       function coordsEstacion() {
         var opt = selectEstacion.options[selectEstacion.selectedIndex];
@@ -594,36 +649,43 @@
       }
 
       function colocarEstacion() {
-        var latlng = coordsEstacion();
-        if (!latlng) {
-          if (marcadorEstacion) {
-            mapa.removeLayer(marcadorEstacion);
-            marcadorEstacion = null;
+        Object.keys(marcadoresEstacion).forEach(function (id) {
+          var elegida = id === selectEstacion.value;
+          marcadoresEstacion[id].setIcon(elegida ? iconoEstacion : iconoEstacionSecundaria);
+          marcadoresEstacion[id].setZIndexOffset(elegida ? 200 : 0);
+          marcadoresEstacion[id].unbindPopup();
+          if (elegida) {
+            marcadoresEstacion[id].bindPopup('<strong>Estación de partida</strong><br>'
+              + escaparHtml(nombreEstacion(selectEstacion.options[selectEstacion.selectedIndex])));
           }
-        } else if (!marcadorEstacion) {
-          marcadorEstacion = L.marker(latlng, {
-            icon: iconoEstacion,
-            zIndexOffset: -100,
-            title: 'Estación de partida'
-          }).addTo(mapa);
-          marcadorEstacion.bindPopup('<strong>Estación de partida</strong>');
-        } else {
-          marcadorEstacion.setLatLng(latlng);
-        }
+        });
         actualizarDistancia();
       }
 
-      // Encuadra zona y estacion; con una sola, la centra; sin ninguna, Cusco.
+      function escaparHtml(texto) {
+        return String(texto).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      // Encuadra zona y estacion elegida; con una sola, la centra; sin ninguna,
+      // muestra todas las estaciones activas (o Cusco si no hubiera ninguna).
       function encuadrar() {
         var puntos = [];
+        var estacion = marcadorEstacionElegida();
         if (marcadorZona) { puntos.push(marcadorZona.getLatLng()); }
-        if (marcadorEstacion) { puntos.push(marcadorEstacion.getLatLng()); }
+        if (estacion) { puntos.push(estacion.getLatLng()); }
         if (puntos.length === 2) {
           mapa.fitBounds(L.latLngBounds(puntos), { padding: [36, 36], maxZoom: 15 });
         } else if (puntos.length === 1) {
           mapa.setView(puntos[0], ZOOM_ESTACION);
         } else {
-          mapa.setView(CENTRO_CUSCO, ZOOM_CIUDAD);
+          var todas = Object.keys(marcadoresEstacion).map(function (id) { return marcadoresEstacion[id].getLatLng(); });
+          if (todas.length) {
+            mapa.fitBounds(L.latLngBounds(todas), { padding: [28, 28], maxZoom: ZOOM_CIUDAD });
+          } else {
+            mapa.setView(CENTRO_CUSCO, ZOOM_CIUDAD);
+          }
         }
       }
 
@@ -642,15 +704,19 @@
       // ---- Eventos ----
       mapa.on('click', function (evento) {
         colocarZona(evento.latlng, { escribir: true, elegirEstacion: true });
+        // Desde la vista general (todas las estaciones) un clic solo aproxima:
+        // se acerca al punto para que el operador afine arrastrando el pin.
+        if (mapa.getZoom() < 12) { mapa.setView(evento.latlng, ZOOM_ESTACION); }
       });
 
       selectEstacion.addEventListener('change', function () {
         colocarEstacion();
+        var estacion = marcadorEstacionElegida();
         if (marcadorZona) {
           encuadrar();
-        } else if (marcadorEstacion) {
-          mapa.setView(marcadorEstacion.getLatLng(), ZOOM_ESTACION);
-          marcadorEstacion.openPopup();
+        } else if (estacion) {
+          mapa.setView(estacion.getLatLng(), ZOOM_ESTACION);
+          estacion.openPopup();
         }
       });
 
@@ -672,6 +738,116 @@
         mapa.invalidateSize();
         sincronizarDesdeFormulario();
         encuadrar();
+      });
+    })();
+
+    // Alta de preferencias sin salir del modal (RNF-06): POST /zonas/preferencias
+    // por fetch con el token CSRF del formulario, y casilla nueva ya marcada.
+    (function () {
+      var boton = document.getElementById('btnAgregarPreferencia');
+      var nombre = document.getElementById('nuevaPreferenciaNombre');
+      var descripcion = document.getElementById('nuevaPreferenciaDescripcion');
+      var ayuda = document.getElementById('ayudaPreferencia');
+      var lista = document.getElementById('listaPreferencias');
+      var form = document.getElementById('formZona');
+      if (!boton || !lista || !form) { return; }
+      var AYUDA_INICIAL = ayuda.textContent;
+
+      function avisar(texto, esError) {
+        ayuda.textContent = texto;
+        ayuda.classList.toggle('text-danger', !!esError);
+        ayuda.classList.toggle('text-success', !esError && texto !== AYUDA_INICIAL);
+      }
+
+      function tokenCsrf() {
+        var campo = form.querySelector('input[name="_csrf"]');
+        return campo ? campo.value : '';
+      }
+
+      // Misma estructura que las casillas que pinta Thymeleaf, para que
+      // desmarcarPreferencias() y el envio del formulario las traten igual.
+      function anadirCasilla(pref) {
+        var col = document.createElement('div');
+        col.className = 'col-12 col-sm-6';
+        var caja = document.createElement('div');
+        caja.className = 'preferencia-check form-check';
+        var input = document.createElement('input');
+        input.className = 'form-check-input check-preferencia';
+        input.type = 'checkbox';
+        input.name = 'idsPreferencia';
+        input.id = 'preferencia-' + pref.id;
+        input.value = pref.id;
+        input.checked = true;
+        var label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = input.id;
+        label.textContent = pref.nombre;
+        if (pref.descripcion) { label.title = pref.descripcion; }
+        caja.appendChild(input);
+        caja.appendChild(label);
+        col.appendChild(caja);
+        lista.appendChild(col);
+      }
+
+      function interpretar(respuesta) {
+        var esJson = (respuesta.headers.get('content-type') || '').indexOf('application/json') >= 0;
+        if (!esJson) {
+          // Una pagina HTML aqui es el login o el 403 de CSRF: la sesion caduco.
+          return Promise.resolve({ ok: false, datos: { error: respuesta.status === 403 || respuesta.redirected
+            ? 'La sesión caducó: recarga la página e inténtalo de nuevo.'
+            : 'Respuesta inesperada del servidor (' + respuesta.status + ').' } });
+        }
+        return respuesta.json().then(function (datos) { return { ok: respuesta.ok, datos: datos }; });
+      }
+
+      function agregar() {
+        var valor = nombre.value.trim();
+        if (!valor) {
+          avisar('Escribe el nombre de la nueva preferencia.', true);
+          nombre.focus();
+          return;
+        }
+        boton.disabled = true;
+        var cuerpo = new URLSearchParams({ nombre: valor, descripcion: descripcion.value.trim(), _csrf: tokenCsrf() });
+        fetch(form.getAttribute('action').replace(/\/$/, '') + '/preferencias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+          body: cuerpo,
+          credentials: 'same-origin'
+        })
+          .then(interpretar)
+          .then(function (resultado) {
+            if (!resultado.ok) {
+              avisar(resultado.datos.error || 'No se pudo crear la preferencia.', true);
+              return;
+            }
+            anadirCasilla(resultado.datos);
+            nombre.value = '';
+            descripcion.value = '';
+            avisar('Preferencia «' + resultado.datos.nombre + '» creada, marcada para esta zona y registrada en auditoría.', false);
+          })
+          .catch(function () {
+            avisar('No se pudo crear la preferencia: revisa la conexión e inténtalo de nuevo.', true);
+          })
+          .finally(function () { boton.disabled = false; });
+      }
+
+      boton.addEventListener('click', agregar);
+      [nombre, descripcion].forEach(function (input) {
+        input.addEventListener('keydown', function (evento) {
+          // Enter en estos campos crea la preferencia; no debe enviar la zona entera.
+          if (evento.key === 'Enter') {
+            evento.preventDefault();
+            agregar();
+          }
+        });
+      });
+
+      // Al abrir el modal de nuevo, la ayuda vuelve a su texto neutro.
+      document.getElementById('modalZona').addEventListener('show.bs.modal', function () {
+        avisar(AYUDA_INICIAL, false);
+        nombre.value = '';
+        descripcion.value = '';
       });
     })();
   </script>
