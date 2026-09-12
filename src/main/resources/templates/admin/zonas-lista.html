@@ -151,6 +151,7 @@
               <select class="form-select" id="modalEstacionCercana" th:field="*{estacionCercana}" required>
                 <option value="">Selecciona una estación</option>
                 <option th:each="est : ${estaciones}" th:value="${est.id}"
+                  th:data-lat="${est.latitud}" th:data-lon="${est.longitud}"
                   th:text="${est.nombre} + ' (' + ${est.ciudad} + ')'"></option>
               </select>
             </div>
@@ -173,8 +174,29 @@
 
             <div class="divider-soft my-3"></div>
 
-            <!-- 5.1: Coordenadas de la zona para Haversine -->
+            <!-- 5.1: Coordenadas de la zona para Haversine. El geoselector las
+                 captura con un clic o arrastrando el marcador; los campos
+                 quedan debajo para verificarlas o pegar coordenadas exactas. -->
             <div class="section-label"><i class="bi bi-geo-alt"></i> Ubicación de la zona</div>
+            <div class="mb-2">
+              <div id="mapaSelectorZona" class="border shadow-sm mb-2" style="height: 240px; border-radius: 8px; z-index: 1;"
+                role="application" aria-label="Mapa para elegir la ubicación de la zona: haz clic o arrastra el marcador"></div>
+              <div class="form-text mb-2">
+                Haz clic en el mapa o arrastra el marcador para fijar la ubicación; la estación elegida aparece como referencia.
+              </div>
+              <!-- Distancia a pie hasta la estacion, clasificada con la tabla dificultad.
+                   Se muestra y oculta con d-none: las utilidades display de Bootstrap
+                   llevan !important y un style en linea no las vence. -->
+              <div id="infoDistanciaEstacion" class="small text-muted d-none align-items-center gap-1 mb-2" role="status">
+                <i class="bi bi-person-walking text-primary" aria-hidden="true"></i>
+                <span id="textoDistanciaEstacion"></span>
+              </div>
+              <!-- Umbrales de la tabla dificultad (RNF-06) para clasificar la distancia en vivo. -->
+              <div id="nivelesDificultad" hidden>
+                <span th:each="niv : ${dificultades}" th:data-nombre="${niv.nombre}"
+                  th:data-max="${niv.distanciaMaximaKm}"></span>
+              </div>
+            </div>
             <div class="row g-3 mb-2">
               <div class="col-md-6">
                 <label class="form-label fw-semibold" for="modalLatitud">Latitud</label>
@@ -263,6 +285,8 @@
 
   <div th:replace="~{layout/footer :: footer}"></div>
   <div th:replace="~{layout/base :: scripts}"></div>
+  <!-- Leaflet para el geoselector del modal (el CSS ya lo carga layout/base). -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -358,6 +382,244 @@
       if (conErrores !== null && conErrores.value === 'true') {
         new bootstrap.Modal(modal).show();
       }
+    })();
+
+    // Geoselector del modal (5.1): la ubicacion de la zona se elige en un mapa
+    // Leaflet, con un clic o arrastrando el pin, y las coordenadas se vuelcan
+    // en los campos de latitud y longitud. Los campos siguen siendo editables
+    // (sincronizacion inversa) para quien prefiera pegar coordenadas exactas.
+    //
+    // Es un modulo aparte del que rellena el formulario: solo depende del
+    // estado de los controles, y se pone al dia en shown.bs.modal, cuando el
+    // formulario ya esta volcado (alta, edicion o reenvio con errores) y el
+    // contenedor tiene tamano real para que Leaflet calcule los tiles.
+    (function () {
+      var contenedor = document.getElementById('mapaSelectorZona');
+      var modal = document.getElementById('modalZona');
+      if (!contenedor || !modal || typeof L === 'undefined') { return; }
+
+      var selectEstacion = document.getElementById('modalEstacionCercana');
+      var inputLat = document.getElementById('modalLatitud');
+      var inputLon = document.getElementById('modalLongitud');
+      var info = document.getElementById('infoDistanciaEstacion');
+      var iconoInfo = info.querySelector('i');
+      var textoInfo = document.getElementById('textoDistanciaEstacion');
+
+      var CENTRO_CUSCO = [-13.5225, -71.9822];
+      var ZOOM_CIUDAD = 13;
+      var ZOOM_ESTACION = 14;
+      var RADIO_TIERRA_KM = 6371.0;
+
+      // Niveles de la tabla dificultad, en orden (RNF-06): el tope de cada uno
+      // se mide sobre el circuito de ida y vuelta; un tope nulo no limita.
+      var niveles = Array.prototype.map.call(
+        document.querySelectorAll('#nivelesDificultad span'), function (span) {
+          var max = parseFloat(span.dataset.max);
+          return { nombre: span.dataset.nombre, max: isNaN(max) ? null : max };
+        });
+
+      function clasificar(kmIdaVuelta) {
+        for (var i = 0; i < niveles.length; i++) {
+          if (niveles[i].max === null || kmIdaVuelta <= niveles[i].max) { return niveles[i].nombre; }
+        }
+        return null;
+      }
+
+      function topeCaminable() {
+        return niveles.reduce(function (tope, n) { return n.max !== null && n.max > tope ? n.max : tope; }, 0);
+      }
+
+      // Misma formula que HaversineCalculator.java y que la ruta peatonal.
+      function haversineKm(a, b) {
+        var toRad = function (d) { return d * Math.PI / 180; };
+        var dLat = toRad(b.lat - a.lat);
+        var dLon = toRad(b.lng - a.lng);
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat))
+              * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return RADIO_TIERRA_KM * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+      }
+
+      var mapa = L.map(contenedor.id, { center: CENTRO_CUSCO, zoom: ZOOM_CIUDAD });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(mapa);
+
+      var iconoZona = L.divIcon({
+        className: 'marcador-zona-custom',
+        html: '<div class="marcador-zona"><i class="bi bi-geo-alt-fill"></i></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 34],
+        popupAnchor: [0, -32]
+      });
+      var iconoEstacion = L.divIcon({
+        className: 'marcador-tren-custom',
+        html: '<div class="marcador-tren"><i class="bi bi-train-front-fill"></i></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18]
+      });
+
+      var marcadorZona = null;
+      var marcadorEstacion = null;
+
+      function coordsEstacion() {
+        var opt = selectEstacion.options[selectEstacion.selectedIndex];
+        if (!opt || !opt.value) { return null; }
+        var lat = parseFloat(opt.dataset.lat);
+        var lon = parseFloat(opt.dataset.lon);
+        return (isNaN(lat) || isNaN(lon)) ? null : L.latLng(lat, lon);
+      }
+
+      function coordsDelFormulario() {
+        var lat = parseFloat(inputLat.value);
+        var lon = parseFloat(inputLon.value);
+        if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) { return null; }
+        return L.latLng(lat, lon);
+      }
+
+      function escribirCoordenadas(latlng) {
+        inputLat.value = latlng.lat.toFixed(6);
+        inputLon.value = latlng.lng.toFixed(6);
+      }
+
+      // ---- Distancia a la estacion y dificultad que le tocaria ----
+      function actualizarDistancia() {
+        var estacion = coordsEstacion();
+        if (!marcadorZona || !estacion) {
+          info.classList.add('d-none');
+          info.classList.remove('d-flex');
+          return;
+        }
+        var ida = haversineKm(marcadorZona.getLatLng(), estacion);
+        var idaVuelta = ida * 2;
+        var nivel = clasificar(idaVuelta);
+        var texto = 'A ~' + ida.toFixed(1) + ' km de la estación (ida y vuelta: ~' + idaVuelta.toFixed(1) + ' km';
+        if (nivel) {
+          texto += ' — dificultad ' + nivel + ').';
+        } else {
+          var tope = topeCaminable();
+          texto += '). Supera el límite caminable de ' + (tope / 2) + ' km (' + tope
+            + ' km ida y vuelta): el sistema no podrá calcular la ruta a pie.';
+        }
+        textoInfo.textContent = texto;
+        info.classList.toggle('text-muted', !!nivel);
+        info.classList.toggle('text-warning-emphasis', !nivel);
+        iconoInfo.className = nivel ? 'bi bi-person-walking text-primary' : 'bi bi-exclamation-triangle-fill text-warning';
+        info.classList.remove('d-none');
+        info.classList.add('d-flex');
+      }
+
+      // ---- Marcadores ----
+      function colocarZona(latlng, escribir) {
+        if (!marcadorZona) {
+          marcadorZona = L.marker(latlng, {
+            icon: iconoZona,
+            draggable: true,
+            autoPan: true,
+            title: 'Ubicación de la zona: arrastra para ajustar'
+          }).addTo(mapa);
+          marcadorZona.bindPopup('<strong>Zona turística</strong><br>Arrastra el pin para ajustar la ubicación.');
+          marcadorZona.on('dragend', function () {
+            escribirCoordenadas(marcadorZona.getLatLng());
+            actualizarDistancia();
+          });
+        } else {
+          marcadorZona.setLatLng(latlng);
+        }
+        if (escribir) { escribirCoordenadas(latlng); }
+        actualizarDistancia();
+      }
+
+      function quitarZona() {
+        if (marcadorZona) {
+          mapa.removeLayer(marcadorZona);
+          marcadorZona = null;
+        }
+        actualizarDistancia();
+      }
+
+      function colocarEstacion() {
+        var latlng = coordsEstacion();
+        if (!latlng) {
+          if (marcadorEstacion) {
+            mapa.removeLayer(marcadorEstacion);
+            marcadorEstacion = null;
+          }
+        } else if (!marcadorEstacion) {
+          marcadorEstacion = L.marker(latlng, {
+            icon: iconoEstacion,
+            zIndexOffset: -100,
+            title: 'Estación de partida'
+          }).addTo(mapa);
+          marcadorEstacion.bindPopup('<strong>Estación de partida</strong>');
+        } else {
+          marcadorEstacion.setLatLng(latlng);
+        }
+        actualizarDistancia();
+      }
+
+      // Encuadra zona y estacion; con una sola, la centra; sin ninguna, Cusco.
+      function encuadrar() {
+        var puntos = [];
+        if (marcadorZona) { puntos.push(marcadorZona.getLatLng()); }
+        if (marcadorEstacion) { puntos.push(marcadorEstacion.getLatLng()); }
+        if (puntos.length === 2) {
+          mapa.fitBounds(L.latLngBounds(puntos), { padding: [36, 36], maxZoom: 15 });
+        } else if (puntos.length === 1) {
+          mapa.setView(puntos[0], ZOOM_ESTACION);
+        } else {
+          mapa.setView(CENTRO_CUSCO, ZOOM_CIUDAD);
+        }
+      }
+
+      // Deja el mapa como dicen los controles: estacion elegida y coordenadas
+      // ya escritas (edicion o reenvio con errores) o nada (alta).
+      function sincronizarDesdeFormulario() {
+        colocarEstacion();
+        var latlng = coordsDelFormulario();
+        if (latlng) {
+          colocarZona(latlng, false);
+        } else {
+          quitarZona();
+        }
+      }
+
+      // ---- Eventos ----
+      mapa.on('click', function (evento) {
+        colocarZona(evento.latlng, true);
+      });
+
+      selectEstacion.addEventListener('change', function () {
+        colocarEstacion();
+        if (marcadorZona) {
+          encuadrar();
+        } else if (marcadorEstacion) {
+          mapa.setView(marcadorEstacion.getLatLng(), ZOOM_ESTACION);
+          marcadorEstacion.openPopup();
+        }
+      });
+
+      // Sincronizacion inversa: lo tecleado o pegado en los campos mueve el pin.
+      ['input', 'change'].forEach(function (ev) {
+        [inputLat, inputLon].forEach(function (input) {
+          input.addEventListener(ev, function () {
+            var latlng = coordsDelFormulario();
+            if (!latlng) { return; }
+            colocarZona(latlng, false);
+            if (!mapa.getBounds().contains(latlng)) { mapa.panTo(latlng); }
+          });
+        });
+      });
+
+      modal.addEventListener('shown.bs.modal', function () {
+        // Dentro del modal el contenedor nace oculto: sin esto Leaflet cree
+        // que mide 0x0 y deja los tiles en gris.
+        mapa.invalidateSize();
+        sincronizarDesdeFormulario();
+        encuadrar();
+      });
     })();
   </script>
 </body>

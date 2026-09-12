@@ -970,6 +970,39 @@ a.tablero-enlace:focus-visible .tablero-nombre {
   font-size: 15px;
 }
 
+/* Marcador de la zona turistica en el geoselector del modal de zonas
+   (admin/zonas-lista): un pin verde arrastrable, distinto del icono de
+   tren que senala la estacion de referencia. La rotacion dibuja la punta;
+   el icono se contrarrota para quedar derecho. */
+.marcador-zona-custom {
+  background: none;
+  border: none;
+}
+
+.marcador-zona {
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--verde-700);
+  color: var(--fg-on-dark);
+  border: 2px solid var(--blanco);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  font-size: 15px;
+  cursor: grab;
+}
+
+.marcador-zona .bi {
+  transform: rotate(45deg);
+}
+
+.leaflet-marker-draggable .marcador-zona:active {
+  cursor: grabbing;
+}
+
 .via-tren {
   transition: stroke-opacity 0.35s ease;
 }

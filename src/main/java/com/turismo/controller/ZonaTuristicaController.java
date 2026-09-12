@@ -1,6 +1,7 @@
 package com.turismo.controller;
 
 import com.turismo.model.ZonaTuristica;
+import com.turismo.repository.DificultadRepository;
 import com.turismo.repository.PreferenciaRepository;
 import com.turismo.service.AuditoriaService;
 import com.turismo.service.EstacionService;
@@ -34,15 +35,18 @@ public class ZonaTuristicaController {
     private final ZonaTuristicaService zonaTuristicaService;
     private final EstacionService estacionService;
     private final PreferenciaRepository preferenciaRepository;
+    private final DificultadRepository dificultadRepository;
     private final AuditoriaService auditoriaService;
 
     public ZonaTuristicaController(ZonaTuristicaService zonaTuristicaService,
             EstacionService estacionService,
             PreferenciaRepository preferenciaRepository,
+            DificultadRepository dificultadRepository,
             AuditoriaService auditoriaService) {
         this.zonaTuristicaService = zonaTuristicaService;
         this.estacionService = estacionService;
         this.preferenciaRepository = preferenciaRepository;
+        this.dificultadRepository = dificultadRepository;
         this.auditoriaService = auditoriaService;
     }
 
@@ -125,5 +129,9 @@ public class ZonaTuristicaController {
     private void cargarCatalogos(Model model) {
         model.addAttribute("estaciones", estacionService.listarActivas());
         model.addAttribute("preferencias", preferenciaRepository.findAllByOrderByNombreAsc());
+        // El geoselector del modal clasifica en vivo la distancia a la estacion
+        // con los mismos umbrales que RutaPeatonalService (RNF-06): salen de la
+        // tabla, no de constantes en el JavaScript.
+        model.addAttribute("dificultades", dificultadRepository.findAllByOrderByOrdenAsc());
     }
 }
