@@ -82,16 +82,24 @@
                       th:data-tarifa="${serv.tarifa}">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <form th:action="@{'/servicios-tren/' + ${serv.id} + '/eliminar'}" method="post"
-                      onsubmit="return confirm('¿Está seguro de eliminar este servicio de tren? Esta acción no se puede deshacer.');"
-                      class="d-inline">
-                      <!-- Papelera, no slash-circle: aqui la fila se borra de la
-                           base. El slash-circle queda para las zonas, donde la
-                           baja es logica y se puede revertir. -->
-                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar servicio">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </form>
+                    <!-- Papelera, no slash-circle: aqui la fila se borra de la
+                         base. El slash-circle queda para las zonas, donde la
+                         baja es logica y se puede revertir.
+
+                         El boton no envia nada: abre #confirmModal (el mismo
+                         que usa zonas-lista) con los data-*, y es el formulario
+                         del modal el que hace el POST con el token CSRF. -->
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                      title="Eliminar servicio"
+                      data-bs-toggle="modal"
+                      data-bs-target="#confirmModal"
+                      th:data-action="@{'/servicios-tren/' + ${serv.id} + '/eliminar'}"
+                      data-message="¿Está seguro de que desea eliminar este servicio de tren? Esta acción no se puede deshacer."
+                      data-title="Confirmar Eliminación"
+                      data-btn-class="btn-danger"
+                      data-btn-text="Sí, eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -221,6 +229,35 @@
       </div>
     </div>
 
+    <!-- Modal de Confirmación Único (Bootstrap). Su formulario no lleva
+         th:action porque la accion la pone el script segun el boton pulsado;
+         por eso el token CSRF se declara a mano: la inyeccion automatica de
+         Thymeleaf solo actua sobre formularios con th:action. -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow rounded-3 border-0">
+
+          <div class="modal-header border-bottom-0 pb-0">
+            <h5 class="modal-title fw-bold" id="confirmModalLabel">Confirmación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+
+          <div class="modal-body py-3 text-secondary" id="confirmModalMessage">
+            ¿Está seguro de realizar esta acción?
+          </div>
+
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <form id="confirmModalForm" method="post" action="">
+              <input type="hidden" th:if="${_csrf} != null" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button type="submit" id="confirmModalSubmitBtn" class="btn btn-primary">Confirmar</button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <div th:replace="~{layout/footer :: footer}"></div>
@@ -329,6 +366,31 @@
         new bootstrap.Modal(modal).show();
       }
     })();
+
+    // Modal de confirmacion: el boton que lo abre trae en sus data-* la
+    // accion, el mensaje, el titulo y el aspecto del boton de confirmar.
+    document.addEventListener('DOMContentLoaded', function () {
+      const confirmModal = document.getElementById('confirmModal');
+      if (confirmModal) {
+        confirmModal.addEventListener('show.bs.modal', function (event) {
+          const button = event.relatedTarget;
+          // Extraer datos de los atributos data-*
+          const action = button.getAttribute('data-action');
+          const message = button.getAttribute('data-message');
+          const title = button.getAttribute('data-title');
+          const btnClass = button.getAttribute('data-btn-class');
+          const btnText = button.getAttribute('data-btn-text');
+          // Actualizar textos y accion del formulario
+          document.getElementById('confirmModalLabel').textContent = title;
+          document.getElementById('confirmModalMessage').textContent = message;
+          document.getElementById('confirmModalForm').action = action;
+          // Estilo y texto del boton de confirmacion
+          const submitBtn = document.getElementById('confirmModalSubmitBtn');
+          submitBtn.textContent = btnText;
+          submitBtn.className = `btn ${btnClass}`;
+        });
+      }
+    });
   </script>
 </body>
 
