@@ -1,7 +1,7 @@
 package com.turismo.exception;
 
 /**
- * RF-12: el servicio de tren no supera las reglas que relacionan varios de
+ * RF-13: el servicio de tren no supera las reglas que relacionan varios de
  * sus campos entre si y que, por tanto, Bean Validation no puede expresar
  * campo a campo: que el origen y el destino sean estaciones distintas y que
  * el horario de llegada se corresponda con la salida mas el tiempo de

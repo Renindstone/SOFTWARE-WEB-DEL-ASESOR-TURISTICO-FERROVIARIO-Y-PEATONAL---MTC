@@ -60,7 +60,7 @@ public class RutaController {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
         ZonaTuristica destino = zonaTuristicaRepository.findById(idZona)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
-        // RF-10: una zona dada de baja desaparece del buscador, pero su
+        // RF-11: una zona dada de baja desaparece del buscador, pero su
         // direccion sigue existiendo; no debe poder planificarse por ella.
         if (!"Activa".equalsIgnoreCase(destino.getEstado())) {
             throw new IllegalArgumentException(

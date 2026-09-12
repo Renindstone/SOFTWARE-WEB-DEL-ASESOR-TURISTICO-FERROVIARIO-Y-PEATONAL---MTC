@@ -40,7 +40,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * RF-08/RF-18 (CN-07/CN-09): generacion del informe consolidado. Cubre que el
+ * RF-08/RF-19 (CN-07/CN-09): generacion del informe consolidado. Cubre que el
  * informe reune ruta, clima y tarifas del grupo, que se persiste con codigo
  * correlativo junto a su detalle de visitantes, y que el aforo agotado corta
  * la emision antes de guardar.
@@ -190,7 +190,7 @@ class InformeServiceTest {
     }
 
     /**
-     * RF-18: la familia sembrada como INF-0001 (dos adultos y un nino de 8).
+     * RF-19: la familia sembrada como INF-0001 (dos adultos y un nino de 8).
      * Tren: 210.00 x2 + 210.00 x 0.50. Zona: 70.00 x2 + 70.00 x 0.68.
      */
     @Test

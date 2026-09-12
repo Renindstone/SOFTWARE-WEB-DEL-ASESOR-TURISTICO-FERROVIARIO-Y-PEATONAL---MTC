@@ -11,7 +11,7 @@ import java.math.RoundingMode;
 import java.util.List;
 
 /**
- * RF-18: resuelve que tarifa le corresponde a cada visitante segun su edad.
+ * RF-19: resuelve que tarifa le corresponde a cada visitante segun su edad.
  *
  * Los cortes de edad los define la tabla parametrica categoria_visitante y no
  * este codigo, porque no son los mismos en los dos proveedores: PeruRail cobra

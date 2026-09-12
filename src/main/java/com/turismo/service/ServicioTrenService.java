@@ -18,9 +18,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * RF-12: mantenimiento de horarios y precios de los servicios de tren
+ * RF-13: mantenimiento de horarios y precios de los servicios de tren
  * (administrador de PeruRail/MTC). Respalda la vista admin/servicios-tren.html
- * y deja traza de cada cambio en AuditoriaLog (RF-15/RNF-07).
+ * y deja traza de cada cambio en AuditoriaLog (RF-16/RNF-07).
  */
 @Service
 public class ServicioTrenService {
@@ -47,7 +47,12 @@ public class ServicioTrenService {
         return servicioTrenRepository.findByEstacionOrigen_Id(idEstacionOrigen);
     }
 
-    /** RF-07: servicios que llegan a la estacion de partida, ordenados por tarifa. */
+    /**
+     * RF-07: servicios que llegan a la estacion de partida, ordenados por
+     * tarifa. Los que salen de una estacion inactiva (RF-02) no se ofrecen:
+     * el mantenimiento admite registrarlos, pero el turista no puede abordar
+     * en una estacion fuera de servicio.
+     */
     public List<ServicioTren> listarHaciaEstacion(Integer idEstacionDestino) {
         return servicioTrenRepository.listarHaciaEstacion(idEstacionDestino);
     }

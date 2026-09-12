@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * RF-15/RNF-07: registra en AuditoriaLog cada operacion administrativa
+ * RF-16/RNF-07: registra en AuditoriaLog cada operacion administrativa
  * (INSERT/UPDATE/DELETE) y cada sincronizacion externa (SYNC).
  * Caja Blanca: CB-07 (persistencia de valor anterior/nuevo sin nulos).
  */
@@ -53,7 +53,7 @@ public class AuditoriaService {
         return auditoriaLogRepository.save(log);
     }
 
-    /** Atajo para las tareas programadas de PeruRail y SENAMHI (RF-13/RF-14). */
+    /** Atajo para las tareas programadas de PeruRail y SENAMHI (RF-14/RF-15). */
     public AuditoriaLog registrarSincronizacion(String tablaAfectada, String detalle) {
         return registrarAuditoria(USUARIO_SISTEMA, "SYNC", tablaAfectada, null, detalle);
     }

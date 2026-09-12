@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Mock del SENAMHI (Sprint 0). El pronostico generado tiene que respetar las
  * mismas restricciones que la tabla prevision_clima, porque entra al sistema
- * por el mismo camino que entraria el feed real (RF-14, CB-03/CB-04).
+ * por el mismo camino que entraria el feed real (RF-15, CB-03/CB-04).
  */
 class GeneradorPronosticoSenamhiTest {
 

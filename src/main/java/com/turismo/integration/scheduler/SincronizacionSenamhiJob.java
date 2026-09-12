@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * RF-14/RNF-03: sincroniza diariamente las previsiones climaticas del
- * SENAMHI por estacion, y registra la sincronizacion en AuditoriaLog (RF-15).
+ * RF-15/RNF-03: sincroniza diariamente las previsiones climaticas del
+ * SENAMHI por estacion, y registra la sincronizacion en AuditoriaLog (RF-16).
  */
 @Component
 public class SincronizacionSenamhiJob {

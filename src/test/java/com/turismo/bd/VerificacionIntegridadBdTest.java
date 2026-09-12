@@ -101,7 +101,7 @@ class VerificacionIntegridadBdTest {
     }
 
     /**
-     * RF-18. La restriccion EXCLUDE de categoria_visitante impide que dos tramos de edad
+     * RF-19. La restriccion EXCLUDE de categoria_visitante impide que dos tramos de edad
      * se solapen, pero no que quede un hueco entre ellos: basta bajar el tope de nino sin
      * bajar el minimo de adulto. Con un hueco, TarifaService.categoriaPorEdad lanza
      * TarifaInvalidaException al generar el informe, delante del turista.

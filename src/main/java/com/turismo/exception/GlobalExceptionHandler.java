@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** RF-16 (CN-09): aforo diario agotado para la fecha elegida. */
+    /** RF-17 (CN-09): aforo diario agotado para la fecha elegida. */
     @ExceptionHandler(AforoCompletoException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public String manejarAforoCompleto(AforoCompletoException ex, Model model) {
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
         return "error";
     }
 
-    /** RF-13/RF-14: datos rechazados de los feeds externos (CB-04, CB-06). */
+    /** RF-14/RF-15: datos rechazados de los feeds externos (CB-04, CB-06). */
     @ExceptionHandler({FeedInvalidoException.class, TarifaInvalidaException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String manejarDatosExternosInvalidos(RuntimeException ex, Model model) {
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
 
     /**
      * CN-05: validaciones del CRUD de zonas turisticas (preferencia, estacion)
-     * y RF-12: reglas entre campos del servicio de tren.
+     * y RF-13: reglas entre campos del servicio de tren.
      *
      * Es una red de seguridad: ServicioTrenController ya captura
      * ServicioTrenInvalidoException para devolver al formulario con lo que el

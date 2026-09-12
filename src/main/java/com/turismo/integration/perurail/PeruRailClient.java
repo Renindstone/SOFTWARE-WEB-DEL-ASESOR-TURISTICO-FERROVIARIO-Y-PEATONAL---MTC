@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Adaptador hacia el servicio/API de PeruRail: catalogo de estaciones,
- * horarios, tiempos de transito y tarifas (RF-13). Consumido por
+ * horarios, tiempos de transito y tarifas (RF-14). Consumido por
  * SincronizacionPeruRailJob (RNF-03).
  *
  * Mientras el feed real no este disponible, la URL base apunta al mock

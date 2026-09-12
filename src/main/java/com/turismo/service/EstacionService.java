@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-/** RF-02/RF-11: catalogo de estaciones (lectura por Travel Group Perú y usuario final). */
+/** RF-02/RF-12: catalogo de estaciones (lectura por Travel Group Perú y usuario final). */
 @Service
 public class EstacionService {
 

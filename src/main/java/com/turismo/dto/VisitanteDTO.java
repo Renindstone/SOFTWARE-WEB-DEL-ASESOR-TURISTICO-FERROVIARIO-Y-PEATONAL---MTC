@@ -3,7 +3,7 @@ package com.turismo.dto;
 import java.math.BigDecimal;
 
 /**
- * Una linea de la composicion del grupo (RF-18): tantas personas de una misma
+ * Una linea de la composicion del grupo (RF-19): tantas personas de una misma
  * edad, con la categoria tarifaria que les corresponde en cada ambito.
  *
  * Al entrar solo lleva edad y cantidad, que es lo que declara el turista; los

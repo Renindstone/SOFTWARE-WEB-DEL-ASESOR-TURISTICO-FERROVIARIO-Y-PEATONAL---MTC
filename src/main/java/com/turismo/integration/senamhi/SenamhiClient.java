@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * Adaptador hacia el servicio/API del SENAMHI: previsiones climaticas por
- * estacion/coordenadas (RF-14). Consumido por SincronizacionSenamhiJob
+ * estacion/coordenadas (RF-15). Consumido por SincronizacionSenamhiJob
  * (RNF-03).
  */
 @Component
@@ -73,7 +73,7 @@ public class SenamhiClient {
      * Caso de prueba CB-03/CB-04: valida el feed recibido de SENAMHI y lo
      * descarta si la probabilidad de lluvia esta fuera del rango 0-100.
      * Cuando es valido, delega en ClimaService el insert/update de
-     * PrevisionClima (RF-14).
+     * PrevisionClima (RF-15).
      */
     public void procesarFeedSenamhi(PrevisionClimaSenamhiDTO feed) {
         BigDecimal probabilidad = feed.getProbabilidadLluvia();

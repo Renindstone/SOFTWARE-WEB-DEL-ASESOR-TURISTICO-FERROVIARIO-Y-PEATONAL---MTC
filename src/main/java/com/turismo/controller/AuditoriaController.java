@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-/** RF-15/RNF-07: panel de auditoria para gestores del MTC (ADMIN_MTC). */
+/** RF-16/RNF-07: panel de auditoria para gestores del MTC (ADMIN_MTC). */
 @Controller
 @RequestMapping("/auditoria")
 public class AuditoriaController {

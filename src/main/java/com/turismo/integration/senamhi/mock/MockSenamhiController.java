@@ -22,7 +22,7 @@ import java.util.List;
  * JSON que consumiria la API real, de modo que SenamhiClient hace una llamada
  * HTTP de verdad y la Capa de Integracion se ejercita completa: validacion del
  * feed (CB-03/CB-04), persistencia en PrevisionClima y registro en la
- * auditoria (RF-14/RF-15).
+ * auditoria (RF-15/RF-16).
  *
  * Vive dentro de la aplicacion para que el sistema funcione con un solo
  * `docker compose up`, sin desplegar un segundo contenedor. La contrapartida

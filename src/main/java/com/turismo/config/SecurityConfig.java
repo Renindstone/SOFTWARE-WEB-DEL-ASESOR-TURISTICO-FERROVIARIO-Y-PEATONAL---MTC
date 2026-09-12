@@ -18,8 +18,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * caso "Zonas turisticas" del MTC contempla la consulta anonima, y por eso
  * InfIdUsuario admite NULL en el diccionario de datos (6.4). El modulo de
  * administracion queda restringido: CRUD de zonas y consulta de estaciones
- * para TRAVEL_GROUP_USER, horarios y tarifas (RF-12) para PERURAIL_ADMIN y
- * auditoria (RF-15) para ADMIN_MTC; ADMIN_MTC entra a los tres.
+ * para TRAVEL_GROUP_USER, horarios y tarifas (RF-13) para PERURAIL_ADMIN y
+ * auditoria (RF-16) para ADMIN_MTC; ADMIN_MTC entra a los tres.
  */
 @Configuration
 public class SecurityConfig {

@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * RF-08/RF-18: genera el informe consolidado (ruta, clima, tiempo estimado,
+ * RF-08/RF-19: genera el informe consolidado (ruta, clima, tiempo estimado,
  * dificultad y tarifas del grupo) en formato web/PDF descargable.
  * Orquesta RutaPeatonalService, ClimaService, TarifaService, AforoService
- * (RF-16/RF-17) y AuditoriaService antes de persistir InformePlanificacion
+ * (RF-17/RF-18) y AuditoriaService antes de persistir InformePlanificacion
  * junto con la composicion del grupo.
  */
 @Service
@@ -71,7 +71,7 @@ public class InformeService {
     }
 
     /**
-     * RF-08/RF-16/RF-18 (CU-08): valida el aforo para TODAS las personas del
+     * RF-08/RF-17/RF-19 (CU-08): valida el aforo para TODAS las personas del
      * grupo, calcula y persiste la ruta, arma el informe con las tarifas por
      * edad y guarda el InformePlanificacion con su detalle de visitantes. Si
      * no queda sitio para el grupo completo, AforoCompletoException
@@ -165,7 +165,7 @@ public class InformeService {
     }
 
     /**
-     * RF-18: a cada linea del grupo se le asigna la categoria que le toca en
+     * RF-19: a cada linea del grupo se le asigna la categoria que le toca en
      * cada ambito y su subtotal. Los cortes de edad los decide TarifaService
      * a partir de la tabla parametrica, no este metodo.
      */

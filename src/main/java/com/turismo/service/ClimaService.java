@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 /**
- * RF-06/RF-14: capa de negocio sobre PrevisionClima. La validacion del
+ * RF-06/RF-15: capa de negocio sobre PrevisionClima. La validacion del
  * feed (rango 0-100 de probabilidad de lluvia) vive en
  * SenamhiClient.procesarFeedSenamhi(); este servicio persiste el
  * insert/update ya validado.

@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * RF-13/RNF-03: sincroniza periodicamente estaciones, horarios y tarifas
- * desde PeruRail, y registra la sincronizacion en AuditoriaLog (RF-15).
+ * RF-14/RNF-03: sincroniza periodicamente estaciones, horarios y tarifas
+ * desde PeruRail, y registra la sincronizacion en AuditoriaLog (RF-16).
  */
 @Component
 public class SincronizacionPeruRailJob {

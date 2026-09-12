@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * RF-11 (CU-05): consulta de estaciones en modo solo lectura para Travel
+ * RF-12 (CU-05): consulta de estaciones en modo solo lectura para Travel
  * Group Perú, y RF-09: listado de estaciones con sus zonas asignadas.
  */
 @Controller

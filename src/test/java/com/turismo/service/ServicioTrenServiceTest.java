@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * Caja Blanca: CB-12 (eliminar - borrado fisico de servicio existente y
  * registro de traza en AuditoriaLog con operacion DELETE).
  *
- * Valida el mantenimiento de servicios de tren (RF-12, RF-15), incluyendo
+ * Valida el mantenimiento de servicios de tren (RF-13, RF-16), incluyendo
  * el alta con validacion de tarifa (CB-05) y la eliminacion de registros.
  */
 @ExtendWith(MockitoExtension.class)
@@ -135,7 +135,7 @@ class ServicioTrenServiceTest {
     }
 
     // ------------------------------------------------------------------
-    // RF-12: reglas que relacionan varios campos entre si y que Bean
+    // RF-13: reglas que relacionan varios campos entre si y que Bean
     // Validation no puede expresar campo a campo.
     // ------------------------------------------------------------------
 

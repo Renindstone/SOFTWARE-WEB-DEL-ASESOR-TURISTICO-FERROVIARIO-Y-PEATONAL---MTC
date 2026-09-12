@@ -204,7 +204,7 @@ public class GeneradorPdf {
     }
 
     /**
-     * RF-18: desglose por edad. Deja ver de donde sale el total cuando viaja
+     * RF-19: desglose por edad. Deja ver de donde sale el total cuando viaja
      * mas de una persona, que es justo lo que el turista quiere comprobar.
      *
      * Sin cuadricula: solo una regla inferior por fila y un sombreado alterno,

@@ -104,7 +104,7 @@ class AforoServiceTest {
                 .hasMessageContaining(FECHA.plusDays(1).toString());
     }
 
-    /** RF-16: sin ZonCupoMaximoDiario configurado, la validacion no aplica. */
+    /** RF-17: sin ZonCupoMaximoDiario configurado, la validacion no aplica. */
     @Test
     void noAplicaLaValidacionCuandoLaZonaNoControlaAforo() {
         ZonaTuristica zona = crearZona(null);
@@ -115,7 +115,7 @@ class AforoServiceTest {
         verify(controlAforoRepository, never()).incrementarCupoUtilizado(any(), any(), any(), any());
     }
 
-    /** RF-18: una familia de tres descuenta tres cupos, no uno. */
+    /** RF-17: una familia de tres descuenta tres cupos, no uno. */
     @Test
     void descuentaUnCupoPorCadaPersonaDelGrupo() {
         ZonaTuristica zona = crearZona(500);

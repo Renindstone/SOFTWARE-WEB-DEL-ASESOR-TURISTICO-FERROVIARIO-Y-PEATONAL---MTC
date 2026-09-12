@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** RF-12: mantenimiento de horarios y precios de los servicios de tren (admin PeruRail/MTC). */
+/** RF-13: mantenimiento de horarios y precios de los servicios de tren (admin PeruRail/MTC). */
 @Controller
 @RequestMapping("/servicios-tren")
 public class ServicioTrenController {

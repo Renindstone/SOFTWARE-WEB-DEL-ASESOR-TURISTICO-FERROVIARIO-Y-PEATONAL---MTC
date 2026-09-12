@@ -10,7 +10,7 @@ import lombok.ToString;
 import java.math.BigDecimal;
 
 /**
- * Composicion del grupo que viaja en un informe (RF-18).
+ * Composicion del grupo que viaja en un informe (RF-19).
  *
  * Cada fila agrupa a las personas de una misma edad, de modo que una familia
  * de dos adultos y un nino son dos filas y no tres. La categoria y los

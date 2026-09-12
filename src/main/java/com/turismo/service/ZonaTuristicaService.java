@@ -15,10 +15,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * RF-10/RF-17: CRUD de zonas turisticas para Travel Group Peru, incluyendo
+ * RF-11/RF-18: CRUD de zonas turisticas para Travel Group Peru, incluyendo
  * la asignacion N:M con Preferencia (tabla ZonaPreferencia) y el campo
  * ZonCupoMaximoDiario usado por AforoService. Cada alta, modificacion y
- * baja queda registrada en AuditoriaLog (RF-15/RNF-07).
+ * baja queda registrada en AuditoriaLog (RF-16/RNF-07).
  */
 @Service
 public class ZonaTuristicaService {
@@ -107,7 +107,7 @@ public class ZonaTuristicaService {
     }
 
     /**
-     * RF-10: baja logica de la zona (ZonEstado = Inactiva). No se borra la
+     * RF-11: baja logica de la zona (ZonEstado = Inactiva). No se borra la
      * fila porque ruta_peatonal, control_aforo e informe_planificacion la
      * referencian con ON DELETE RESTRICT y el historial debe conservarse
      * (seccion 6.3).

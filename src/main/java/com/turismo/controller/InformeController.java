@@ -136,7 +136,7 @@ public class InformeController {
     }
 
     /**
-     * RF-18: el formulario envia una edad por acompanante. InformeService las
+     * RF-19: el formulario envia una edad por acompanante. InformeService las
      * agrupa despues, de modo que tres personas de 35 anos acaben en una sola
      * fila con cantidad 3 y no en tres filas.
      */
@@ -186,6 +186,12 @@ public class InformeController {
                 && !servicio.getEstacionDestino().getId().equals(origen.getId())) {
             throw new IllegalArgumentException(
                     "El servicio de tren elegido no llega a la estación " + origen.getNombre());
+        }
+        // Mismo criterio que el selector: no se aborda en una estacion inactiva (RF-02).
+        if (servicio != null && servicio.getEstacionOrigen() != null
+                && !"Activa".equalsIgnoreCase(servicio.getEstacionOrigen().getEstado())) {
+            throw new IllegalArgumentException("El servicio de tren elegido parte de la estación "
+                    + servicio.getEstacionOrigen().getNombre() + ", que está fuera de servicio");
         }
         return servicio;
     }

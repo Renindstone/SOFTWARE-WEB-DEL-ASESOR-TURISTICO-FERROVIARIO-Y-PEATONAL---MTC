@@ -46,7 +46,7 @@ class AuditoriaServiceTest {
         assertThat(resultado.getTablaAfectada()).isEqualTo("estacion");
     }
 
-    /** RF-15: las sincronizaciones automaticas se registran como SYNC / SISTEMA. */
+    /** RF-16: las sincronizaciones automaticas se registran como SYNC / SISTEMA. */
     @Test
     void registraLasSincronizacionesComoOperacionSyncDelSistema() {
         when(auditoriaLogRepository.save(any(AuditoriaLog.class))).thenAnswer(inv -> inv.getArgument(0));

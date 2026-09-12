@@ -17,7 +17,7 @@ public interface ServicioTrenRepository extends JpaRepository<ServicioTren, Inte
 
     List<ServicioTren> findByEstacionOrigen_Id(Integer estIdEstacion);
 
-    /** RF-12: listado completo del panel de horarios y tarifas. */
+    /** RF-13: listado completo del panel de horarios y tarifas. */
     @Query("""
             SELECT s FROM ServicioTren s
               JOIN FETCH s.estacionOrigen o
@@ -32,6 +32,7 @@ public interface ServicioTrenRepository extends JpaRepository<ServicioTren, Inte
               JOIN FETCH s.estacionOrigen o
               JOIN FETCH s.estacionDestino d
              WHERE d.id = :idEstacionDestino
+               AND o.estado = 'Activa'
              ORDER BY s.tarifa ASC
             """)
     List<ServicioTren> listarHaciaEstacion(@Param("idEstacionDestino") Integer idEstacionDestino);

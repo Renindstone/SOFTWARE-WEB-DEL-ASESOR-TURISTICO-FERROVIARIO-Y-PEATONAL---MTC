@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * RF-10/RF-15/RF-17 (CU-04, CN-04/CN-05/CN-10): CRUD de zonas turisticas de
+ * RF-11/RF-16/RF-18 (CU-04, CN-04/CN-05/CN-10): CRUD de zonas turisticas de
  * Travel Group Peru, con su validacion de preferencias y el registro de
  * auditoria de cada operacion.
  */
@@ -135,7 +135,7 @@ class ZonaTuristicaServiceTest {
     }
 
     /**
-     * RF-10: la baja es logica (ZonEstado = Inactiva). Borrar la fila
+     * RF-11: la baja es logica (ZonEstado = Inactiva). Borrar la fila
      * chocaria con el ON DELETE RESTRICT de ruta_peatonal, control_aforo e
      * informe_planificacion (seccion 6.3).
      */

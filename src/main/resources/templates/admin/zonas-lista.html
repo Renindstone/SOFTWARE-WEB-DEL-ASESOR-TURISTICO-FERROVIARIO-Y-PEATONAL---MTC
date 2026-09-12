@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-<!-- RF-10 (CU-04): listado y mantenimiento de zonas turísticas de Travel Group Perú. -->
+<!-- RF-11 (CU-04): listado y mantenimiento de zonas turísticas de Travel Group Perú. -->
 
 <head th:replace="~{layout/base :: head('Zonas turísticas')}"></head>
 
@@ -72,7 +72,7 @@
                       th:text="${rel.preferencia.id}"></span>
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <!-- RF-10: baja lógica (ZonEstado = Inactiva), auditada. -->
+                  <!-- RF-11: baja lógica (ZonEstado = Inactiva), auditada. -->
                   <!-- Botón Inhabilitar -->
                   <button th:if="${z.estado == 'Activa'}" type="button" class="btn btn-sm btn-outline-danger"
                     title="Inhabilitar Zona" data-bs-toggle="modal" data-bs-target="#confirmModal"
@@ -102,7 +102,7 @@
       </div>
     </div>
 
-    <!-- Modal Zona Turística (RF-10 / RF-17 / CU-04) -->
+    <!-- Modal Zona Turística (RF-11 / RF-18 / CU-04) -->
     <div class="modal fade" id="modalZona" tabindex="-1" aria-labelledby="modalZonaLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <form method="post" th:action="@{/zonas}" th:object="${zona}" id="formZona"
@@ -206,7 +206,7 @@
                 </div>
               </div>
               <div class="col-md-4">
-                <!-- RF-17: Cupo máximo diario configurable -->
+                <!-- RF-18: Cupo máximo diario configurable -->
                 <label class="form-label fw-semibold" for="modalCupoMaximoDiario">Cupo máximo diario</label>
                 <input type="number" min="1" class="form-control" id="modalCupoMaximoDiario"
                   th:field="*{cupoMaximoDiario}" placeholder="Opcional">

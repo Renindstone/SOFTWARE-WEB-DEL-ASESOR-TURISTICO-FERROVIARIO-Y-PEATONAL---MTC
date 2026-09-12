@@ -25,9 +25,9 @@ public class InformeConsolidadoDTO {
     private String servicioTren;
     private BigDecimal costoZona;
     private BigDecimal totalEstimado;
-    /** Cupo restante de la zona para la fecha; null si la zona no controla aforo (RF-16). */
+    /** Cupo restante de la zona para la fecha; null si la zona no controla aforo (RF-17). */
     private Integer cupoDisponible;
-    /** RF-18: composicion del grupo, una linea por edad. */
+    /** RF-19: composicion del grupo, una linea por edad. */
     private List<VisitanteDTO> visitantes = new ArrayList<>();
 
     public String getCodigo() {

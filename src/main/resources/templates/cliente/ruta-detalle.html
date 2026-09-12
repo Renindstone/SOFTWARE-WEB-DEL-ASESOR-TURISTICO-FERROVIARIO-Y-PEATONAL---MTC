@@ -153,7 +153,7 @@
       </p>
     </section>
 
-    <!-- RF-16/RF-17: el cupo deja de ser un numero suelto. La barra dice de un
+    <!-- RF-17/RF-18: el cupo deja de ser un numero suelto. La barra dice de un
          vistazo si todavia queda sitio para la fecha elegida, y late cuando
          queda menos de un cuarto. -->
     <section class="section-card bento-card bento-aforo" aria-labelledby="aforo-titulo" th:if="${hayAforo}">
@@ -248,7 +248,7 @@
                  th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
         </div>
 
-        <!-- RF-18: la edad de cada acompanante decide su tarifa. -->
+        <!-- RF-19: la edad de cada acompanante decide su tarifa. -->
         <div class="col-12">
           <div class="divider-soft"></div>
           <div class="section-label"><i class="bi bi-people"></i> ¿Quiénes viajan?</div>

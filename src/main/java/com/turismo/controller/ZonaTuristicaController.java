@@ -24,7 +24,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 
 /**
- * RF-10/RF-17 (CU-04): CRUD de zonas turisticas para Travel Group Perú, con
+ * RF-11/RF-18 (CU-04): CRUD de zonas turisticas para Travel Group Perú, con
  * preferencias y cupo diario.
  */
 @Controller
@@ -107,7 +107,7 @@ public class ZonaTuristicaController {
         return "redirect:/zonas";
     }
 
-    /** RF-10: baja de la zona turistica (ZonEstado = Inactiva), auditada. */
+    /** RF-11: baja de la zona turistica (ZonEstado = Inactiva), auditada. */
     @PostMapping("/{id}/inhabilitar")
     public String inhabilitar(@PathVariable Integer id, RedirectAttributes redirect) {
         zonaTuristicaService.inhabilitar(id, auditoriaService.usuarioActual());

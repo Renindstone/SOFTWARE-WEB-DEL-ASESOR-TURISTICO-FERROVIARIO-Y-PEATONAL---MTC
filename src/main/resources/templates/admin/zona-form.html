@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <!--
-  CU-04 (RF-10/RF-17): alta y edicion de zonas turisticas por Travel Group
+  CU-04 (RF-11/RF-18): alta y edicion de zonas turisticas por Travel Group
   Perú. Incluye las preferencias (relacion N:M, CN-10), las coordenadas
   que usa el motor de rutas y el cupo maximo diario que valida AforoService.
 -->
@@ -106,7 +106,7 @@
             </div>
           </div>
           <div class="col-md-4">
-            <!-- RF-17: cupo maximo diario configurable por Travel Group Perú. -->
+            <!-- RF-18: cupo maximo diario configurable por Travel Group Perú. -->
             <label class="form-label fw-semibold" for="cupoMaximoDiario">Cupo máximo diario</label>
             <input type="number" min="1" class="form-control" id="cupoMaximoDiario"
                    th:field="*{cupoMaximoDiario}" placeholder="Opcional">

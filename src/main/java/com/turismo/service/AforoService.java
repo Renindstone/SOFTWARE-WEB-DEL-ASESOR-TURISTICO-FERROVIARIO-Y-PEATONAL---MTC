@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 /**
- * RF-16/RF-17/RNF-08: valida y actualiza de forma atomica el cupo maximo
+ * RF-17/RF-18/RNF-08: valida y actualiza de forma atomica el cupo maximo
  * diario de una zona turistica antes de confirmar el informe de visita.
  * Caja Blanca: CB-08 (cupo disponible), CB-09 (cupo agotado -> excepcion).
  */
@@ -30,7 +30,7 @@ public class AforoService {
 
     /**
      * CB-08/CB-09: si la zona no tiene ZonCupoMaximoDiario configurado, no
-     * aplica la validacion (RF-16). Si lo tiene, descuenta del contador
+     * aplica la validacion (RF-17). Si lo tiene, descuenta del contador
      * tantos cupos como personas viajen, de forma atomica; si no quedan
      * suficientes, rechaza la operacion con AforoCompletoException,
      * incluyendo en el mensaje una fecha alternativa con sitio para todo el
@@ -64,7 +64,7 @@ public class AforoService {
         return true;
     }
 
-    /** Con una sola persona, RF-16 en su forma original. */
+    /** Con una sola persona, RF-17 en su forma original. */
     @Transactional
     public boolean validarAforoDisponible(ZonaTuristica zona, LocalDate fecha) {
         return validarAforoDisponible(zona, fecha, 1);
