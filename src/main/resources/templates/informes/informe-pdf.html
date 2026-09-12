@@ -452,7 +452,8 @@
 
     <p class="pie">
       Referencia de tarifas: tren
-      <span th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'no aplica'">S/ 0</span>
+      <span th:text="${informe.tarifaTren != null} ? 'S/ ' + ${informe.tarifaTren} : 'no aplica'">S/ 0</span><span
+        th:if="${informe.servicioTren != null}" th:text="' (' + ${informe.servicioTren} + ')'"></span>
       · ingreso a la zona
       <span th:text="${informe.costoZona != null and informe.costoZona > 0} ? 'S/ ' + ${informe.costoZona} : 'libre'">S/ 0</span>,
       ambas por adulto. Generado automáticamente por el sistema del MTC.

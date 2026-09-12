@@ -57,6 +57,9 @@ public class SecurityConfig {
                         // Modulo cliente / usuario final (RF-01 a RF-08, CU-01 a CU-03, CU-08).
                         .requestMatchers("/preferencias/**", "/estaciones/seleccion",
                                 "/rutas/**", "/informes/**").permitAll()
+                        // RNF-05: el historial es del turista (y del MTC); los operadores
+                        // externos no planifican visitas. El menu ya lo oculta para ellos.
+                        .requestMatchers("/mis-informes").hasAnyRole("TURISTA_PUBLICO", "ADMIN_MTC")
                         // Modulo de administracion (RNF-05).
                         .requestMatchers("/auditoria/**").hasRole("ADMIN_MTC")
                         .requestMatchers("/servicios-tren/**").hasAnyRole("ADMIN_MTC", "PERURAIL_ADMIN")

@@ -296,6 +296,9 @@ public class GeneradorPdf {
 
     private void agregarPie(Document documento, InformeConsolidadoDTO informe) throws DocumentException {
         String tren = informe.getTarifaTren() == null ? "no aplica" : "S/ " + informe.getTarifaTren();
+        if (informe.getServicioTren() != null) {
+            tren += " (" + informe.getServicioTren() + ")";
+        }
         String zona = informe.getCostoZona() == null
                 || informe.getCostoZona().signum() <= 0 ? "libre" : "S/ " + informe.getCostoZona();
 

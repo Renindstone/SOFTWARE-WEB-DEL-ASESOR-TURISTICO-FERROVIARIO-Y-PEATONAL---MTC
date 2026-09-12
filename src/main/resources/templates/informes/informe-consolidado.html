@@ -181,6 +181,10 @@
       <div class="divider-soft"></div>
 
       <ul class="ficha">
+        <li class="ficha-fila" th:if="${informe.servicioTren != null}">
+          <span class="ficha-etiqueta">Servicio de tren</span>
+          <span class="ficha-valor" th:text="${informe.servicioTren}">Origen → Destino, salida 08:00</span>
+        </li>
         <li class="ficha-fila">
           <span class="ficha-etiqueta">Tarifa del tren, referencia de adulto</span>
           <span class="ficha-valor"

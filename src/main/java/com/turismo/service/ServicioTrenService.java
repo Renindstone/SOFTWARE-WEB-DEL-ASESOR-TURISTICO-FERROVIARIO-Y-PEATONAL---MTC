@@ -57,6 +57,7 @@ public class ServicioTrenService {
     @Transactional
     public ServicioTren guardar(ServicioTren servicioTren, String usuario) {
         peruRailClient.validarTarifaPeruRail(servicioTren.getTarifa());
+        validarHorasDistintas(servicioTren);
         completarTiempoTransito(servicioTren);
         validarTramo(servicioTren);
         validarHorarios(servicioTren);
@@ -71,6 +72,20 @@ public class ServicioTrenService {
                 valorAnterior, describir(guardado));
 
         return guardado;
+    }
+
+    /**
+     * Salida y llegada iguales no describen ningun viaje: completarTiempoTransito
+     * las interpretaria como un servicio de 24 horas exactas (cruce de
+     * medianoche), que es casi con seguridad un error al teclear.
+     */
+    private void validarHorasDistintas(ServicioTren servicioTren) {
+        LocalTime salida = servicioTren.getHorarioSalida();
+        LocalTime llegada = servicioTren.getHorarioLlegada();
+        if (salida != null && salida.equals(llegada)) {
+            throw new ServicioTrenInvalidoException(
+                    "La hora de llegada debe ser distinta de la hora de salida");
+        }
     }
 
     /**

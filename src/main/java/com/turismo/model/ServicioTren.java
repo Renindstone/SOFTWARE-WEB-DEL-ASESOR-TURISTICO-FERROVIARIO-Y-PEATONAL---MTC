@@ -2,6 +2,7 @@ package com.turismo.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -55,6 +56,7 @@ public class ServicioTren {
      */
     @NotNull(message = "La tarifa es obligatoria")
     @DecimalMin(value = "0.01", message = "La tarifa debe ser un valor mayor a cero")
+    @Digits(integer = 5, fraction = 2, message = "La tarifa admite hasta 5 enteros y 2 decimales (máximo 99999.99)")
     @Column(name = "SerTarifa", precision = 7, scale = 2, nullable = false)
     private BigDecimal tarifa;
 

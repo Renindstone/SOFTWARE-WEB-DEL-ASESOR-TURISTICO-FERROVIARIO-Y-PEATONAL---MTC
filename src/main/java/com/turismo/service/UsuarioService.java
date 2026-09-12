@@ -9,7 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -23,6 +25,9 @@ public class UsuarioService {
     public static final String ROL_AUTO_REGISTRO = "TURISTA_PUBLICO";
 
     private static final String TABLA_AUDITADA = "usuario";
+
+    /** Limite del algoritmo BCrypt (spring-security-crypto lo aplica al codificar). */
+    private static final int LIMITE_BYTES_BCRYPT = 72;
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
@@ -69,6 +74,15 @@ public class UsuarioService {
         if (!dto.getContrasenia().equals(dto.getConfirmarContrasenia())) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
+        // BCrypt cifra como maximo 72 bytes; con mas, el codificador lanza un
+        // error en ingles que llegaba tal cual a la pantalla de registro.
+        if (dto.getContrasenia().getBytes(StandardCharsets.UTF_8).length > LIMITE_BYTES_BCRYPT) {
+            throw new IllegalArgumentException("La contraseña es demasiado larga (máximo 72 caracteres)");
+        }
+        // El correo no distingue mayusculas: "Ana@Correo.pe" y "ana@correo.pe"
+        // son la misma cuenta y no deben poder registrarse por separado.
+        dto.setEmail(dto.getEmail().trim().toLowerCase(Locale.ROOT));
+
         if (usuarioRepository.findByNombreUsuario(dto.getNombreUsuario()).isPresent()) {
             throw new IllegalArgumentException("El nombre de usuario ya está en uso");
         }

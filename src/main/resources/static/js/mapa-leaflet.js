@@ -28,6 +28,19 @@
 // Las coordenadas llegan como data-attributes del contenedor del mapa, que la
 // vista cliente/ruta-detalle.html rellena desde Estacion y ZonaTuristica; las
 // del tren, como data-attributes de cada <option> del selector.
+
+// Los nombres de estaciones y zonas se insertan en HTML (popups y leyenda) y
+// los escribe un administrador: se escapan para que un "<" en el nombre no
+// se interprete como marcado.
+function escaparHtml(texto) {
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   var contenedor = document.querySelector("[id^='mapa-']");
   if (!contenedor || typeof L === "undefined") {
@@ -47,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(mapa);
 
-  var nombreOrigen = contenedor.dataset.nombreOrigen || "Estación de origen";
+  var nombreOrigen = escaparHtml(contenedor.dataset.nombreOrigen || "Estación de origen");
   var marcadorOrigen = L.marker([latOrigen, lonOrigen]).addTo(mapa);
   marcadorOrigen.bindPopup("<strong>Inicio y retorno</strong><br>" + nombreOrigen);
 
@@ -58,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  var nombreDestino = contenedor.dataset.nombreDestino || "Zona turística";
+  var nombreDestino = escaparHtml(contenedor.dataset.nombreDestino || "Zona turística");
   L.marker([latDestino, lonDestino]).addTo(mapa)
     .bindPopup("<strong>Destino</strong><br>" + nombreDestino);
 
@@ -370,11 +383,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Cambio de un tren a otro: la via anterior se sustituye en el acto.
     capaFerroviaria.clearLayers();
 
-    var nombreTrenOrigen = opcion.dataset.nombreOrigen || "Estación de tren";
-    var salida = opcion.dataset.salida || "";
-    var llegada = opcion.dataset.llegada || "";
-    var tiempo = opcion.dataset.tiempo || "";
-    var tarifa = opcion.dataset.tarifa || "";
+    var nombreTrenOrigen = escaparHtml(opcion.dataset.nombreOrigen || "Estación de tren");
+    var salida = escaparHtml(opcion.dataset.salida || "");
+    var llegada = escaparHtml(opcion.dataset.llegada || "");
+    var tiempo = escaparHtml(opcion.dataset.tiempo || "");
+    var tarifa = escaparHtml(opcion.dataset.tarifa || "");
     var duracion = tiempo ? " (" + tiempo + " min)" : "";
 
     // 1. Icono de tren para la estacion de abordaje (.marcador-tren en

@@ -152,6 +152,7 @@ public class InformeService {
         // Tarifas base por persona; el total sale de aplicarlas a cada edad.
         BigDecimal tarifaTren = servicioTren == null ? null : servicioTren.getTarifa();
         informe.setTarifaTren(tarifaTren);
+        informe.setServicioTren(describirServicio(servicioTren));
         informe.setCostoZona(destino.getCostoAprox());
 
         aplicarTarifas(visitantes, tarifaTren, destino.getCostoAprox());
@@ -239,6 +240,16 @@ public class InformeService {
         List<VisitanteDTO> normalizado = new ArrayList<>();
         personasPorEdad.forEach((edad, cantidad) -> normalizado.add(new VisitanteDTO(edad, cantidad)));
         return normalizado;
+    }
+
+    /** "Ollantaytambo → Machu Picchu, salida 08:53": el tren al que corresponde la tarifa. */
+    private String describirServicio(ServicioTren servicio) {
+        if (servicio == null) {
+            return null;
+        }
+        String origen = servicio.getEstacionOrigen() == null ? "?" : servicio.getEstacionOrigen().getNombre();
+        String destino = servicio.getEstacionDestino() == null ? "?" : servicio.getEstacionDestino().getNombre();
+        return origen + " → " + destino + ", salida " + servicio.getHorarioSalida();
     }
 
     private int contarPersonas(List<VisitanteDTO> visitantes) {

@@ -155,6 +155,16 @@ class RegistroUsuarioDTOTest {
     }
 
     @org.junit.jupiter.api.Test
+    @DisplayName("Contraseña de más de 72 caracteres: se rechaza antes de llegar a BCrypt")
+    void contraseniaDemasiadoLarga() {
+        RegistroUsuarioDTO dto = valido();
+        String larga = "p".repeat(73);
+        dto.setContrasenia(larga);
+        dto.setConfirmarContrasenia(larga);
+        assertThat(camposConError(dto)).contains("contrasenia");
+    }
+
+    @org.junit.jupiter.api.Test
     @DisplayName("El DTO completo y correcto no produce ninguna violación")
     void dtoValido_sinViolaciones() {
         assertThat(camposConError(valido())).isEmpty();

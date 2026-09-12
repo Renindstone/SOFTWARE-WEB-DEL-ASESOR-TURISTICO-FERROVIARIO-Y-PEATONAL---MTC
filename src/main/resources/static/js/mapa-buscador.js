@@ -8,6 +8,19 @@
 //
 // Es progresivo: sin JavaScript, o sin Leaflet, el tablero sigue siendo un
 // listado completo y utilizable.
+
+// Los nombres de estaciones y zonas se insertan en HTML (popups y leyenda) y
+// los escribe un administrador: se escapan para que un "<" en el nombre no
+// se interprete como marcado.
+function escaparHtml(texto) {
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   var contenedor = document.getElementById("buscador-mapa");
   if (!contenedor || typeof L === "undefined") {
@@ -98,8 +111,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var popupHtml =
       "<div class='mapa-popup-contenido'>" +
-        "<strong class='d-block mb-1'>" + (fila.dataset.nombre || "Zona turística") + "</strong>" +
-        "<span class='text-muted small'><i class='bi bi-train-front me-1'></i>Desde " + (fila.dataset.estacion || "su estación de acceso") + "</span>" +
+        "<strong class='d-block mb-1'>" + escaparHtml(fila.dataset.nombre || "Zona turística") + "</strong>" +
+        "<span class='text-muted small'><i class='bi bi-train-front me-1'></i>Desde " + escaparHtml(fila.dataset.estacion || "su estación de acceso") + "</span>" +
       "</div>";
 
     marcador.bindPopup(popupHtml);

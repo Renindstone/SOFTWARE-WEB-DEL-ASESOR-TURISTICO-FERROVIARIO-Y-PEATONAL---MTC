@@ -70,8 +70,9 @@ public class RegistroUsuarioDTO {
     )
     private String nombreUsuario;
 
+    /** BCrypt solo cifra los primeros 72 bytes; por encima, el codificador falla. */
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @Size(min = 6, max = 72, message = "La contraseña debe tener entre 6 y 72 caracteres")
     private String contrasenia;
 
     @NotBlank(message = "Debe repetir la contraseña")

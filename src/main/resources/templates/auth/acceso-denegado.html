@@ -11,12 +11,23 @@
   <div class="card section-card">
     <div class="card-body text-center p-4 p-md-5">
       <i class="bi bi-shield-lock fs-1" style="color:#B3382C;"></i>
-      <h1 class="h4 fw-bold page-title mt-3 mb-2">Acceso denegado (403)</h1>
-      <p class="page-sub mb-1">Tu rol no tiene permisos para acceder a este módulo.</p>
-      <p class="small page-sub">
-        Si necesitas este acceso, solicítalo al administrador del MTC.
-      </p>
-      <div class="d-flex gap-2 justify-content-center mt-3">
+      <!-- sesionCaducada la marca AccesoDenegadoHandler cuando lo rechazado fue
+           el token CSRF de un formulario: el problema es la sesion, no el rol. -->
+      <th:block th:if="${sesionCaducada}">
+        <h1 class="h4 fw-bold page-title mt-3 mb-2">El formulario ya no es válido</h1>
+        <p class="page-sub mb-1">La sesión caducó mientras la página estaba abierta.</p>
+        <p class="small page-sub">
+          Vuelve a cargar la página e inténtalo de nuevo; no se guardó ningún cambio.
+        </p>
+      </th:block>
+      <th:block th:unless="${sesionCaducada}">
+        <h1 class="h4 fw-bold page-title mt-3 mb-2">Acceso denegado (403)</h1>
+        <p class="page-sub mb-1">Tu rol no tiene permisos para acceder a este módulo.</p>
+        <p class="small page-sub">
+          Si necesitas este acceso, solicítalo al administrador del MTC.
+        </p>
+      </th:block>
+      <div class="d-flex align-items-center gap-2 justify-content-center mt-3">
         <a th:href="@{/preferencias}" class="btn btn-mtc btn-sm">Ir al panel del turista</a>
         <a th:href="@{/}" class="btn btn-mtc-outline btn-sm">Ir al inicio</a>
       </div>

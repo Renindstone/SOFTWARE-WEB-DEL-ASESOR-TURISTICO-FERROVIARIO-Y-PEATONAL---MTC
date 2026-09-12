@@ -21,6 +21,8 @@ public class InformeConsolidadoDTO {
     private BigDecimal probabilidadLluvia;
     private String estadoClima;
     private BigDecimal tarifaTren;
+    /** Tramo y hora de salida del tren cuya tarifa se tomo, para que el informe diga cual es. */
+    private String servicioTren;
     private BigDecimal costoZona;
     private BigDecimal totalEstimado;
     /** Cupo restante de la zona para la fecha; null si la zona no controla aforo (RF-16). */
@@ -106,6 +108,14 @@ public class InformeConsolidadoDTO {
 
     public void setTarifaTren(BigDecimal tarifaTren) {
         this.tarifaTren = tarifaTren;
+    }
+
+    public String getServicioTren() {
+        return servicioTren;
+    }
+
+    public void setServicioTren(String servicioTren) {
+        this.servicioTren = servicioTren;
     }
 
     public BigDecimal getCostoZona() {

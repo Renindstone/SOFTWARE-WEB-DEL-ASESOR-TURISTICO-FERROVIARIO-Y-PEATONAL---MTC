@@ -10,7 +10,10 @@ import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +44,16 @@ public class ZonaTuristicaController {
         this.estacionService = estacionService;
         this.preferenciaRepository = preferenciaRepository;
         this.auditoriaService = auditoriaService;
+    }
+
+    /**
+     * Recorta los espacios de todos los campos de texto antes de validar: un
+     * nombre formado solo por espacios pasaba el required del navegador y se
+     * guardaba como una zona sin nombre.
+     */
+    @InitBinder("zona")
+    public void recortarTexto(WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
     }
 
     @GetMapping

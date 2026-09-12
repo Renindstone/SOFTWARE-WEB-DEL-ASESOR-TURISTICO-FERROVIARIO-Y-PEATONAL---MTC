@@ -140,6 +140,24 @@ class ServicioTrenServiceTest {
     // ------------------------------------------------------------------
 
     @Test
+    @DisplayName("Guardar con la misma hora de salida y de llegada: rechaza y no persiste")
+    void guardar_salidaIgualALlegada_rechaza() {
+        ServicioTren instantaneo = new ServicioTren();
+        instantaneo.setEstacionOrigen(estacionOrigen);
+        instantaneo.setEstacionDestino(estacionDestino);
+        instantaneo.setHorarioSalida(LocalTime.of(8, 30));
+        instantaneo.setHorarioLlegada(LocalTime.of(8, 30));
+        instantaneo.setTarifa(new BigDecimal("95.00"));
+
+        // Sin esta regla se derivaria un transito de 1440 minutos (24 h).
+        assertThatThrownBy(() -> servicioTrenService.guardar(instantaneo, "admin_mtc"))
+                .isInstanceOf(ServicioTrenInvalidoException.class)
+                .hasMessageContaining("distinta de la hora de salida");
+
+        verify(servicioTrenRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Guardar con origen igual al destino: rechaza y no persiste")
     void guardar_origenIgualADestino_rechaza() {
         ServicioTren circular = new ServicioTren();

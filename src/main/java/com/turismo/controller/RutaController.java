@@ -60,6 +60,12 @@ public class RutaController {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
         ZonaTuristica destino = zonaTuristicaRepository.findById(idZona)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
+        // RF-10: una zona dada de baja desaparece del buscador, pero su
+        // direccion sigue existiendo; no debe poder planificarse por ella.
+        if (!"Activa".equalsIgnoreCase(destino.getEstado())) {
+            throw new IllegalArgumentException(
+                    "La zona turística " + destino.getNombre() + " no está disponible actualmente");
+        }
         LocalDate fecha = fechaVisita == null ? LocalDate.now() : fechaVisita;
 
         RutaCalculadaDTO ruta = rutaPeatonalService.calcularRutaPeatonalIdaVuelta(origen, destino);

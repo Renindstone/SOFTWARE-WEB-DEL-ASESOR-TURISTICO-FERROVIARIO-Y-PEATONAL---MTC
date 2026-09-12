@@ -102,6 +102,38 @@ class UsuarioServiceTest {
     }
 
     @Test
+    @DisplayName("El correo se guarda en minusculas y sin espacios: una sola cuenta por direccion")
+    void registrarTurista_normalizaElCorreo() {
+        dto.setEmail("  Ana.Perez@Correo.PE ");
+        when(usuarioRepository.findByNombreUsuario("ana_turista")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmail("ana.perez@correo.pe")).thenReturn(Optional.empty());
+        when(rolRepository.findByNombre("TURISTA_PUBLICO")).thenReturn(Optional.of(rolTurista));
+        when(passwordEncoder.encode("Turista2026")).thenReturn("$2a$10$hashSimulado");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Usuario guardado = usuarioService.registrarTurista(dto);
+
+        assertThat(guardado.getEmail()).isEqualTo("ana.perez@correo.pe");
+        verify(usuarioRepository).findByEmail("ana.perez@correo.pe");
+    }
+
+    @Test
+    @DisplayName("Contrasena de mas de 72 bytes: rechaza con mensaje propio, sin llamar al codificador")
+    void registrarTurista_contraseniaSuperaLimiteBcrypt_rechaza() {
+        // 30 caracteres de 3 bytes (UTF-8) superan los 72 bytes aunque no los 72 caracteres.
+        String larga = "€".repeat(30);
+        dto.setContrasenia(larga);
+        dto.setConfirmarContrasenia(larga);
+
+        assertThatThrownBy(() -> usuarioService.registrarTurista(dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("demasiado larga");
+
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Las contrasenas no coinciden: rechaza sin consultar el repositorio")
     void registrarTurista_contrasenasDistintas_rechaza() {
         dto.setConfirmarContrasenia("OtraClave999");

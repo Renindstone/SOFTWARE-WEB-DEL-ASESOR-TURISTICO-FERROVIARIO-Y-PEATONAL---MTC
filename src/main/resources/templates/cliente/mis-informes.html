@@ -41,11 +41,11 @@
                   <!-- Solo enviamos los IDs y fecha para reconstruir, más el código. -->
                   <!-- Para la previsualización no se consume aforo, como estipula InformeController.generar() -->
                   <a th:href="@{/informes/consolidado/html(idEstacion=${inf.ruta.estacionOrigen.id},idZona=${inf.ruta.zonaDestino.id},fechaVisita=${inf.fechaVisita},codigo=${inf.codigo})}"
-                    class="btn btn-sm btn-outline-primary" title="Ver detalle HTML" target="_blank">
+                    class="btn btn-sm btn-mtc-outline" title="Ver detalle HTML" target="_blank">
                     <i class="bi bi-eye"></i> Ver
                   </a>
                   <a th:href="@{/informes/consolidado/pdf(idEstacion=${inf.ruta.estacionOrigen.id},idZona=${inf.ruta.zonaDestino.id},fechaVisita=${inf.fechaVisita},codigo=${inf.codigo})}"
-                    class="btn btn-sm btn-danger" title="Descargar PDF">
+                    class="btn btn-sm btn-mtc" title="Descargar PDF">
                     <i class="bi bi-file-earmark-pdf"></i> PDF
                   </a>
                 </td>

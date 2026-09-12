@@ -63,9 +63,14 @@ public class InformeController {
                            @RequestParam(name = "edades", required = false) List<Integer> edades,
                            Authentication autenticacion,
                            Model model) {
+        // El aforo se reserva por fecha: reservar en el pasado no tiene sentido y
+        // el formulario ya impide elegirla (min = hoy); esto cubre la URL a mano.
+        if (fechaVisita.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de visita no puede ser anterior a hoy");
+        }
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
-        ZonaTuristica destino = buscarZona(idZona);
-        ServicioTren servicio = buscarServicio(idServicioTren);
+        ZonaTuristica destino = buscarZonaDisponible(idZona);
+        ServicioTren servicio = buscarServicio(idServicioTren, origen);
 
         InformeConsolidadoDTO informe = informeService.generarInformeConsolidado(
                 origen, destino, servicio, fechaVisita, construirGrupo(edades),
@@ -95,7 +100,7 @@ public class InformeController {
                                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaVisita) {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
         ZonaTuristica destino = buscarZona(idZona);
-        ServicioTren servicio = buscarServicio(idServicioTren);
+        ServicioTren servicio = buscarServicio(idServicioTren, origen);
 
         InformeConsolidadoDTO informe = informeService.previsualizarInforme(
                 origen, destino, servicio, fechaVisita, construirGrupo(edades), codigo);
@@ -123,7 +128,7 @@ public class InformeController {
                                 Model model) {
         Estacion origen = estacionService.buscarActivaPorId(idEstacion);
         ZonaTuristica destino = buscarZona(idZona);
-        ServicioTren servicio = buscarServicio(idServicioTren);
+        ServicioTren servicio = buscarServicio(idServicioTren, origen);
 
         model.addAttribute("informe", informeService.previsualizarInforme(
                 origen, destino, servicio, fechaVisita, construirGrupo(edades), codigo));
@@ -148,13 +153,41 @@ public class InformeController {
         return grupo;
     }
 
+    /** Para reconstruir informes ya emitidos: la zona puede haberse dado de baja despues. */
     private ZonaTuristica buscarZona(Integer idZona) {
         return zonaTuristicaRepository.findById(idZona)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
     }
 
-    private ServicioTren buscarServicio(Integer idServicioTren) {
-        return idServicioTren == null ? null : servicioTrenRepository.findById(idServicioTren).orElse(null);
+    /** Para emitir uno nuevo: una zona inactiva ya no se ofrece ni reserva aforo. */
+    private ZonaTuristica buscarZonaDisponible(Integer idZona) {
+        ZonaTuristica zona = buscarZona(idZona);
+        if (!"Activa".equalsIgnoreCase(zona.getEstado())) {
+            throw new IllegalArgumentException(
+                    "La zona turística " + zona.getNombre() + " no está disponible actualmente");
+        }
+        return zona;
+    }
+
+    /**
+     * RF-07: el selector solo ofrece servicios que llegan a la estacion de
+     * partida (listarHaciaEstacion); aqui se exige lo mismo a la URL, para
+     * que el informe no sume la tarifa de un tren que no forma parte del
+     * itinerario. Un identificador inexistente se trata como "sin tren".
+     */
+    private ServicioTren buscarServicio(Integer idServicioTren, Estacion origen) {
+        if (idServicioTren == null) {
+            return null;
+        }
+        // Con las estaciones resueltas (fetch join): el informe describe el
+        // tramo por su nombre y open-in-view esta desactivado.
+        ServicioTren servicio = servicioTrenRepository.buscarConEstaciones(idServicioTren).orElse(null);
+        if (servicio != null && servicio.getEstacionDestino() != null
+                && !servicio.getEstacionDestino().getId().equals(origen.getId())) {
+            throw new IllegalArgumentException(
+                    "El servicio de tren elegido no llega a la estación " + origen.getNombre());
+        }
+        return servicio;
     }
 
     /** InfIdUsuario queda NULL cuando la consulta es anonima (diccionario 6.4). */
