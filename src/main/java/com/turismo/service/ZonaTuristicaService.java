@@ -31,9 +31,9 @@ public class ZonaTuristicaService {
     private final AuditoriaService auditoriaService;
 
     public ZonaTuristicaService(ZonaTuristicaRepository zonaTuristicaRepository,
-                                 ZonaPreferenciaRepository zonaPreferenciaRepository,
-                                 PreferenciaRepository preferenciaRepository,
-                                 AuditoriaService auditoriaService) {
+            ZonaPreferenciaRepository zonaPreferenciaRepository,
+            PreferenciaRepository preferenciaRepository,
+            AuditoriaService auditoriaService) {
         this.zonaTuristicaRepository = zonaTuristicaRepository;
         this.zonaPreferenciaRepository = zonaPreferenciaRepository;
         this.preferenciaRepository = preferenciaRepository;
@@ -48,12 +48,17 @@ public class ZonaTuristicaService {
         return zonaTuristicaRepository.findAll();
     }
 
-    /** Listado de mantenimiento con estacion y preferencias ya cargadas (RNF-01). */
+    /**
+     * Listado de mantenimiento con estacion y preferencias ya cargadas (RNF-01).
+     */
     public List<ZonaTuristica> listarTodasConEstacionYPreferencias() {
         return zonaTuristicaRepository.listarTodasConEstacionYPreferencias();
     }
 
-    /** RF-09: zonas activas con estacion y preferencias ya cargadas, para el listado asignado. */
+    /**
+     * RF-09: zonas activas con estacion y preferencias ya cargadas, para el listado
+     * asignado.
+     */
     public List<ZonaTuristica> listarActivasConEstacionYPreferencias() {
         return zonaTuristicaRepository.listarActivasConEstacionYPreferencias();
     }
@@ -119,7 +124,8 @@ public class ZonaTuristicaService {
         auditoriaService.registrarAuditoria(usuario, "UPDATE", TABLA_AUDITADA,
                 valorAnterior, describir(zona));
     }
-@Transactional
+
+    @Transactional
     public void habilitar(Integer idZona, String usuario) {
         ZonaTuristica zona = zonaTuristicaRepository.findById(idZona)
                 .orElseThrow(() -> new IllegalArgumentException("Zona turística no encontrada: " + idZona));
@@ -131,6 +137,7 @@ public class ZonaTuristicaService {
         auditoriaService.registrarAuditoria(usuario, "UPDATE", TABLA_AUDITADA,
                 valorAnterior, describir(zona));
     }
+
     @Transactional
     public void asignarPreferencias(ZonaTuristica zona, List<Integer> idsPreferencia) {
         zonaPreferenciaRepository.deleteAll(
@@ -146,7 +153,10 @@ public class ZonaTuristicaService {
         }
     }
 
-    /** Ids de Preferencia ya asociados a la zona, para preseleccionarlos en el formulario. */
+    /**
+     * Ids de Preferencia ya asociados a la zona, para preseleccionarlos en el
+     * formulario.
+     */
     public List<Integer> listarIdsPreferencia(Integer idZona) {
         return zonaPreferenciaRepository.findByZonaTuristica_Id(idZona).stream()
                 .map(relacion -> relacion.getPreferencia().getId())
@@ -159,14 +169,18 @@ public class ZonaTuristicaService {
                 .collect(Collectors.joining(", "));
     }
 
-    /** Resumen de la zona en texto, acotado a los 500 caracteres de AudValorAnterior/Nuevo. */
+    /**
+     * Resumen de la zona en texto, acotado a los 500 caracteres de
+     * AudValorAnterior/Nuevo.
+     */
     private String describir(ZonaTuristica zona) {
         if (zona == null) {
             return null;
         }
         String descripcion = "ZonNombre=" + zona.getNombre()
                 + "; ZonIdEstacionCercana=" + (zona.getEstacionCercana() == null
-                        ? "-" : zona.getEstacionCercana().getId())
+                        ? "-"
+                        : zona.getEstacionCercana().getId())
                 + "; ZonCostoAprox=" + zona.getCostoAprox()
                 + "; ZonCupoMaximoDiario=" + zona.getCupoMaximoDiario()
                 + "; ZonEstado=" + zona.getEstado();
