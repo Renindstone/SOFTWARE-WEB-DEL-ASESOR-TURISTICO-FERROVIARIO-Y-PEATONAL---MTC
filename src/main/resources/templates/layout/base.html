@@ -56,9 +56,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </div>
 
+  <!-- mapa-base.js decide la capa base de los dos mapas (CartoDB Voyager con
+       clave de CARTO, OpenStreetMap sin ella); va antes que cada script. -->
   <div th:fragment="scripts-mapa">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script th:src="@{/js/mapa-base.js}"></script>
     <script th:src="@{/js/mapa-leaflet.js}"></script>
   </div>
 
@@ -68,6 +71,7 @@
   <div th:fragment="scripts-buscador">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script th:src="@{/js/mapa-base.js}"></script>
     <script th:src="@{/js/mapa-buscador.js}"></script>
   </div>
 </body>

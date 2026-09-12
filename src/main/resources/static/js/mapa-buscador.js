@@ -24,10 +24,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var mapa = L.map(contenedor, { scrollWheelZoom: false });
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(mapa);
+  // Capa base (CartoDB Voyager con clave, OpenStreetMap sin ella): la decide
+  // mapa-base.js, que layout/base.html carga antes que este script.
+  var capaBase = typeof crearCapaBase === "function"
+    ? crearCapaBase(contenedor)
+    : L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      });
+  capaBase.addTo(mapa);
 
   // El color del marcador codifica la dificultad del circuito, la misma
   // escala que usan las insignias del tablero.

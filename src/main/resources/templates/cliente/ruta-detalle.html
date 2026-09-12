@@ -198,7 +198,8 @@
                     data-nombre-destino=${destino.nombre},
                     data-distancia-haversine=${ruta.distanciaKm},
                     data-tiempo-haversine=${ruta.tiempoEstimadoMin},
-                    data-red-ferroviaria=@{/js/geo/red-ferroviaria.geojson}"></div>
+                    data-red-ferroviaria=@{/js/geo/red-ferroviaria.geojson},
+                    data-carto-key=${cartoApiKey}"></div>
       <div id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0" aria-live="polite">
         El trazo representa el circuito de ida y vuelta estimado en línea recta (fórmula de Haversine).
       </div>

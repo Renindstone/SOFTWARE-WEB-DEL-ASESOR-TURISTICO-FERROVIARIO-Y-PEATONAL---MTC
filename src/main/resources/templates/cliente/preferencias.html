@@ -208,7 +208,8 @@
       <div class="rail-filtros">
         <div class="section-card bento-card bento-orden-2 p-3">
           <div class="section-title"><i class="bi bi-map"></i> Dónde quedan</div>
-          <div id="buscador-mapa"></div>
+          <!-- data-carto-key: clave de CARTO (MapaBaseAdvice); vacia, el mapa usa OpenStreetMap. -->
+          <div id="buscador-mapa" th:attr="data-carto-key=${cartoApiKey}"></div>
           <p class="page-sub small mt-2 mb-0">
             Cada marcador es una zona del listado. Las distancias se miden en línea
             recta desde su estación de acceso.

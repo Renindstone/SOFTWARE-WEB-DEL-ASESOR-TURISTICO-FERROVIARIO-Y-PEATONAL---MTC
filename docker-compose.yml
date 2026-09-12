@@ -53,6 +53,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-mtc:5432/bd_asesor_turistico
       SPRING_DATASOURCE_USERNAME: admin_mtc
       SPRING_DATASOURCE_PASSWORD: mtc2026
+      # Clave gratuita de CARTO para las teselas Voyager (mapa.carto.api-key);
+      # se toma del entorno del host y puede quedar vacia.
+      CARTO_API_KEY: ${CARTO_API_KEY:-}
       TZ: America/Lima
     ports:
       - "8082:8082"

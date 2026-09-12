@@ -42,10 +42,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var mapa = L.map(contenedor.id).setView([latOrigen, lonOrigen], 14);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(mapa);
+  // Capa base (CartoDB Voyager con clave, OpenStreetMap sin ella): la decide
+  // mapa-base.js, que layout/base.html carga antes que este script.
+  var capaBase = typeof crearCapaBase === "function"
+    ? crearCapaBase(contenedor)
+    : L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      });
+  capaBase.addTo(mapa);
 
   var nombreOrigen = contenedor.dataset.nombreOrigen || "Estación de origen";
   var marcadorOrigen = L.marker([latOrigen, lonOrigen]).addTo(mapa);
