@@ -184,9 +184,11 @@
          prefijo por el contenedor del mapa. -->
     <section class="section-card bento-card bento-mapa" aria-labelledby="titulo-mapa">
       <h2 class="h6 section-title" id="titulo-mapa"><i class="bi bi-map"></i> Mapa del recorrido</h2>
-      <!-- Las dos ultimas son las cifras de Haversine: el script las necesita
-           para deducir el ritmo de caminata (min/km) del nivel de dificultad y
-           reescalar el tiempo cuando la distancia por calles resulte otra. -->
+      <!-- Las cifras de Haversine las necesita el script para deducir el
+           ritmo de caminata (min/km) del nivel de dificultad y reescalar el
+           tiempo cuando la distancia por calles resulte otra. La red
+           ferroviaria es el trazado real de las vias (OpenStreetMap) que
+           sigue el tramo en tren; se descarga solo al elegir un servicio. -->
       <div id="mapa-ruta" style="height: 380px;"
            th:attr="data-lat-origen=${origen.latitud},
                     data-lon-origen=${origen.longitud},
@@ -195,7 +197,8 @@
                     data-lon-destino=${destino.longitud},
                     data-nombre-destino=${destino.nombre},
                     data-distancia-haversine=${ruta.distanciaKm},
-                    data-tiempo-haversine=${ruta.tiempoEstimadoMin}"></div>
+                    data-tiempo-haversine=${ruta.tiempoEstimadoMin},
+                    data-red-ferroviaria=@{/js/geo/red-ferroviaria.geojson}"></div>
       <div id="texto-descripcion-ruta" class="page-sub small mt-2 mb-0" aria-live="polite">
         El trazo representa el circuito de ida y vuelta estimado en línea recta (fórmula de Haversine).
       </div>

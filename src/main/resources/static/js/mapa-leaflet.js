@@ -18,6 +18,13 @@
 // marcador, y amplia la vista al itinerario completo. Al volver a "Sin
 // servicio de tren" la via se retira y el mapa vuelve a la caminata.
 //
+// El tramo en tren sigue el trazado real de las vias: la red ferroviaria
+// (OpenStreetMap, ver scripts/descargar_red_ferroviaria.py) se descarga como
+// GeoJSON la primera vez que se elige un tren, se convierte en un grafo y el
+// camino entre las dos estaciones se calcula con Dijkstra. Mientras llega, o
+// si no llega, o si alguna estacion queda lejos de la via, se dibuja una
+// recta marcada como esquematica: nunca se hace pasar una recta por la via.
+//
 // Las coordenadas llegan como data-attributes del contenedor del mapa, que la
 // vista cliente/ruta-detalle.html rellena desde Estacion y ZonaTuristica; las
 // del tren, como data-attributes de cada <option> del selector.
@@ -69,6 +76,172 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function hayTrenSeleccionado() {
     return !!(selectTren && selectTren.value);
+  }
+
+  // ---- Red ferroviaria real ----
+  // red: {vertices: [[lat, lon]...], ady: [[{v, d}]...]} con d en km.
+  // cargaRed guarda la promesa para que la descarga ocurra una sola vez.
+  var urlRed = contenedor.dataset.redFerroviaria || "";
+  var red = null;
+  var cargaRed = null;
+  var MAX_KM_ESTACION_A_VIA = 3;
+
+  function haversineKm(a, b) {
+    var R = 6371;
+    var dLat = (b[0] - a[0]) * Math.PI / 180;
+    var dLon = (b[1] - a[1]) * Math.PI / 180;
+    var la1 = a[0] * Math.PI / 180;
+    var la2 = b[0] * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+      + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  // Los vertices se identifican por su coordenada redondeada a 5 decimales,
+  // que es como los guarda el GeoJSON: dos vias que comparten un nodo en OSM
+  // comparten aqui el mismo vertice, y asi el grafo queda conectado.
+  function construirGrafo(geojson) {
+    var indice = {};
+    var vertices = [];
+    var ady = [];
+
+    function idDe(lat, lon) {
+      var clave = lat.toFixed(5) + "," + lon.toFixed(5);
+      if (!(clave in indice)) {
+        indice[clave] = vertices.length;
+        vertices.push([lat, lon]);
+        ady.push([]);
+      }
+      return indice[clave];
+    }
+
+    (geojson.features || []).forEach(function (f) {
+      if (!f.geometry || f.geometry.type !== "LineString") return;
+      var cs = f.geometry.coordinates;
+      for (var i = 0; i < cs.length - 1; i++) {
+        var a = idDe(cs[i][1], cs[i][0]);
+        var b = idDe(cs[i + 1][1], cs[i + 1][0]);
+        var d = haversineKm(vertices[a], vertices[b]);
+        ady[a].push({ v: b, d: d });
+        ady[b].push({ v: a, d: d });
+      }
+    });
+    return { vertices: vertices, ady: ady };
+  }
+
+  function cargarRed() {
+    if (cargaRed) return cargaRed;
+    if (!urlRed || typeof fetch !== "function") {
+      cargaRed = Promise.resolve(null);
+      return cargaRed;
+    }
+    cargaRed = fetch(urlRed)
+      .then(function (res) {
+        if (!res.ok) throw new Error("red ferroviaria " + res.status);
+        return res.json();
+      })
+      .then(function (geojson) {
+        red = construirGrafo(geojson);
+        return red;
+      })
+      .catch(function (err) {
+        console.info("Red ferroviaria no disponible, tramo en tren esquemático:", err.message);
+        red = null;
+        return null;
+      });
+    return cargaRed;
+  }
+
+  function verticeMasCercano(punto) {
+    var mejor = -1;
+    var mejorDist = Infinity;
+    for (var i = 0; i < red.vertices.length; i++) {
+      var d = haversineKm(punto, red.vertices[i]);
+      if (d < mejorDist) {
+        mejorDist = d;
+        mejor = i;
+      }
+    }
+    return { indice: mejor, km: mejorDist };
+  }
+
+  // Dijkstra con un monticulo binario minimo. La red tiene unos pocos miles
+  // de vertices, asi que tarda milisegundos.
+  function caminoMasCorto(desde, hasta) {
+    var n = red.vertices.length;
+    var dist = new Array(n);
+    var previo = new Array(n);
+    for (var i = 0; i < n; i++) { dist[i] = Infinity; previo[i] = -1; }
+    dist[desde] = 0;
+
+    var monticulo = [];
+    function subir(pos) {
+      while (pos > 0) {
+        var padre = (pos - 1) >> 1;
+        if (monticulo[padre].d <= monticulo[pos].d) break;
+        var t = monticulo[padre]; monticulo[padre] = monticulo[pos]; monticulo[pos] = t;
+        pos = padre;
+      }
+    }
+    function bajar(pos) {
+      for (;;) {
+        var izq = 2 * pos + 1, der = izq + 1, menor = pos;
+        if (izq < monticulo.length && monticulo[izq].d < monticulo[menor].d) menor = izq;
+        if (der < monticulo.length && monticulo[der].d < monticulo[menor].d) menor = der;
+        if (menor === pos) break;
+        var t = monticulo[menor]; monticulo[menor] = monticulo[pos]; monticulo[pos] = t;
+        pos = menor;
+      }
+    }
+    function meter(item) { monticulo.push(item); subir(monticulo.length - 1); }
+    function sacar() {
+      var primero = monticulo[0];
+      var ultimo = monticulo.pop();
+      if (monticulo.length) { monticulo[0] = ultimo; bajar(0); }
+      return primero;
+    }
+
+    meter({ v: desde, d: 0 });
+    while (monticulo.length) {
+      var actual = sacar();
+      if (actual.v === hasta) break;
+      if (actual.d > dist[actual.v]) continue;
+      var vecinos = red.ady[actual.v];
+      for (var j = 0; j < vecinos.length; j++) {
+        var nd = actual.d + vecinos[j].d;
+        if (nd < dist[vecinos[j].v]) {
+          dist[vecinos[j].v] = nd;
+          previo[vecinos[j].v] = actual.v;
+          meter({ v: vecinos[j].v, d: nd });
+        }
+      }
+    }
+    if (dist[hasta] === Infinity) return null;
+
+    var camino = [];
+    for (var v = hasta; v !== -1; v = previo[v]) camino.push(v);
+    camino.reverse();
+    return { vertices: camino, km: dist[hasta] };
+  }
+
+  /**
+   * Trazado por la via entre dos estaciones, o null si la red no esta
+   * cargada, alguna estacion queda a mas de 3 km de la via (la de Urubamba
+   * del catalogo, por ejemplo) o no hay camino. Los extremos son las propias
+   * estaciones, unidas a la via por un corto tramo recto.
+   */
+  function trazadoFerroviario(desde, hasta) {
+    if (!red) return null;
+    var a = verticeMasCercano(desde);
+    var b = verticeMasCercano(hasta);
+    if (a.indice < 0 || b.indice < 0) return null;
+    if (a.km > MAX_KM_ESTACION_A_VIA || b.km > MAX_KM_ESTACION_A_VIA) return null;
+    var camino = caminoMasCorto(a.indice, b.indice);
+    if (!camino) return null;
+    var latLngs = [desde];
+    camino.vertices.forEach(function (v) { latLngs.push(red.vertices[v]); });
+    latLngs.push(hasta);
+    return { latLngs: latLngs, km: camino.km + a.km + b.km };
   }
 
   // ---- Respaldo: trazo directo (Haversine) ----
@@ -228,10 +401,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 3. Trazo ferroviario con estilo cartografico de via de tren: riel base
     //    oscuro y, encima, una linea blanca discontinua a modo de durmientes.
-    var tramoTrenCoords = [
+    //    Sigue la via real si la red ya esta cargada; si no, una recta
+    //    esquematica que se sustituye en cuanto la red llega.
+    var trazado = trazadoFerroviario([latTrenOrigen, lonTrenOrigen], [latOrigen, lonOrigen]);
+    var tramoTrenCoords = trazado ? trazado.latLngs : [
       [latTrenOrigen, lonTrenOrigen],
       [latOrigen, lonOrigen]
     ];
+    if (!trazado && !red) {
+      cargarRed().then(function (cargada) {
+        if (cargada && hayTrenSeleccionado()) {
+          actualizarTramoFerroviario();
+        }
+      });
+    }
     var viaBase = L.polyline(tramoTrenCoords, {
       className: "via-tren",
       color: "#1B365D",
@@ -249,21 +432,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     capaFerroviaria.addLayer(viaDurmientes);
 
-    // 4. Encuadre multimodal: estacion de abordaje, estacion de transbordo y
-    //    destino peatonal.
-    var boundsMultimodal = L.latLngBounds([
-      [latTrenOrigen, lonTrenOrigen],
-      [latOrigen, lonOrigen],
-      [latDestino, lonDestino]
-    ]);
+    // 4. Encuadre multimodal: toda la via recorrida, la estacion de
+    //    transbordo y el destino peatonal.
+    var boundsMultimodal = L.latLngBounds(tramoTrenCoords)
+      .extend([latOrigen, lonOrigen])
+      .extend([latDestino, lonDestino]);
     mapa.fitBounds(boundsMultimodal.pad(0.18));
 
-    // 5. Leyenda multimodal al pie del mapa
+    // 5. Leyenda multimodal al pie del mapa. Dice de donde sale el trazo:
+    //    kilometros de via reales, o una recta que no sigue la via.
+    var detalleVia = trazado
+      ? Math.round(trazado.km) + ' km de vía'
+      : 'tramo esquemático, no sigue la vía';
     if (textoRuta) {
       textoRuta.innerHTML =
         '<div class="leyenda-multimodal">' +
           '<div><i class="bi bi-train-front texto-riel me-1"></i><strong>Tramo ferroviario:</strong> ' +
-            nombreTrenOrigen + ' &rarr; ' + nombreOrigen +
+            nombreTrenOrigen + ' &rarr; ' + nombreOrigen + ', ' + detalleVia +
             (tiempo ? ' (' + tiempo + ' min de viaje en tren, salida ' + salida + ').' : ' (salida ' + salida + ').') +
           '</div>' +
           '<div><i class="bi bi-person-walking text-success me-1"></i><strong>Tramo peatonal:</strong> ' +
