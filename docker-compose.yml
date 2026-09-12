@@ -55,7 +55,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: mtc2026
       # Clave gratuita de CARTO para las teselas Voyager (mapa.carto.api-key);
       # se toma del entorno del host y puede quedar vacia.
-      CARTO_API_KEY: ${CARTO_API_KEY:-}
+      CARTO_API_KEY: cb1_3hxd_1_a2c1ff2f39fb4863392bb17c
       TZ: America/Lima
     ports:
       - "8082:8082"
