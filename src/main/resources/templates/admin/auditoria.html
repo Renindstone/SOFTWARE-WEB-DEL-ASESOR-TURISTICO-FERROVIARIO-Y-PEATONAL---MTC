@@ -24,8 +24,10 @@
           <label class="form-label fw-semibold mb-1" for="tabla">Tabla afectada</label>
           <select class="form-select form-select-sm" id="tabla" name="tabla">
             <option value="">Todas las tablas</option>
+            <!-- Todas las tablas que escriben en AuditoriaLog: usuario (auto-registro,
+                 RF-20) y preferencia (altas desde el modal de zonas, RNF-06) incluidas. -->
             <option th:each="t : ${ {'zona_turistica','servicio_tren','estacion','prevision_clima',
-                                     'informe_planificacion'} }"
+                                     'informe_planificacion','usuario','preferencia'} }"
                     th:value="${t}" th:text="${t}" th:selected="${t == tablaFiltrada}"></option>
           </select>
         </div>
