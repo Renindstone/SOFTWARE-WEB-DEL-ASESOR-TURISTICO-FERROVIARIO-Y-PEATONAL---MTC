@@ -170,8 +170,8 @@ body {
 }
 
 /* ------------------------------------------------------------ Navegacion */
-/* Barra lateral (layout/nav.html, referencia docs/NavBar.jpg). Un solo
-   marcado con offcanvas-lg de Bootstrap: por debajo de lg es un panel
+/* Barra lateral (layout/nav.html, disposicion de docs/NavBar.jpg sobre la
+   paleta verde institucional). Un solo marcado con offcanvas-lg de Bootstrap: por debajo de lg es un panel
    deslizante que abre la barra superior; desde lg es una columna fija.
    Bootstrap fuerza background transparente en .offcanvas-lg a partir de lg,
    por eso el color va en la propia clase con !important y no en un envoltorio. */
@@ -307,7 +307,7 @@ body {
   display: grid;
   place-items: center;
   background: var(--blanco);
-  color: var(--marino-700);
+  color: var(--verde-700);
   font-size: 1.5rem;
 }
 
@@ -364,15 +364,15 @@ body {
   border-radius: 8px;
   text-align: center;
   font-weight: 600;
-  color: var(--marino-900);
-  background: var(--sidebar-acento);
+  color: var(--verde-900);
+  background: var(--fg-on-dark);
   text-decoration: none;
 }
 
 .sidebar-mtc__entrar:hover,
 .sidebar-mtc__entrar:focus-visible {
-  color: var(--marino-900);
-  filter: brightness(1.08);
+  color: var(--verde-900);
+  background: var(--verde-100);
 }
 
 /* Barra superior delgada: solo por debajo de lg. */

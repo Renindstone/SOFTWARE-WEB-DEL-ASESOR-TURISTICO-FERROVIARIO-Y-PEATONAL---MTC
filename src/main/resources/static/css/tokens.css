@@ -103,12 +103,6 @@
      abordaje, riel y leyenda). mapa-leaflet.js repite el mismo valor en el
      trazo, porque Leaflet pinta el SVG desde JavaScript. */
   --riel:           #1B365D;
-  /* Azul marino de la barra lateral (docs/NavBar.jpg): mas oscuro y menos
-     saturado que el riel para que el contenido, verde y papel, siga siendo
-     el protagonista. El celeste rotula el rol en la tarjeta de usuario. */
-  --marino-900:     #16233A;
-  --marino-700:     #1F3050;
-  --celeste-400:    #38BDF8;
 
   /* Terracota de expedicion (Propuesta B). Es el color de la tierra andina
      y se reserva a tres cosas: la linea del perfil altimetrico, el relieve
@@ -193,16 +187,20 @@
 
   --focus-ring:    0 0 0 3px rgba(20, 69, 61, 0.22);
 
-  /* Barra lateral de navegacion (layout/nav.html). */
+  /* Barra lateral de navegacion (layout/nav.html). Toma la disposicion de
+     docs/NavBar.jpg pero los colores de la casa: el verde profundo que ya
+     vestia la barra superior, paneles y pildoras en blanco translucido, y el
+     verde salvia para rotular el rol. Nada de azules: desentonan con el
+     papel andino y las tarjetas de vidrio. */
   --sidebar-ancho:     260px;
-  --sidebar-bg:        var(--marino-900);
+  --sidebar-bg:        var(--bg-inverse-strong);
   --sidebar-bg-panel:  rgba(255, 255, 255, 0.07);
   --sidebar-bg-activo: rgba(255, 255, 255, 0.12);
   --sidebar-bg-hover:  rgba(255, 255, 255, 0.06);
-  --sidebar-fg:        #F4F7FB;
-  --sidebar-fg-muted:  rgba(244, 247, 251, 0.72);
-  --sidebar-acento:    var(--celeste-400);
-  --sidebar-borde:     rgba(255, 255, 255, 0.10);
+  --sidebar-fg:        var(--fg-on-dark);
+  --sidebar-fg-muted:  var(--fg-on-dark-muted);
+  --sidebar-acento:    var(--verde-300);
+  --sidebar-borde:     var(--border-inverse);
 
   /* Tipografia por rol. Una familia de trabajo con dos anchos: Plex Sans
      para prosa, Plex Mono para cifras que el turista compara entre si
