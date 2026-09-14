@@ -174,13 +174,13 @@
           </div>
 
           <div class="tablero-cifras">
-            <span class="tablero-dato">
+            <span class="tablero-dato" title="Distancia estimada en línea recta (Haversine). Al abrir la ruta se calcula el recorrido exacto por calles.">
               <span class="tablero-valor" th:text="${zona.ruta.distanciaKm}">0</span>
-              <span class="tablero-unidad">km</span>
+              <span class="tablero-unidad">km aprox.</span>
             </span>
-            <span class="tablero-dato">
+            <span class="tablero-dato" title="Tiempo estimado referencial de caminata">
               <span class="tablero-valor" th:text="${zona.ruta.tiempoEstimadoMin}">0</span>
-              <span class="tablero-unidad">min</span>
+              <span class="tablero-unidad">min aprox.</span>
             </span>
             <span class="tablero-dato">
               <span class="badge"
