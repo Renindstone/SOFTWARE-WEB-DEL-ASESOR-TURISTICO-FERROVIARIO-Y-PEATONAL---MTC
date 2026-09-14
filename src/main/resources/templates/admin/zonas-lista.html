@@ -124,7 +124,7 @@
             <input type="hidden" id="hasValidationErrors" th:value="${#fields.hasAnyErrors() ? 'true' : 'false'}">
 
             <!-- CN-05: Debe seleccionar al menos una preferencia -->
-            <div class="alert alert-warning mb-3" th:if="${#fields.hasAnyErrors()}" role="alert">
+            <div class="alert alert-warning mb-3" id="alertaErroresZona" th:if="${#fields.hasAnyErrors()}" role="alert">
               <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Corrija los siguientes
                 errores:</div>
               <ul class="mb-0 ps-3">
@@ -383,9 +383,21 @@
         });
       }
 
+      function limpiarErrores() {
+        var alerta = document.getElementById('alertaErroresZona');
+        if (alerta) {
+          alerta.remove();
+        }
+        var conErrores = document.getElementById('hasValidationErrors');
+        if (conErrores) {
+          conErrores.value = 'false';
+        }
+      }
+
       var botonNueva = document.getElementById('btnNuevaZona');
       if (botonNueva) {
         botonNueva.addEventListener('click', function () {
+          limpiarErrores();
           titulo.textContent = 'Registrar zona turística';
           volcar({});
           desmarcarPreferencias();
@@ -395,6 +407,7 @@
 
       document.querySelectorAll('.btn-editar-zona').forEach(function (boton) {
         boton.addEventListener('click', function () {
+          limpiarErrores();
           titulo.textContent = 'Actualizar zona turística';
           volcar(boton.dataset);
           if (!boton.dataset.estado) {
@@ -407,6 +420,10 @@
             if (chk) { chk.checked = true; }
           });
         });
+      });
+
+      modal.addEventListener('hidden.bs.modal', function () {
+        limpiarErrores();
       });
 
       var conErrores = document.getElementById('hasValidationErrors');
