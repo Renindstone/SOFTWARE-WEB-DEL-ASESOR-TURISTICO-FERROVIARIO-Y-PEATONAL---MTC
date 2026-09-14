@@ -170,39 +170,278 @@ body {
 }
 
 /* ------------------------------------------------------------ Navegacion */
-/* Antes los colores iban en style="" repetido en ocho enlaces de nav.html,
-   lo que hacia imposible tematizar la barra desde un token. */
-.nav-mtc {
-  background: var(--bg-inverse);
+/* Barra lateral (layout/nav.html, referencia docs/NavBar.jpg). Un solo
+   marcado con offcanvas-lg de Bootstrap: por debajo de lg es un panel
+   deslizante que abre la barra superior; desde lg es una columna fija.
+   Bootstrap fuerza background transparente en .offcanvas-lg a partir de lg,
+   por eso el color va en la propia clase con !important y no en un envoltorio. */
+.sidebar-mtc {
+  --bs-offcanvas-width: 280px;
+  --bs-offcanvas-bg: var(--sidebar-bg);
+  --bs-offcanvas-color: var(--sidebar-fg);
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-fg);
 }
 
-.nav-mtc .navbar-brand {
-  color: var(--fg-on-dark);
+.sidebar-mtc__cierre {
+  padding: var(--esp-3) var(--esp-4) 0;
+}
+
+.sidebar-mtc__cuerpo {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--esp-4) var(--esp-3) var(--esp-3) !important;
+  overflow-y: auto !important;
+}
+
+/* Cabecera: caja del logo + nombre en dos lineas. */
+.sidebar-mtc__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-2) var(--esp-2) var(--esp-3);
+  color: var(--sidebar-fg);
+  text-decoration: none;
+}
+
+.sidebar-mtc__marca:hover,
+.sidebar-mtc__marca:focus {
+  color: var(--sidebar-fg);
+}
+
+.sidebar-mtc__logo {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  background: var(--sidebar-bg-panel);
+  border: 1px solid var(--sidebar-borde);
+  border-radius: var(--radio-superficie);
+}
+
+.sidebar-mtc__logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.sidebar-mtc__titulo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.sidebar-mtc__titulo strong {
+  font-size: 1.0625rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.nav-mtc .nav-link {
-  color: var(--fg-on-dark-muted);
-  border-radius: var(--radio-control);
-  padding-inline: var(--esp-3);
-}
-
-.nav-mtc .nav-link:hover,
-.nav-mtc .nav-link:focus {
-  color: var(--fg-on-dark);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.nav-mtc-sesion {
-  color: var(--fg-on-dark);
+.sidebar-mtc__titulo small {
   font-size: var(--paso--1);
+  color: var(--sidebar-fg-muted);
+}
+
+.sidebar-mtc__sello {
+  margin: 0 var(--esp-2) var(--esp-4);
+  opacity: 0.9;
+}
+
+/* Menu vertical: pildora activa redondeada y hover suave. */
+.sidebar-mtc__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-mtc__enlace {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: 10px var(--esp-3);
+  border-radius: 8px;
+  color: var(--sidebar-fg-muted);
+  font-size: var(--paso-0);
+  text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.sidebar-mtc__enlace .bi {
+  flex: 0 0 1.25rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.sidebar-mtc__enlace:hover,
+.sidebar-mtc__enlace:focus-visible {
+  background: var(--sidebar-bg-hover);
+  color: var(--sidebar-fg);
+  outline: none;
+}
+
+.sidebar-mtc__enlace.activo {
+  background: var(--sidebar-bg-activo);
+  color: var(--sidebar-fg);
+  font-weight: 600;
+}
+
+/* Tarjeta de usuario fijada al fondo. */
+.sidebar-mtc__usuario {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-3);
+  background: var(--sidebar-bg-panel);
+  border: 1px solid var(--sidebar-borde);
+  border-radius: var(--radio-superficie);
+}
+
+.sidebar-mtc__avatar {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--blanco);
+  color: var(--marino-700);
+  font-size: 1.5rem;
+}
+
+.sidebar-mtc__identidad {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   line-height: 1.25;
 }
 
-.nav-mtc-roles {
-  color: var(--fg-on-dark-muted);
+.sidebar-mtc__nombre {
+  color: var(--sidebar-fg);
+  font-weight: 600;
+  font-size: var(--paso--1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-mtc__rol {
+  color: var(--sidebar-acento);
   font-size: var(--paso--2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-mtc__salir {
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sidebar-borde);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sidebar-fg-muted);
+  text-decoration: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.sidebar-mtc__salir:hover,
+.sidebar-mtc__salir:focus-visible {
+  background: var(--sidebar-bg-activo);
+  color: var(--sidebar-fg);
+  outline: none;
+}
+
+.sidebar-mtc__entrar {
+  display: block;
+  margin-top: var(--esp-2);
+  padding: 10px var(--esp-3);
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--marino-900);
+  background: var(--sidebar-acento);
+  text-decoration: none;
+}
+
+.sidebar-mtc__entrar:hover,
+.sidebar-mtc__entrar:focus-visible {
+  color: var(--marino-900);
+  filter: brightness(1.08);
+}
+
+/* Barra superior delgada: solo por debajo de lg. */
+.topbar-mtc {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: 56px;
+  padding: 0 var(--esp-3);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  border-bottom: 3px solid var(--seal);
+}
+
+.topbar-mtc__hamburguesa {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sidebar-borde);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sidebar-fg);
+  font-size: 1.4rem;
+}
+
+.topbar-mtc__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  color: var(--sidebar-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.topbar-mtc__marca img {
+  height: 28px;
+}
+
+/* Escritorio: columna fija y desplazamiento del contenido. Se aplica sobre
+   el body que contiene la barra (todas las vistas que incluyen layout/nav),
+   asi ninguna de ellas necesita tocar su <main>; el .container se centra en
+   el ancho restante en vez de pegarse a la barra. Las pantallas sin barra
+   (login, registro, PDF) no se ven afectadas. */
+@media (min-width: 992px) {
+  .sidebar-mtc {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    width: var(--sidebar-ancho);
+    border-right: 1px solid var(--sidebar-borde);
+  }
+
+  body:has(.sidebar-mtc) {
+    padding-left: var(--sidebar-ancho);
+  }
+}
+
+/* Movil y tablet: el dorado sube a la barra superior, asi que el sello del
+   panel deslizante no se repite. */
+@media (max-width: 991.98px) {
+  .sidebar-mtc__sello {
+    display: none;
+  }
 }
 
 .pie-mtc {
