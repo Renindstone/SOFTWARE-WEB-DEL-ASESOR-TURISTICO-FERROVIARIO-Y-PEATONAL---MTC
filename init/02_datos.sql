@@ -460,6 +460,23 @@ LEFT JOIN categoria_visitante ct ON ct."CatAmbito" = 'Tren' AND ct."CatNombre" =
 JOIN      categoria_visitante cz ON cz."CatAmbito" = 'Zona' AND cz."CatNombre" = v.cat_zona;
 
 -- ----------------------------------------------------------------------------
+-- 14. CONTROL_AFORO  (aforo diario y pruebas de cupo maximo - CN-09 / RF-17)
+--
+-- Registra el aforo consumido por zona y fecha. Incluye historico y el caso
+-- de aforo agotado (4500 de 4500 cupos utilizados, disponible = 0) para
+-- 'Llaqta de Machu Picchu' el dia 14 de septiembre de 2026.
+-- ----------------------------------------------------------------------------
+INSERT INTO control_aforo ("AfoIdZona", "AfoFecha", "AfoCupoUtilizado") VALUES
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Parque Arqueologico de Sacsayhuaman'),   '2026-09-01',  980),
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Conjunto Arqueologico de Ollantaytambo'), '2026-09-01',  320),
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Conjunto Arqueologico de Ollantaytambo'), '2026-09-02',  145),
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Llaqta de Machu Picchu'),                 '2026-09-01', 4500),
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Llaqta de Machu Picchu'),                 '2026-09-02', 1820),
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Llaqta de Machu Picchu'),                 '2026-09-03',  640),
+    -- CN-09: aforo agotado (0 cupos libres) para el dia 14 de septiembre de 2026
+    ((SELECT "ZonIdZona" FROM zona_turistica WHERE "ZonNombre" = 'Llaqta de Machu Picchu'),                 '2026-09-14', 4500);
+
+-- ----------------------------------------------------------------------------
 -- 15. AUDITORIA_LOG  (RNF-07)
 -- ----------------------------------------------------------------------------
 INSERT INTO auditoria_log ("AudUsuario", "AudOperacion", "AudTablaAfectada",
