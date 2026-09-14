@@ -210,13 +210,15 @@ body {
   color: var(--sidebar-fg);
 }
 
+/* Caja blanca: el logo del MTC es negro y sobre el verde profundo no se
+   distingue. Se aplica tambien a la marca de la barra superior movil. */
 .sidebar-mtc__logo {
   flex: 0 0 auto;
   width: 52px;
   height: 52px;
   display: grid;
   place-items: center;
-  background: var(--sidebar-bg-panel);
+  background: var(--blanco);
   border: 1px solid var(--sidebar-borde);
   border-radius: var(--radio-superficie);
 }
@@ -413,6 +415,9 @@ body {
 
 .topbar-mtc__marca img {
   height: 28px;
+  padding: 3px;
+  background: var(--blanco);
+  border-radius: var(--radio-control);
 }
 
 /* Escritorio: columna fija y desplazamiento del contenido. Se aplica sobre
