@@ -365,7 +365,6 @@ En la carpeta [`docs/`](docs/) del repositorio se encuentran los documentos form
 2. **`MANUAL_DE_USUARIO_ASESOR_TURISTICO_MTC.docx` (v1.1)**: Guía detallada paso a paso para cada uno de los roles del sistema con capturas y procedimientos.
 3. **`Arquitectura_Software_y_Diseno_BD_MTC.docx`**: Especificación formal de la arquitectura en 4 capas, topología Docker, decisiones de diseño (ADRs) y diccionario de datos de las 15 tablas de PostgreSQL.
 4. **`Diagrama Entidad Relacion MTC.drawio.xml`** y **`Diagrama Diseno Logico MTC.drawio.xml`**: Diagramas relacionales editables.
-5. **`NavBar.jpg`**: Diseño de referencia para la interfaz de navegación.
 
 ---
 
